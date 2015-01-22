@@ -1,10 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="1">
+        <file>
+            <url>src/net/trdlo/zelda/Bird.java</url>
+            <bookmark id="1">
+                <name/>
+                <line>32</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/chleboir/workspace/Richard/Java/HelloWorld/src/eu/chleboir/helloworld/MultiBufferTest.java</file>
-            <file>file:/home/chleboir/workspace/Richard/Java/HelloWorld/maps/default.txt</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/GameObjectInstance.java</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/maps/small.txt</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/Bird.java</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/WorldView.java</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/World.java</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/images/bird.png</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/BirdInstance.java</file>
+            <file>file:/home/chleboir/workspace/Richard/Java/ZeldaPlatform/src/net/trdlo/zelda/ZFrame.java</file>
         </group>
     </open-files>
 </project-private>
