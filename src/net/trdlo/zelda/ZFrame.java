@@ -31,7 +31,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 
 	private long renderFrame = 0;
 	private long totalRenderLength = 0;
-	private int lastRenderCount = 0;
+	private	int lastRenderCount;
 
 	GraphicsDevice gDevice;
 	BufferStrategy bufferStrategy;
@@ -39,6 +39,8 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	Random rand;
 	World world;
 	WorldView mainView;
+	
+	//private static final Logger logger = Logger.getLogger(ZFrame.class.getName());
 
 	public ZFrame() throws ZException {
 		super("ZeldaFrame app");
@@ -109,11 +111,14 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	private void run() {
 		while (!terminate) {
 			long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
-
-			if (updatesPending > MAX_FRAME_DROPS) {
+		
+			if (updatesPending < 1) {
+				updatesPending = 1; //one update minimum!
+			} else if (updatesPending > MAX_FRAME_DROPS) {
 				updatesPending = MAX_FRAME_DROPS;
 			}
 
+			//System.err.print("pending: " + updatesPending + ",\t");
 			while (updatesPending-- > 0) {
 				update();
 			}
@@ -127,20 +132,30 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 			int renderCounter = 1;
 			
 			while (remainingToUpdate > getAvgRenderLenth()) {
-				int rendersPerFrame = lastRenderCount;
-				if (rendersPerFrame == 0) {
-					rendersPerFrame = renderCounter + (int)(remainingToUpdate / getAvgRenderLenth());
-				}
+				int approxRenderCount = renderCounter + (int)(remainingToUpdate / getAvgRenderLenth());
+				float approxProgres = renderCounter / (float)approxRenderCount;
 				
-				float renderFraction = renderCounter++ / (float) rendersPerFrame;
+				int rendersPerFrame;
+				if (lastRenderCount == 0) {
+					rendersPerFrame = approxRenderCount;
+				} else {
+					rendersPerFrame = (int)(lastRenderCount * (1.0f - approxProgres) + approxRenderCount * approxProgres);
+				}
+				//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
+				//System.err.print(updateFrame + ": " + renderCounter + "/" + rendersPerFrame + ",\t");
+				
+				float renderFraction = renderCounter / (float) rendersPerFrame;
 				render(renderFraction);
 				remainingToUpdate = nextUpdateTime - getTime();
+				renderCounter++;
 			}
+			//System.err.println("total: " + renderCounter);
 			
 			lastRenderCount = renderCounter;
 
 			if (remainingToUpdate > 0) {
 				try {
+					//System.err.println("Sleep for " + remainingToUpdate + " / " + getAvgRenderLenth());
 					Thread.sleep((int) remainingToUpdate);
 				} catch (InterruptedException ex) {
 				}
@@ -154,7 +169,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		}
 		return ((System.nanoTime() - runStartTime) / 1000000L);
 	}
-
+	
 	private void setRenderLength(long length) {
 		renderFrame++;
 		totalRenderLength += length;
