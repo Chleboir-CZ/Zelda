@@ -11,8 +11,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.imageio.ImageIO;
@@ -26,7 +29,7 @@ public class World {
     private Set<Tile> tiles = new HashSet<>(); 
     private Tile defaultTile;
     private Set<GameObject> objects = new HashSet<>();
-    Set<GameObjectInstance> objectInstances = new HashSet<>();
+    List<GameObjectInstance> objectInstances = new ArrayList<>();
     
     
     TileInstance map[];
@@ -115,6 +118,8 @@ public class World {
             if (row < mapHeight -1) {
                 throw new MapLoadException("Map has less rows than declared.");
             }
+			
+			Collections.sort(objectInstances);
             
         } catch (FileNotFoundException ex) {
             throw new MapLoadException("Map file not found ("+ fileName +")", ex);

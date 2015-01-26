@@ -50,7 +50,7 @@ public class WorldView {
 		for (GameObjectInstance goi : world.objectInstances) {
 			int x = xOffset + (int)Math.floor((goi.getPosX() + goi.getMoveX() * renderFraction)*World.GRID_SIZE);
 			int y = yOffset + (int)Math.floor((goi.getPosY() + goi.getMoveY() * renderFraction)*World.GRID_SIZE);
-			goi.getGameObject().render(graphics, x, y);
+			goi.render(graphics, x, y, renderFraction);
 		}
                 
 	}

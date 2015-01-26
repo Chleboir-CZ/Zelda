@@ -5,7 +5,6 @@
  */
 package net.trdlo.zelda;
 
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +20,7 @@ public class Tree extends GameObject {
     BufferedImage img;
 
     public Tree() throws MapLoadException {
-        super('T', 0.5f);
+        super('T', 0.5f, Z_OVERHEAD);
         
         try {
             img = ImageIO.read(new File("images/tree.png"));
@@ -31,13 +30,8 @@ public class Tree extends GameObject {
     }
 
     @Override
-    public void render(Graphics2D graphics, int x, int y) {
-        graphics.drawImage(img, x, y, null);
-    }
-
-    @Override
     public GameObjectInstance getInstance(float x, float y, String args) {
-        return new GameObjectInstance(this, x, y);
+        return new TreeInstance(this, x, y);
 	}
 
 }

@@ -5,13 +5,13 @@
  */
 package net.trdlo.zelda;
 
+import java.awt.Graphics2D;
 
-public class GameObjectInstance {
-    protected GameObject gameObject;
+
+public abstract class GameObjectInstance implements Comparable<GameObjectInstance> {
     protected float posX, posY;
 
-    public GameObjectInstance(GameObject gameObject, float posX, float posY) {
-        this.gameObject = gameObject;
+    public GameObjectInstance(float posX, float posY) {
         this.posX = posX;
         this.posY = posY;
     }
@@ -19,10 +19,6 @@ public class GameObjectInstance {
 	public void update() {
 		
 	}
-
-    public GameObject getGameObject() {
-        return gameObject;
-    }
 
     public float getPosX() {
         return posX;
@@ -32,18 +28,6 @@ public class GameObjectInstance {
         return posY;
     }
 
-    public void setGameObject(GameObject gameObject) {
-        this.gameObject = gameObject;
-    }
-
-    /*public void setPosX(float posX) {
-        //this.posX = posX;
-    }
-
-    public void setPosY(float posY) {
-        //this.posY = posY;
-    }*/
-    
     public float getMoveX() {
         return 0;
     }
@@ -51,4 +35,18 @@ public class GameObjectInstance {
     public float getMoveY() {
         return 0;
     }
+	
+    public abstract void render(Graphics2D graphics, int x, int y, float renderFraction);
+	
+	public abstract int getZIndex();
+	
+	@Override
+	public int compareTo(GameObjectInstance t) {
+		/*int zDiff = getZIndex() - t.getZIndex();
+		if (zDiff != 0)
+			return zDiff;
+		else
+			return hashCode() - t.hashCode();*/
+		return 0;//getZIndex() - t.getZIndex();
+	}
 }

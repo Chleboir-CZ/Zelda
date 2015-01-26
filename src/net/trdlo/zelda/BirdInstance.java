@@ -5,19 +5,24 @@
  */
 package net.trdlo.zelda;
 
+import java.awt.Graphics2D;
 import java.util.Random;
 
-/**
- *
- * @author chleboir
- */
+
 public class BirdInstance extends GameObjectInstance {
-	private float moveX = 2, moveY = 3;
-	World world;
+	private final Bird gameObject;
+	private float moveX, moveY;
+	private final World world;
+
+	private float flightSpeed = 5.0f;
+	private int flatterSpeed = 1;
+	private int updateCounter = 0;
 	
-	public BirdInstance(GameObject gameObject, float posX, float posY, World world) {
-		super(gameObject, posX, posY);
+	public BirdInstance(Bird gameObject, float posX, float posY, World world) {
+		super(posX, posY);
+		this.gameObject = gameObject;
 		this.world = world;
+		randomPlaceBird();
 	}
 	
 	private void randomPlaceBird() {
@@ -30,11 +35,10 @@ public class BirdInstance extends GameObjectInstance {
 			posX = -gameObject.size / 2;
 			posY = 0 + r.nextInt(world.mapHeight - 1);
 
-			float alpha = -0.785398163f + r.nextFloat() * 2 * 0.785398163f;
-			float speed = 5.0f;
+			float angle = -0.785398163f + r.nextFloat() * 2 * 0.785398163f;
 			
-			moveX = speed * (float)(Math.cos(alpha));
-			moveY = speed * (float)(Math.sin(alpha));
+			moveX = flightSpeed * (float)(Math.cos(angle));
+			moveY = flightSpeed * (float)(Math.sin(angle));
 		}
 	}
 	
@@ -45,6 +49,7 @@ public class BirdInstance extends GameObjectInstance {
 	
 	@Override
 	public void update() {
+		updateCounter++;
 		posX += moveX;
 		posY += moveY;
 
@@ -59,5 +64,15 @@ public class BirdInstance extends GameObjectInstance {
 	@Override
 	public float getMoveY() {
 		return moveY;
+	}
+
+	@Override
+	public void render(Graphics2D graphics, int x, int y, float renderFraction) {
+		gameObject.renderFrame(graphics, x, y, (updateCounter/flatterSpeed)%gameObject.FRAME_COUNT);
+	}
+
+	@Override
+	public int getZIndex() {
+		return gameObject.zIndex;
 	}
 }
