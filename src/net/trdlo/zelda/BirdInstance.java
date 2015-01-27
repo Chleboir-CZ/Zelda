@@ -14,8 +14,8 @@ public class BirdInstance extends GameObjectInstance {
 	private float moveX, moveY;
 	private final World world;
 
-	private float flightSpeed = 5.0f;
-	private int flatterSpeed = 1;
+	private float flightSpeed = 0.1f;
+	private int flatterSpeed = 5;
 	private int updateCounter = 0;
 	
 	public BirdInstance(Bird gameObject, float posX, float posY, World world) {

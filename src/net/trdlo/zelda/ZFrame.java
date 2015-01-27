@@ -25,7 +25,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
-	private static final int UPDATES_FREQ = 1;
+	private static final int UPDATES_FREQ = 20;
 	private static final long UPDATE_PERIOD = 1000L / UPDATES_FREQ;
 	private static final int MAX_FRAME_DROPS = UPDATES_FREQ;
 

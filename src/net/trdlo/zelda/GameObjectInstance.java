@@ -47,6 +47,6 @@ public abstract class GameObjectInstance implements Comparable<GameObjectInstanc
 			return zDiff;
 		else
 			return hashCode() - t.hashCode();*/
-		return 0;//getZIndex() - t.getZIndex();
+		return getZIndex() - t.getZIndex();
 	}
 }

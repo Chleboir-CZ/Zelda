@@ -32,8 +32,10 @@ public class WorldView {
 	public void render(Graphics2D graphics, float renderFraction) {
 		Rectangle bounds = graphics.getDeviceConfiguration().getBounds();
 		
+		//TODO set clip na svět, aby nešlo kreslit mimo mapu (ve WorldView)
+		//graphics.setClip();
                 
-		move(bounds);
+		limitViewPosition(bounds);
 
 		float rWidth2 = Math.min(world.mapWidth, bounds.width / (float)World.GRID_SIZE) / 2.0f;
 		float rHeight2 = Math.min(world.mapHeight, bounds.height / (float)World.GRID_SIZE) / 2.0f;
@@ -55,7 +57,7 @@ public class WorldView {
                 
 	}
 	
-	public void move(Rectangle bounds) {
+	public void limitViewPosition(Rectangle bounds) {
 		float centerX = world.mapWidth / 2.0f;
 		float centerY = world.mapHeight / 2.0f;
 		float bWidth = bounds.width / (float)World.GRID_SIZE;
