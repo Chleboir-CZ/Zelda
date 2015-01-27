@@ -14,39 +14,49 @@ public class BirdInstance extends GameObjectInstance {
 	private float moveX, moveY;
 	private final World world;
 
-	private float flightSpeed = 0.1f;
-	private int flatterSpeed = 5;
+	private float flightSpeed;
+	private float flatterSpeed;
 	private int updateCounter = 0;
+
+	private final Random r;
 	
 	public BirdInstance(Bird gameObject, float posX, float posY, World world) {
 		super(posX, posY);
 		this.gameObject = gameObject;
 		this.world = world;
-		randomPlaceBird();
+		r = new Random();
+		
+		randomSpeedBird();
 	}
-	
+
 	private void randomPlaceBird() {
-		Random r = new Random();
-		boolean isVert = r.nextBoolean();
-		boolean isMax = r.nextBoolean();
+//		boolean isVert = r.nextBoolean();
+//		boolean isMax = r.nextBoolean();
+//		TODO: prák může začít kdekoli po obvodu
 
-		//if(!isVert && !isMax)
-		{
-			posX = -gameObject.size / 2;
-			posY = 0 + r.nextInt(world.mapHeight - 1);
+		posX = -gameObject.size; // mělo být /2, ale při kreslení neadresujeme střed, nýbrž levý horní roh
+		posY = 0 + r.nextInt(world.mapHeight - 1);
+	}
 
-			float angle = -0.785398163f + r.nextFloat() * 2 * 0.785398163f;
-			
-			moveX = flightSpeed * (float)(Math.cos(angle));
-			moveY = flightSpeed * (float)(Math.sin(angle));
+	private void randomSpeedBird() {
+		flatterSpeed = ZFrame.getUpdateCountFromHz(2.0f + r.nextFloat()*3.0f); //udává, jakou frekvencí se přepínají snímky, ne jakou se opakuje celý cyklus
+		flightSpeed = ZFrame.getFrameStepFromTps(0.05f + r.nextFloat()*0.5f);
+		//směr se dává do celého kruhu, tedy i ven, namísto dovnitř mapy, pokud startuje mimo ni
+		//několikanásobné přegenerování není za tak hrozné, za tu logiku to teď nestojí
+		float angle = r.nextFloat() * 2 * (float)Math.PI;
+		moveX = flightSpeed * (float)(Math.cos(angle));
+		moveY = flightSpeed * (float)(Math.sin(angle));
+	}
+
+	private void checkMapBorders() {
+		if(posX < -gameObject.size || posY < -gameObject.size || posX > world.mapWidth || posY > world.mapHeight) {
+			//adresujeme levý horní roh objektu a ne jeho střed, zatím
+//		if(posX < -gameObject.size / 2 || posY < -gameObject.size / 2 || posX > world.mapWidth + gameObject.size / 2 || posY > world.mapHeight + gameObject.size / 2) {
+			randomSpeedBird();
+			randomPlaceBird();
 		}
 	}
-	
-	private void checkMapBorders() {
-		if(posX < -gameObject.size / 2 || posY < -gameObject.size / 2 || posX > world.mapWidth + gameObject.size / 2 || posY > world.mapHeight + gameObject.size / 2) 
-			randomPlaceBird();
-	}
-	
+
 	@Override
 	public void update() {
 		updateCounter++;
@@ -67,8 +77,8 @@ public class BirdInstance extends GameObjectInstance {
 	}
 
 	@Override
-	public void render(Graphics2D graphics, int x, int y, float renderFraction) {
-		gameObject.renderFrame(graphics, x, y, (updateCounter/flatterSpeed)%gameObject.FRAME_COUNT);
+	public void render(Graphics2D graphics, float x, float y, float renderFraction) {
+		gameObject.renderFrame(graphics, x, y, (int)(updateCounter/flatterSpeed) % gameObject.FRAME_COUNT);
 	}
 
 	@Override

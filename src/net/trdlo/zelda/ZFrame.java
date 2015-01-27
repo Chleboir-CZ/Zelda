@@ -2,6 +2,7 @@ package net.trdlo.zelda;
 
 import net.trdlo.zelda.exceptions.MapLoadException;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -25,8 +26,8 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
-	private static final int UPDATES_FREQ = 20;
-	private static final long UPDATE_PERIOD = 1000L / UPDATES_FREQ;
+	public static final int UPDATES_FREQ = 20;
+	public static final long UPDATE_PERIOD = 1000L / UPDATES_FREQ;
 	private static final int MAX_FRAME_DROPS = UPDATES_FREQ;
 
 	private long renderFrame = 0;
@@ -88,6 +89,9 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		g.setBackground(Color.BLACK);
 		Rectangle bounds = g.getDeviceConfiguration().getBounds();
 		g.clearRect(0, 0, bounds.width, bounds.height);
+
+		g.setFont(new Font("Monospaced", Font.BOLD, 12));
+		g.setColor(Color.WHITE);
 
 		mainView.render(g, renderFraction);
 
@@ -166,6 +170,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	private long getTime() {
 		if (runStartTime == 0) {
 			runStartTime = System.nanoTime();
+			return 0;
 		}
 		return ((System.nanoTime() - runStartTime) / 1000000L);
 	}
@@ -182,6 +187,30 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	private void doneFrame() {
 		gDevice.setFullScreenWindow(null);
 		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+	}
+
+	public static float getHzFromUpdateCount(float updateCount) {
+		return UPDATES_FREQ / updateCount;
+	}
+
+	public static int getHzFromUpdateCount(int updateCount) {
+		return UPDATES_FREQ / updateCount;
+	}
+
+	public static float getUpdateCountFromHz(float Hz) {
+		return UPDATES_FREQ / Hz;
+	}
+
+	public static int getUpdateCountFromHz(int Hz) {
+		return UPDATES_FREQ / Hz;
+	}
+
+	public static float getFrameStepFromTps(float tps) {
+		return tps / UPDATES_FREQ;
+	}
+
+	public static float getTpsFrpmFrameStep(float frameStep) {
+		return frameStep * UPDATES_FREQ;
 	}
 
 	public static void main(String[] args) {

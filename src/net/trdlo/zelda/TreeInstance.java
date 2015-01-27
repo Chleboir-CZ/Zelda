@@ -6,6 +6,7 @@
 package net.trdlo.zelda;
 
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 
 
 public class TreeInstance extends GameObjectInstance {
@@ -17,8 +18,10 @@ public class TreeInstance extends GameObjectInstance {
 	}
 
 	@Override
-	public void render(Graphics2D graphics, int x, int y, float renderFraction) {
-		graphics.drawImage(gameObject.img, x, y, null);
+	public void render(Graphics2D graphics, float x, float y, float renderFraction) {
+		AffineTransform t = new AffineTransform();
+		t.translate(x, y);
+		graphics.drawImage(gameObject.img, t, null);
 	}
 	
 	@Override

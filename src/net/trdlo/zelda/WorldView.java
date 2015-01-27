@@ -7,6 +7,7 @@ package net.trdlo.zelda;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 
 /**
  *
@@ -32,9 +33,6 @@ public class WorldView {
 	public void render(Graphics2D graphics, float renderFraction) {
 		Rectangle bounds = graphics.getDeviceConfiguration().getBounds();
 		
-		//TODO set clip na svět, aby nešlo kreslit mimo mapu (ve WorldView)
-		//graphics.setClip();
-                
 		limitViewPosition(bounds);
 
 		float rWidth2 = Math.min(world.mapWidth, bounds.width / (float)World.GRID_SIZE) / 2.0f;
@@ -42,6 +40,8 @@ public class WorldView {
 		
 		int xOffset = (int)Math.floor((bounds.width / 2.0f) - (x * World.GRID_SIZE));
 		int yOffset = (int)Math.floor((bounds.height / 2.0f) - (y * World.GRID_SIZE));
+
+		graphics.setClip(xOffset, yOffset, world.mapWidth * World.GRID_SIZE, world.mapHeight * World.GRID_SIZE);
 		
 		for(int j = (int)(y - rHeight2); j < (int)Math.ceil(y + rHeight2); j++) {
 			for(int i = (int)(x - rWidth2); i < (int)Math.ceil(x + rWidth2); i++) {
@@ -49,12 +49,23 @@ public class WorldView {
 			}
 		}
 
-		for (GameObjectInstance goi : world.objectInstances) {
-			int x = xOffset + (int)Math.floor((goi.getPosX() + goi.getMoveX() * renderFraction)*World.GRID_SIZE);
-			int y = yOffset + (int)Math.floor((goi.getPosY() + goi.getMoveY() * renderFraction)*World.GRID_SIZE);
-			goi.render(graphics, x, y, renderFraction);
+		//graphics.setColor(Color.RED);
+		//graphics.drawRect(xOffset, yOffset, world.mapWidth * World.GRID_SIZE -1, world.mapHeight * World.GRID_SIZE -1);
+
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		
+		for (GameObjectInstance goi : world.objectInstances) {			
+			float pixelX = xOffset + (goi.getPosX() + goi.getMoveX() * renderFraction) * World.GRID_SIZE;
+			float pixelY = yOffset + (goi.getPosY() + goi.getMoveY() * renderFraction) * World.GRID_SIZE;
+			goi.render(graphics, pixelX, pixelY, renderFraction);
 		}
-                
+		
+		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		
+		graphics.setClip(null);
+		
+		graphics.drawString("WorldView looks at [" + x + "; " + y + "]", 100, 100);
+
 	}
 	
 	public void limitViewPosition(Rectangle bounds) {

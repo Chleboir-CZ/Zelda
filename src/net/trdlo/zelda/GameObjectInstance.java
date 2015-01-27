@@ -9,34 +9,34 @@ import java.awt.Graphics2D;
 
 
 public abstract class GameObjectInstance implements Comparable<GameObjectInstance> {
-    protected float posX, posY;
+	protected float posX, posY;
 
-    public GameObjectInstance(float posX, float posY) {
-        this.posX = posX;
-        this.posY = posY;
-    }
+	public GameObjectInstance(float posX, float posY) {
+		this.posX = posX;
+		this.posY = posY;
+	}
 	
 	public void update() {
 		
 	}
 
-    public float getPosX() {
-        return posX;
-    }
+	public float getPosX() {
+		return posX;
+	}
 
-    public float getPosY() {
-        return posY;
-    }
+	public float getPosY() {
+		return posY;
+	}
 
-    public float getMoveX() {
-        return 0;
-    }
+	public float getMoveX() {
+		return 0;
+	}
 
-    public float getMoveY() {
-        return 0;
-    }
-	
-    public abstract void render(Graphics2D graphics, int x, int y, float renderFraction);
+	public float getMoveY() {
+		return 0;
+	}
+
+	public abstract void render(Graphics2D graphics, float x, float y, float renderFraction);
 	
 	public abstract int getZIndex();
 	
