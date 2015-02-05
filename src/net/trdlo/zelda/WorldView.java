@@ -1,18 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.trdlo.zelda;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 
-/**
- *
- * @author bayer
- */
+
 public class WorldView {
 	private World world;
 	private float x, y, dx, dy;

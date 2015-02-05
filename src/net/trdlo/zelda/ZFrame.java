@@ -19,6 +19,7 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import net.trdlo.zelda.exceptions.ZException;
 
+
 public class ZFrame extends JFrame implements WindowListener, KeyListener, MouseListener {
 
 	private boolean terminate = false;
