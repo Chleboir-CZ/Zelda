@@ -37,6 +37,8 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 
 	GraphicsDevice gDevice;
 	BufferStrategy bufferStrategy;
+	
+	Font defaultFont;
 
 	Random rand;
 	World world;
@@ -49,7 +51,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 
 		addWindowListener(this);
 		addKeyListener(this);
-		addMouseListener(this);
+//		addMouseListener(this);
 
 		initFrame();
 
@@ -60,7 +62,10 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 			throw new ZException("Game can't begin, map did no load well.", ex);
 		}
 
-		mainView = new WorldView(world);
+		mainView = new WorldView(world, this);
+		addMouseListener(mainView);
+		
+		defaultFont = new Font("Monospaced", Font.BOLD, 12);
 	}
 
 	private void initFrame() {
@@ -91,7 +96,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		Rectangle bounds = g.getDeviceConfiguration().getBounds();
 		g.clearRect(0, 0, bounds.width, bounds.height);
 
-		g.setFont(new Font("Monospaced", Font.BOLD, 12));
+		g.setFont(defaultFont);
 		g.setColor(Color.WHITE);
 
 		mainView.render(g, renderFraction);
@@ -213,7 +218,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	public static float getTpsFrpmFrameStep(float frameStep) {
 		return frameStep * UPDATES_FREQ;
 	}
-
+	
 	public static void main(String[] args) {
 		try {
 			ZFrame zFrame = new ZFrame();
@@ -269,6 +274,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		//mainView.mouseClicked(e);
 	}
 
 	@Override
