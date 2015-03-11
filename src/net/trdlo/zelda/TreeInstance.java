@@ -5,8 +5,9 @@ import java.awt.geom.AffineTransform;
 
 
 public class TreeInstance extends GameObjectInstance {
+
 	private final Tree gameObject;
-	
+
 	public TreeInstance(Tree gameObject, float posX, float posY) {
 		super(posX, posY);
 		this.gameObject = gameObject;
@@ -18,7 +19,7 @@ public class TreeInstance extends GameObjectInstance {
 		t.translate(x, y);
 		graphics.drawImage(gameObject.img, t, null);
 	}
-	
+
 	@Override
 	public int getZIndex() {
 		return gameObject.zIndex;

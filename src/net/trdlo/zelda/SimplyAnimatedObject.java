@@ -8,8 +8,9 @@ import java.awt.image.BufferedImage;
 
 
 public abstract class SimplyAnimatedObject extends GameObject {
-	protected BufferedImage[] images; 
-	
+
+	protected BufferedImage[] images;
+
 	/**
 	 *
 	 * @param identifier
@@ -24,12 +25,12 @@ public abstract class SimplyAnimatedObject extends GameObject {
 	public void setImages(BufferedImage[] images) {
 		this.images = images;
 	}
-	
+
 	public void renderFrame(Graphics2D graphics, float x, float y, int frameIndex, int frameIndex2, float frameFraction) {
 		AffineTransform t = new AffineTransform();
 		t.translate(x, y);
 		//tohle je jen ukázka zneužití aktuálního času na animaci
-		t.rotate(Math.sin(System.currentTimeMillis()/200.0)*0.5, 16, 16);
+		t.rotate(Math.sin(System.currentTimeMillis() / 200.0) * 0.5, 16, 16);
 
 		graphics.drawImage(images[frameIndex], t, null);
 
@@ -39,7 +40,7 @@ public abstract class SimplyAnimatedObject extends GameObject {
 			graphics.drawImage(images[frameIndex2], t, null);
 			graphics.setComposite(originalComp);
 		}
-		
+
 		graphics.drawString(String.format("px [%9.4f; %9.4f]", x, y), x, y);
 	}
 

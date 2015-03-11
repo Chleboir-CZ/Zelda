@@ -20,10 +20,10 @@ public class TiledFrame extends ZFrame {
 			throw new ZException("Game can't begin, map did no load well.", ex);
 		}
 
-		mainView = new WorldView((World)world, this);
+		mainView = new WorldView((World) world, this);
 		addMouseListener(mainView);
 	}
-	
+
 	public static void main(String[] args) {
 		try {
 			TiledFrame frame = new TiledFrame("Tiled Zelda game demo");
@@ -32,5 +32,5 @@ public class TiledFrame extends ZFrame {
 		} catch (ZException ex) {
 			ex.printStackTrace();
 		}
-	}	
+	}
 }

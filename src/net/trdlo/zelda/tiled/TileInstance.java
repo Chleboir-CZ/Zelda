@@ -2,28 +2,29 @@ package net.trdlo.zelda.tiled;
 
 
 public class TileInstance {
-    private Tile tile;
-    private int timeOffset;
 
-    public TileInstance(Tile tile, int timeOffset) {
-        this.tile = tile;
-        this.timeOffset = timeOffset;
-    }
+	private Tile tile;
+	private int timeOffset;
 
-    public Tile getTile() {
-        return tile;
-    }
+	public TileInstance(Tile tile, int timeOffset) {
+		this.tile = tile;
+		this.timeOffset = timeOffset;
+	}
 
-    public int getTimeOffset() {
-        return timeOffset;
-    }
+	public Tile getTile() {
+		return tile;
+	}
 
-    public void setTile(Tile tile) {
-        this.tile = tile;
-    }
+	public int getTimeOffset() {
+		return timeOffset;
+	}
 
-    public void setTimeOffset(int timeOffset) {
-        this.timeOffset = timeOffset;
-    }
-    
+	public void setTile(Tile tile) {
+		this.tile = tile;
+	}
+
+	public void setTimeOffset(int timeOffset) {
+		this.timeOffset = timeOffset;
+	}
+
 }

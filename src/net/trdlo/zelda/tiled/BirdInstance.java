@@ -1,14 +1,13 @@
 package net.trdlo.zelda.tiled;
 
-import net.trdlo.zelda.tiled.Bird;
-import net.trdlo.zelda.tiled.World;
 import java.awt.Graphics2D;
 import java.util.Random;
 import net.trdlo.zelda.GameObjectInstance;
 import net.trdlo.zelda.ZFrame;
 
-
 public class BirdInstance extends GameObjectInstance {
+
+	
 	private final Bird gameObject;
 	private float moveX, moveY;
 	private final World world;
@@ -18,13 +17,13 @@ public class BirdInstance extends GameObjectInstance {
 	private int updateCounter = 0;
 
 	private final Random r;
-	
+
 	public BirdInstance(Bird gameObject, float posX, float posY, World world) {
 		super(posX, posY);
 		this.gameObject = gameObject;
 		this.world = world;
 		r = new Random();
-		
+
 		randomSpeedBird();
 	}
 
@@ -38,17 +37,17 @@ public class BirdInstance extends GameObjectInstance {
 	}
 
 	private void randomSpeedBird() {
-		flatterSpeed = ZFrame.getUpdateCountFromHz(2.0f + r.nextFloat()*3.0f); //udává, jakou frekvencí se přepínají snímky, ne jakou se opakuje celý cyklus
-		flightSpeed = ZFrame.getFrameStepFromTps(0.5f + r.nextFloat()*1.5f);
+		flatterSpeed = ZFrame.getUpdateCountFromHz(2.0f + r.nextFloat() * 3.0f); //udává, jakou frekvencí se přepínají snímky, ne jakou se opakuje celý cyklus
+		flightSpeed = ZFrame.getFrameStepFromTps(0.5f + r.nextFloat() * 1.5f);
 		//směr se dává do celého kruhu, tedy i ven, namísto dovnitř mapy, pokud startuje mimo ni
 		//několikanásobné přegenerování není za tak hrozné, za tu logiku to teď nestojí
-		float angle = r.nextFloat() * 2 * (float)Math.PI;
-		moveX = flightSpeed * (float)(Math.cos(angle));
-		moveY = flightSpeed * (float)(Math.sin(angle));
+		float angle = r.nextFloat() * 2 * (float) Math.PI;
+		moveX = flightSpeed * (float) (Math.cos(angle));
+		moveY = flightSpeed * (float) (Math.sin(angle));
 	}
 
 	private void checkMapBorders() {
-		if(posX < -gameObject.size || posY < -gameObject.size || posX > world.mapWidth || posY > world.mapHeight) {
+		if (posX < -gameObject.size || posY < -gameObject.size || posX > world.mapWidth || posY > world.mapHeight) {
 			//adresujeme levý horní roh objektu a ne jeho střed, zatím
 //		if(posX < -gameObject.size / 2 || posY < -gameObject.size / 2 || posX > world.mapWidth + gameObject.size / 2 || posY > world.mapHeight + gameObject.size / 2) {
 			randomSpeedBird();
@@ -77,7 +76,7 @@ public class BirdInstance extends GameObjectInstance {
 
 	@Override
 	public void render(Graphics2D graphics, float x, float y, float renderFraction) {
-		gameObject.renderFrame(graphics, x, y, (int)(updateCounter/flatterSpeed) % gameObject.FRAME_COUNT);
+		gameObject.renderFrame(graphics, x, y, (int) (updateCounter / flatterSpeed) % gameObject.FRAME_COUNT);
 	}
 
 	@Override
