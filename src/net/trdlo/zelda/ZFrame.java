@@ -1,6 +1,5 @@
 package net.trdlo.zelda;
 
-import net.trdlo.zelda.exceptions.MapLoadException;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -9,21 +8,17 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import net.trdlo.zelda.exceptions.ZException;
 
 
-public class ZFrame extends JFrame implements WindowListener, KeyListener, MouseListener {
+public abstract class ZFrame extends JFrame implements WindowListener, KeyListener {
 
 	private boolean terminate = false;
-
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
@@ -38,33 +33,15 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	GraphicsDevice gDevice;
 	BufferStrategy bufferStrategy;
 	
-	Font defaultFont;
+	protected Font defaultFont;
 
-	Random rand;
-	World world;
-	WorldView mainView;
+	protected ZWorld world;
+	protected ZView mainView;
 	
-	//private static final Logger logger = Logger.getLogger(ZFrame.class.getName());
-
-	public ZFrame() throws ZException {
-		super("ZeldaFrame app");
-
-		addWindowListener(this);
-		addKeyListener(this);
-//		addMouseListener(this);
-
+	
+	public ZFrame(String frameCaption) throws ZException {
+		super(frameCaption);
 		initFrame();
-
-		rand = new Random();
-		try {
-			world = new World("maps/small.txt");
-		} catch (MapLoadException ex) {
-			throw new ZException("Game can't begin, map did no load well.", ex);
-		}
-
-		mainView = new WorldView(world, this);
-		addMouseListener(mainView);
-		
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
 	}
 
@@ -87,7 +64,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		bufferStrategy = getBufferStrategy();
 	}
 
-	private void render(float renderFraction) {
+	protected void render(float renderFraction) {
 		long renderStart = getTime();
 
 		Graphics2D g = (Graphics2D) bufferStrategy.getDrawGraphics();
@@ -112,13 +89,13 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		setRenderLength(getTime() - renderStart);
 	}
 
-	private void update() {
+	protected void update() {
 		world.update();
 
 		updateFrame++;
 	}
 
-	private void run() {
+	protected void run() {
 		while (!terminate) {
 			long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
 		
@@ -190,7 +167,7 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 		return totalRenderLength / renderFrame;
 	}
 
-	private void doneFrame() {
+	protected void doneFrame() {
 		gDevice.setFullScreenWindow(null);
 		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
@@ -218,14 +195,11 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	public static float getTpsFrpmFrameStep(float frameStep) {
 		return frameStep * UPDATES_FREQ;
 	}
-	
-	public static void main(String[] args) {
-		try {
-			ZFrame zFrame = new ZFrame();
-			zFrame.run();
-			zFrame.doneFrame();
-		} catch (ZException ex) {
-			ex.printStackTrace();
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+			terminate = true;
 		}
 	}
 
@@ -262,34 +236,6 @@ public class ZFrame extends JFrame implements WindowListener, KeyListener, Mouse
 	}
 
 	@Override
-	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			terminate = true;
-		}
-	}
-
-	@Override
 	public void keyReleased(KeyEvent e) {
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		//mainView.mouseClicked(e);
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) {
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) {
 	}
 }

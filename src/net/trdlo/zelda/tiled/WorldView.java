@@ -1,4 +1,4 @@
-package net.trdlo.zelda;
+package net.trdlo.zelda.tiled;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -6,10 +6,12 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import net.trdlo.zelda.GameObjectInstance;
+import net.trdlo.zelda.ZFrame;
+import net.trdlo.zelda.ZView;
 
 
-public class WorldView implements MouseListener {
+public class WorldView extends ZView {
 	private World world;
 	private float viewX, viewY, dx, dy;
 	private Rectangle bounds;
@@ -32,6 +34,7 @@ public class WorldView implements MouseListener {
 		this(world, world.mapWidth / 2.0f, world.mapHeight/2.0f, zFrame);
 	}
 
+	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
 		this.bounds = graphics.getDeviceConfiguration().getBounds();
 		
@@ -167,5 +170,13 @@ public class WorldView implements MouseListener {
 
 	@Override
 	public void mouseExited(MouseEvent me) {
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
 	}
 }

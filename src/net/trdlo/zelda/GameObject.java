@@ -4,7 +4,7 @@ package net.trdlo.zelda;
 public abstract class GameObject implements Identifiable {
 
     private final char identifier;
-	final float size;
+	public final float size;
 	public final int zIndex;
 	
 	public static final int Z_GROUND = 0;

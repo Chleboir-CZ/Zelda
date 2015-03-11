@@ -25,7 +25,7 @@ public abstract class SimplyAnimatedObject extends GameObject {
 		this.images = images;
 	}
 	
-	protected void renderFrame(Graphics2D graphics, float x, float y, int frameIndex, int frameIndex2, float frameFraction) {
+	public void renderFrame(Graphics2D graphics, float x, float y, int frameIndex, int frameIndex2, float frameFraction) {
 		AffineTransform t = new AffineTransform();
 		t.translate(x, y);
 		//tohle je jen ukázka zneužití aktuálního času na animaci
@@ -43,7 +43,7 @@ public abstract class SimplyAnimatedObject extends GameObject {
 		graphics.drawString(String.format("px [%9.4f; %9.4f]", x, y), x, y);
 	}
 
-	protected void renderFrame(Graphics2D graphics, float x, float y, int frameIndex) {
+	public void renderFrame(Graphics2D graphics, float x, float y, int frameIndex) {
 		renderFrame(graphics, x, y, frameIndex, 0, 0);
 	}
 }

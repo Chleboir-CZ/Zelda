@@ -1,4 +1,4 @@
-package net.trdlo.zelda;
+package net.trdlo.zelda.tiled;
 
 import net.trdlo.zelda.exceptions.MapLoadException;
 import java.io.BufferedReader;
@@ -14,9 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.imageio.ImageIO;
+import net.trdlo.zelda.GameObject;
+import net.trdlo.zelda.GameObjectInstance;
+import net.trdlo.zelda.Identifiable;
+import net.trdlo.zelda.Tree;
+import net.trdlo.zelda.ZWorld;
 
 
-public class World {
+public class World extends ZWorld {
 	public static final int GRID_SIZE = 32;
     
     private Set<Tile> tiles = new HashSet<>(); 
@@ -112,7 +117,7 @@ public class World {
                 throw new MapLoadException("Map has less rows than declared.");
             }
 			
-			Collections.sort(objectInstances);
+			Collections.sort(objectInstances, GameObjectInstance.zIndexComparator);
             
         } catch (FileNotFoundException ex) {
             throw new MapLoadException("Map file not found ("+ fileName +")", ex);

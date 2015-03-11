@@ -1,9 +1,10 @@
 package net.trdlo.zelda;
 
 import java.awt.Graphics2D;
+import java.util.Comparator;
 
 
-public abstract class GameObjectInstance implements Comparable<GameObjectInstance> {
+public abstract class GameObjectInstance {
 	protected float posX, posY;
 
 	public GameObjectInstance(float posX, float posY) {
@@ -35,13 +36,10 @@ public abstract class GameObjectInstance implements Comparable<GameObjectInstanc
 	
 	public abstract int getZIndex();
 	
-	@Override
-	public int compareTo(GameObjectInstance t) {
-		/*int zDiff = getZIndex() - t.getZIndex();
-		if (zDiff != 0)
-			return zDiff;
-		else
-			return hashCode() - t.hashCode();*/
-		return getZIndex() - t.getZIndex();
-	}
+	public static Comparator<GameObjectInstance> zIndexComparator = new Comparator<GameObjectInstance>() {
+		@Override
+	    public int compare(GameObjectInstance go1, GameObjectInstance go2) {
+			return go1.getZIndex() - go2.getZIndex();
+	    }
+	};
 }
