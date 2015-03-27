@@ -10,6 +10,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -232,6 +233,8 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 
 	@Override
 	public void keyTyped(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+			terminate = true;
 	}
 
 	@Override
