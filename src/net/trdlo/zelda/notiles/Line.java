@@ -1,6 +1,11 @@
 
 package net.trdlo.zelda.notiles;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 
 public class Line {
 	protected Point A, B;
@@ -81,5 +86,68 @@ public class Line {
 		Point S = lineParalell.intersectPoint(lineNormal);
 		Point reflectedA = new Point(2 * S.x - A.x, 2 * S.y - A.y);
 		return new Line(intersect, reflectedA);
+	}
+	
+	
+	public List<Line> rayTraceEffect(Collection<Line> collidableLines) {
+		Line currentLine = this;
+		List<Line> returnList = new ArrayList<>();
+		returnList.add(currentLine);
+		
+		int i = 0;
+		while(i++ < 5000) {
+			double vx = currentLine.B.x - currentLine.A.x;
+			double vy = currentLine.B.y - currentLine.A.y;
+			
+			List<PointAndDistanceAndLine> intersectPoints = new ArrayList<>();
+			for(Line line : collidableLines) {
+				Point intersectPoint = currentLine.intersectPoint(line);
+				double dist;
+				if(Math.abs(vx) > Math.abs(vy)) {
+					dist = (intersectPoint.x - currentLine.A.x) / vx;
+				} else {
+					dist = (intersectPoint.y - currentLine.A.y) / vy;
+				}
+				
+				if(dist > 0.00001) {
+					intersectPoints.add(new PointAndDistanceAndLine(dist, intersectPoint, line));
+				}
+			}
+			Collections.sort(intersectPoints);
+			if(intersectPoints.isEmpty())
+				break;
+			PointAndDistanceAndLine firstContact = intersectPoints.get(0);
+			currentLine = currentLine.mirrorReflection(firstContact.line); 
+			returnList.add(currentLine);
+		}
+		return returnList;
+	}
+}
+
+
+
+
+
+class PointAndDistanceAndLine implements Comparable<PointAndDistanceAndLine> {
+	double dist;
+	Point p;
+	Line line;
+
+	public PointAndDistanceAndLine(double dist, Point p, Line line) {
+		this.dist = dist;
+		this.p = p;
+		this.line = line;
+	}
+	
+/*	public static Comparator<GameObjectInstance> zIndexComparator = new Comparator<GameObjectInstance>() {
+		@Override
+		public int compare(GameObjectInstance go1, GameObjectInstance go2) {
+			return go1.getZIndex() - go2.getZIndex();
+		}
+	};*/
+
+	@Override
+	public int compareTo(PointAndDistanceAndLine t) {
+		return (dist - t.dist) > 0 ? 1 : -1;
 	}
 }
