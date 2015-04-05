@@ -95,7 +95,7 @@ public class Line {
 		returnList.add(currentLine);
 		
 		int i = 0;
-		while(i++ < 5000) {
+		while(i++ < 2) {
 			double vx = currentLine.B.x - currentLine.A.x;
 			double vy = currentLine.B.y - currentLine.A.y;
 			
@@ -121,6 +121,15 @@ public class Line {
 			returnList.add(currentLine);
 		}
 		return returnList;
+	}
+	
+	
+	public Collection<Line> rayPurifier(List<Line> rayCollection) {
+		Collection<Line> purifiedRay = new ArrayList<>();
+		for(int i = 0; i < rayCollection.size() - 1; i++) {
+			purifiedRay.add(new Line(rayCollection.get(i).A,rayCollection.get(i + 1).A));
+		}
+		return purifiedRay;
 	}
 }
 

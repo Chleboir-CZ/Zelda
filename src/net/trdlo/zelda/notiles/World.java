@@ -29,7 +29,7 @@ public class World extends ZWorld {
 		Point X = new Point(200, 200);
 		X.lineTo(200,390).lineTo(407,400).lineTo(400, 166).lineTo(X);
 		Line ray = new Line(X,new Point(400, 287));
-		lines.addAll(ray.rayTraceEffect(lines)); 
+		lines.addAll(ray.rayPurifier(ray.rayTraceEffect(lines))); 
 //		Line ray = new Line(X, new Point(300, 300));
 //		Line mirror = new Line(new Point(200, 400), new Point(600, 320));
 //		Line reflectedRay = ray.mirrorReflection(mirror);
@@ -38,6 +38,7 @@ public class World extends ZWorld {
 //		lines.add(reflectedRay);
 		
 	}
+
 	
 
 	@Override
