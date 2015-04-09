@@ -16,6 +16,7 @@ public class NoTilesFrame extends ZFrame {
 
 		mainView = new View((World) world);
 		addMouseListener(mainView);
+		addMouseMotionListener(mainView);
 	}
 
 	public static void main(String[] args) {
