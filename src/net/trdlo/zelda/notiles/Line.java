@@ -117,21 +117,31 @@ public class Line {
 		
 		int i = 0;
 		while(i++ < 20) {
-			double vx = currentLine.B.x - currentLine.A.x;
-			double vy = currentLine.B.y - currentLine.A.y;
+			double rayvx = currentLine.B.x - currentLine.A.x;
+			double rayvy = currentLine.B.y - currentLine.A.y;
 			
 			List<PointAndDistanceAndLine> intersectPoints = new ArrayList<>();
 			for(Line line : collidableLines) {
 				Point intersectPoint = currentLine.intersectPoint(line);
-				double dist;
-				if(Math.abs(vx) > Math.abs(vy)) {
-					dist = (intersectPoint.x - currentLine.A.x) / vx;
+				double mirrorvx = line.B.x - line.A.x;
+				double mirrorvy = line.B.y - line.A.y;
+				double rayDist;
+				double mirrorDist;
+				
+				if(Math.abs(rayvx) > Math.abs(rayvy)) {
+					rayDist = (intersectPoint.x - currentLine.A.x) / rayvx;
 				} else {
-					dist = (intersectPoint.y - currentLine.A.y) / vy;
+					rayDist = (intersectPoint.y - currentLine.A.y) / rayvy;
+				}
+				if(Math.abs(mirrorvx) > Math.abs(mirrorvy)) {
+					mirrorDist = (intersectPoint.x - line.A.x) / mirrorvx;
+				}
+				else {
+					mirrorDist = (intersectPoint.y - line.A.y) / mirrorvy;
 				}
 				
-				if(dist > 0.00001) {
-					intersectPoints.add(new PointAndDistanceAndLine(dist, intersectPoint, line));
+				if(rayDist > 0.00001 && mirrorDist > 0.00001 && mirrorDist < 1) {
+					intersectPoints.add(new PointAndDistanceAndLine(rayDist, intersectPoint, line));
 				}
 			}
 			Collections.sort(intersectPoints);

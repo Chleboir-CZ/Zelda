@@ -28,8 +28,8 @@ public class World extends ZWorld {
 		Point.setLinesCollection(lines);
 
 		Point X = new Point(200, 200);
-		X.lineTo(200, 390).lineTo(407, 400).lineTo(400, 166).lineTo(X);
-		Line ray = new Line(X, new Point(400, 287));
+		X.lineTo(200, 390).lineTo(407, 400);
+		Line ray = new Line(new Point(500, 400), new Point(180, 100));
 		lines.addAll(ray.rayTraceEffect(lines));
 //		Line ray = new Line(X, new Point(300, 300));
 //		Line mirror = new Line(new Point(200, 400), new Point(600, 320));
@@ -53,5 +53,13 @@ public class World extends ZWorld {
 		}
 		return null;
 	}
-
+	public Collection<Point> pointsInRect(Point A, Point B) {
+		Collection<Point> pointsInRect = new ArrayList();
+		for(Point p : independentPoints) {
+			if(p.x > A.x && p.x < B.x && p.y > A.y && p.y < B.y) {
+				pointsInRect.add(p);
+			}
+		}
+		return pointsInRect;
+	}
 }
