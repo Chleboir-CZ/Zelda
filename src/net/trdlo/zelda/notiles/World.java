@@ -7,6 +7,7 @@ package net.trdlo.zelda.notiles;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import net.trdlo.zelda.ZWorld;
 
 /**
@@ -17,7 +18,7 @@ public class World extends ZWorld {
 
 	Collection<Line> lines;
 	Collection<Line> collidableLines;
-	Collection<Point> independentPoints;
+	List<Point> independentPoints;
 	Line ray;
 
 	public World() {
@@ -27,10 +28,12 @@ public class World extends ZWorld {
 //		lines.add(new Line(new Point(789, 150), new Point(900, 300)));
 		Point.setLinesCollection(lines);
 
-		Point X = new Point(200, 200);
-		X.lineTo(200, 390).lineTo(407, 400);
-		Line ray = new Line(new Point(500, 400), new Point(180, 100));
-		lines.addAll(ray.rayTraceEffect(lines));
+		independentPoints.add(new Point(200, 200));
+		independentPoints.add(new Point(200, 390));
+		independentPoints.add(new Point(407, 400));
+		independentPoints.get(0).lineTo(independentPoints.get(1)).lineTo(independentPoints.get(2));
+		ray = new Line(new Point(500, 400), new Point(180, 100));
+		//lines.addAll(ray.rayTraceEffect(lines));
 //		Line ray = new Line(X, new Point(300, 300));
 //		Line mirror = new Line(new Point(200, 400), new Point(600, 320));
 //		Line reflectedRay = ray.mirrorReflection(mirror);
@@ -53,8 +56,9 @@ public class World extends ZWorld {
 		}
 		return null;
 	}
+	
 	public Collection<Point> pointsInRect(Point A, Point B) {
-		Collection<Point> pointsInRect = new ArrayList();
+		Collection<Point> pointsInRect = new ArrayList<>();
 		for(Point p : independentPoints) {
 			if(p.x > A.x && p.x < B.x && p.y > A.y && p.y < B.y) {
 				pointsInRect.add(p);
