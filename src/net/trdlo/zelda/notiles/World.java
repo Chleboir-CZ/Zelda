@@ -5,6 +5,7 @@
  */
 package net.trdlo.zelda.notiles;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,11 +19,8 @@ public class World extends ZWorld {
 
 	Collection<Line> lines;
 	Collection<Line> collidableLines;
-<<<<<<< HEAD
-	Collection<IndependentPoint> independentPoints;
-=======
-	List<Point> independentPoints;
->>>>>>> 206bf4dc6c60f568e4d8b0524139693fb678b114
+	List<IndependentPoint> independentPoints;
+
 	Line ray;
 
 	public World() {
@@ -32,9 +30,9 @@ public class World extends ZWorld {
 //		lines.add(new Line(new Point(789, 150), new Point(900, 300)));
 		Point.setLinesCollection(lines);
 
-		independentPoints.add(new Point(200, 200));
-		independentPoints.add(new Point(200, 390));
-		independentPoints.add(new Point(407, 400));
+		independentPoints.add(new IndependentPoint(200, 200));
+		independentPoints.add(new IndependentPoint(200, 390));
+		independentPoints.add(new IndependentPoint(407, 400));
 		independentPoints.get(0).lineTo(independentPoints.get(1)).lineTo(independentPoints.get(2));
 		ray = new Line(new Point(500, 400), new Point(180, 100));
 		//lines.addAll(ray.rayTraceEffect(lines));
@@ -52,8 +50,8 @@ public class World extends ZWorld {
 
 	}
 
-	public Point getPointAt(int x, int y) {
-		for(Point p : this.independentPoints) {
+	public IndependentPoint getPointAt(int x, int y) {
+		for(IndependentPoint p : this.independentPoints) {
 			if (Math.abs(p.x - x) < 4 && Math.abs(p.y - y) < 4) {
 				return p;
 			}
@@ -61,10 +59,16 @@ public class World extends ZWorld {
 		return null;
 	}
 	
-	public Collection<Point> pointsInRect(Point A, Point B) {
-		Collection<Point> pointsInRect = new ArrayList<>();
-		for(Point p : independentPoints) {
-			if(p.x > A.x && p.x < B.x && p.y > A.y && p.y < B.y) {
+	public Collection<IndependentPoint> pointsInRect(Point A, Point B) {
+		Collection<IndependentPoint> pointsInRect = new ArrayList<>();
+		
+		Rectangle rect = new Rectangle(A.getJavaPoint());
+		rect.add(B.getJavaPoint());
+		
+		
+		for(IndependentPoint p : independentPoints) {
+			//if(p.x > A.x && p.x < B.x && p.y > A.y && p.y < B.y) {
+			if (rect.contains(p.getJavaPoint())) {
 				pointsInRect.add(p);
 			}
 		}

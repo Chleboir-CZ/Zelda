@@ -14,6 +14,10 @@ public class Point {
 		this.y = y;
 	}
 	
+	public java.awt.Point getJavaPoint() {
+		return new java.awt.Point((int)x, (int)y);
+	}
+	
 	public static void setLinesCollection(Collection<Line> lines) {
 		linesCollection = lines;
 	}

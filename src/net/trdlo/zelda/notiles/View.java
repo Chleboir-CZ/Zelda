@@ -1,6 +1,7 @@
 package net.trdlo.zelda.notiles;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
@@ -25,13 +26,22 @@ TODO
 */
 
 public class View extends ZView {
-
-	private World world;
+	
+	public static final int POINT_DISPLAY_SIZE = 8;
+	private final World world;
 	private Line dragLine;
-	private Rectangle dragRectangle;
+	private Point dragStart;
+	private Point dragEnd;
+	
+	private Stroke defaultStroke;
+	private final Stroke dashedStroke;
+	private final Stroke selectionStroke;
 
 	public View(World world) {
 		this.world = world;
+		
+		dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
+		selectionStroke = new BasicStroke(2);
 	}
 
 	@Override
@@ -40,21 +50,37 @@ public class View extends ZView {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
 
-		Stroke previousStroke = graphics.getStroke();
-		graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{3}, 0));
+		defaultStroke = graphics.getStroke();
+		graphics.setStroke(dashedStroke);
 		for (Line line : world.ray.rayTraceEffect(world.lines)) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
-		graphics.setStroke(previousStroke);
-		
-		for (Point p : world.independentPoints) {
-			graphics.drawRect((int) p.x - 4, (int) p.y - 4, 8, 8);
+		if (dragStart != null && dragEnd != null) {
+			Rectangle rect = new Rectangle(dragStart.getJavaPoint());
+			rect.add(dragEnd.getJavaPoint());
+			
+			graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
+		
+		for (IndependentPoint p : world.independentPoints) {
+			if(p.isSelected()) {
+				graphics.setStroke(selectionStroke);
+				graphics.setColor(Color.PINK);
+			}
+			else {
+				graphics.setStroke(defaultStroke);
+				graphics.setColor(Color.WHITE);
+			}
+				
+			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
+		}
+		graphics.setStroke(defaultStroke);
+		graphics.setColor(Color.WHITE);
+		
 		if (dragLine != null) {
-			previousStroke = graphics.getStroke();
-			graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0));
+			graphics.setStroke(dashedStroke);
 			graphics.drawLine((int) dragLine.A.x, (int) dragLine.A.y, (int) dragLine.B.x, (int) dragLine.B.y);
-			graphics.setStroke(previousStroke);
+			graphics.setStroke(defaultStroke);
 		}
 
 		try {
@@ -66,9 +92,16 @@ public class View extends ZView {
 
 	@Override
 	public void mouseClicked(MouseEvent me) {
-		if(!new Point(me.getX(), me.getY()).equals(world.getPointAt(me.getX(), me.getY()))) {
-			world.independentPoints.add(new IndependentPoint(me.getX(), me.getY(), false));
+		IndependentPoint clickedPoint = world.getPointAt(me.getX(), me.getY());
+		if(clickedPoint == null) {
+			world.independentPoints.add(new IndependentPoint(me.getX(), me.getY()));
 		}
+		else {
+			clickedPoint.setSelected(!clickedPoint.isSelected());
+		}
+//		if (me.getButton() == MouseEvent.BUTTON2 && world.getPointAt(me.getX(), me.getY()) != null) {
+//			
+//		}
 	}
 
 	@Override
@@ -78,7 +111,8 @@ public class View extends ZView {
 			dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
 		}
 		else {
-			
+			dragStart = new Point(me.getX(), me.getY());
+			dragEnd = new Point(me.getX(), me.getY());
 		}
 	}
 
@@ -91,6 +125,15 @@ public class View extends ZView {
 				world.lines.add(dragLine);
 			}
 			dragLine = null;
+		}
+		if (dragStart != null) {
+			if ((Math.abs(dragStart.getX() - dragEnd.getX()) > POINT_DISPLAY_SIZE / 2) || (Math.abs(dragStart.getY() - dragEnd.getY()) > POINT_DISPLAY_SIZE / 2)) {
+				for (IndependentPoint iP : world.pointsInRect(dragStart, dragEnd)) {
+					iP.setSelected((me.getModifiersEx() &  MouseEvent.SHIFT_DOWN_MASK) != MouseEvent.SHIFT_DOWN_MASK);
+				}
+			}
+			dragStart = null;
+			dragEnd = null;
 		}
 	}
 
@@ -106,6 +149,10 @@ public class View extends ZView {
 	public void mouseDragged(MouseEvent me) {
 		if (dragLine != null) {
 			dragLine.setB(new Point(me.getX(), me.getY()));
+		}
+		if (dragStart != null) {
+			dragEnd.setX(me.getX());
+			dragEnd.setY(me.getY());
 		}
 	}
 
