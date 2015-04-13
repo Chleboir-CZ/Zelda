@@ -2,6 +2,7 @@ package net.trdlo.zelda.notiles;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.util.logging.Level;
@@ -27,6 +28,7 @@ public class View extends ZView {
 
 	private World world;
 	private Line dragLine;
+	private Rectangle dragRectangle;
 
 	public View(World world) {
 		this.world = world;
@@ -56,7 +58,9 @@ public class View extends ZView {
 
 	@Override
 	public void mouseClicked(MouseEvent me) {
-		world.independentPoints.add(new Point(me.getX(), me.getY()));
+		if(!new Point(me.getX(), me.getY()).equals(world.getPointAt(me.getX(), me.getY()))) {
+			world.independentPoints.add(new IndependentPoint(me.getX(), me.getY(), false));
+		}
 	}
 
 	@Override
@@ -64,6 +68,9 @@ public class View extends ZView {
 		Point startPoint = world.getPointAt(me.getX(), me.getY());
 		if (startPoint != null) {
 			dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
+		}
+		else {
+			
 		}
 	}
 

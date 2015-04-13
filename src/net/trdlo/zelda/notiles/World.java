@@ -17,7 +17,7 @@ public class World extends ZWorld {
 
 	Collection<Line> lines;
 	Collection<Line> collidableLines;
-	Collection<Point> independentPoints;
+	Collection<IndependentPoint> independentPoints;
 	Line ray;
 
 	public World() {
