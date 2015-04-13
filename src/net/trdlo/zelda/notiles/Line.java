@@ -116,13 +116,16 @@ public class Line {
 		returnList.add(currentLine);
 		
 		int i = 0;
-		while(i++ < 20) {
+		while(i++ < 64) {
 			double rayvx = currentLine.B.x - currentLine.A.x;
 			double rayvy = currentLine.B.y - currentLine.A.y;
 			
 			List<PointAndDistanceAndLine> intersectPoints = new ArrayList<>();
 			for(Line line : collidableLines) {
 				Point intersectPoint = currentLine.intersectPoint(line);
+				if (intersectPoint == null)
+					continue;
+				
 				double mirrorvx = line.B.x - line.A.x;
 				double mirrorvy = line.B.y - line.A.y;
 				double rayDist;

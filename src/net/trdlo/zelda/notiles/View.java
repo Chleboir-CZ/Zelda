@@ -39,11 +39,19 @@ public class View extends ZView {
 		for (Line line : world.lines) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
+
+		Stroke previousStroke = graphics.getStroke();
+		graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{3}, 0));
+		for (Line line : world.ray.rayTraceEffect(world.lines)) {
+			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
+		}
+		graphics.setStroke(previousStroke);
+		
 		for (Point p : world.independentPoints) {
 			graphics.drawRect((int) p.x - 4, (int) p.y - 4, 8, 8);
 		}
 		if (dragLine != null) {
-			Stroke previousStroke = graphics.getStroke();
+			previousStroke = graphics.getStroke();
 			graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0));
 			graphics.drawLine((int) dragLine.A.x, (int) dragLine.A.y, (int) dragLine.B.x, (int) dragLine.B.y);
 			graphics.setStroke(previousStroke);
