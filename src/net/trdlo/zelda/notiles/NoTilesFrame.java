@@ -1,5 +1,6 @@
 package net.trdlo.zelda.notiles;
 
+import java.awt.event.KeyEvent;
 import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.exceptions.ZException;
 
@@ -9,14 +10,14 @@ public class NoTilesFrame extends ZFrame {
 		super(frameCaption);
 
 		addWindowListener(this);
-		addKeyListener(this);
 //		addMouseListener(this);
 
 		world = new World();
 
-		mainView = new View((World) world);
+		mainView = new View((World) world, this);
 		addMouseListener(mainView);
 		addMouseMotionListener(mainView);
+		addKeyListener(mainView);
 	}
 
 	public static void main(String[] args) {
@@ -27,5 +28,22 @@ public class NoTilesFrame extends ZFrame {
 		} catch (ZException ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+			this.terminate = true;
+		}
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+
 	}
 }

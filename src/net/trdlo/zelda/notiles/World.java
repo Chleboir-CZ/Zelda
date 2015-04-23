@@ -8,6 +8,7 @@ package net.trdlo.zelda.notiles;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import net.trdlo.zelda.ZWorld;
 
@@ -52,7 +53,7 @@ public class World extends ZWorld {
 
 	public IndependentPoint getPointAt(int x, int y) {
 		for(IndependentPoint p : this.independentPoints) {
-			if (Math.abs(p.x - x) < 4 && Math.abs(p.y - y) < 4) {
+			if (Math.abs(p.x - x) < 6 && Math.abs(p.y - y) < 6) {
 				return p;
 			}
 		}
@@ -73,5 +74,23 @@ public class World extends ZWorld {
 			}
 		}
 		return pointsInRect;
+	}
+	
+	public void delSelectedPoints() {
+		boolean deleted;
+		do {
+			deleted = false;
+			for(IndependentPoint iP : independentPoints) {
+				if(iP.isSelected()) {
+					independentPoints.remove(iP);
+					deleted = true;
+					break;
+				}
+			}
+		} while (deleted);
+	}
+	
+	public void removePoint(IndependentPoint iP) {
+		independentPoints.remove(iP);
 	}
 }

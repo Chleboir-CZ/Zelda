@@ -2,12 +2,15 @@ package net.trdlo.zelda.notiles;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.ZView;
 
 /*
@@ -20,25 +23,39 @@ TODO
  - vybrané body lze DEL smazat
  - vybrané body se vykreslují výrazněji
  - po stisku T lze do ENTER zadávat popisek bodu (ukládá se do bodu), ESC stornovat zadávání
- 
  - vytvořit třídu GeometryUtils, která převezme špinavé výpočty (vše budou statické metody!)
 
 */
 
 public class View extends ZView {
 	
-	public static final int POINT_DISPLAY_SIZE = 8;
+	public static final int POINT_DISPLAY_SIZE = 12;
+
 	private final World world;
+	private ZFrame zFrame;
+
+	
 	private Line dragLine;
 	private Point dragStart;
 	private Point dragEnd;
+	private Point mousePosition;
+	private Point typingPoint;
+	private boolean typing;
+	private String tmpDescription;
+	private boolean polylineMode;
+	private IndependentPoint previousPoint;
+	private boolean movingPoint;
+	
 	
 	private Stroke defaultStroke;
 	private final Stroke dashedStroke;
 	private final Stroke selectionStroke;
+	private Font defaultFont;
 
-	public View(World world) {
+	public View(World world, ZFrame zFrame) {		
 		this.world = world;
+		this.zFrame = zFrame;
+		mousePosition = new Point(0,0);
 		
 		dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 		selectionStroke = new BasicStroke(2);
@@ -51,6 +68,7 @@ public class View extends ZView {
 		}
 
 		defaultStroke = graphics.getStroke();
+		defaultFont = graphics.getFont();		
 		graphics.setStroke(dashedStroke);
 		for (Line line : world.ray.rayTraceEffect(world.lines)) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
@@ -63,6 +81,7 @@ public class View extends ZView {
 		}
 		
 		for (IndependentPoint p : world.independentPoints) {
+			String textToDraw;
 			if(p.isSelected()) {
 				graphics.setStroke(selectionStroke);
 				graphics.setColor(Color.PINK);
@@ -71,8 +90,15 @@ public class View extends ZView {
 				graphics.setStroke(defaultStroke);
 				graphics.setColor(Color.WHITE);
 			}
+	
+			if (p.isSelected() && typing)
+				textToDraw = tmpDescription;
+			else
+				textToDraw = p.getDescription();
 				
 			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
+			if (textToDraw != null)
+				graphics.drawString(textToDraw, (int)p.x + POINT_DISPLAY_SIZE, (int)p.y + POINT_DISPLAY_SIZE);
 		}
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
@@ -93,26 +119,45 @@ public class View extends ZView {
 	@Override
 	public void mouseClicked(MouseEvent me) {
 		IndependentPoint clickedPoint = world.getPointAt(me.getX(), me.getY());
-		if(clickedPoint == null) {
-			world.independentPoints.add(new IndependentPoint(me.getX(), me.getY()));
+		if(me.getClickCount() < 2) {
+			if(polylineMode) {
+				IndependentPoint iP = new IndependentPoint((double)me.getX(), (double)me.getY());
+				previousPoint.lineTo(iP);
+				world.independentPoints.add(iP);
+				previousPoint = iP;
+			}
+			if(clickedPoint == null) {
+				world.independentPoints.add(new IndependentPoint(me.getX(), me.getY()));
+			}
+			else {
+				if(me.getButton() == MouseEvent.BUTTON2) {
+					world.removePoint(clickedPoint);
+				}
+				clickedPoint.setSelected(!clickedPoint.isSelected());
+			}
+	//		if (me.getButton() == MouseEvent.BUTTON2 && world.getPointAt(me.getX(), me.getY()) != null) {
+	//			
 		}
 		else {
-			clickedPoint.setSelected(!clickedPoint.isSelected());
+			polylineMode = !polylineMode;
+			previousPoint = new IndependentPoint(me.getX(), me.getY());
 		}
-//		if (me.getButton() == MouseEvent.BUTTON2 && world.getPointAt(me.getX(), me.getY()) != null) {
-//			
-//		}
 	}
 
 	@Override
 	public void mousePressed(MouseEvent me) {
-		Point startPoint = world.getPointAt(me.getX(), me.getY());
-		if (startPoint != null) {
-			dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
+		if(world.getPointAt(me.getX(), me.getY()) != null && me.getButton() == MouseEvent.BUTTON2) {
+			movingPoint = true;
 		}
 		else {
-			dragStart = new Point(me.getX(), me.getY());
-			dragEnd = new Point(me.getX(), me.getY());
+			Point startPoint = world.getPointAt(me.getX(), me.getY());
+			if (startPoint != null) {
+				dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
+			}
+			else {
+				dragStart = new Point(me.getX(), me.getY());
+				dragEnd = new Point(me.getX(), me.getY());
+			}
 		}
 	}
 
@@ -158,7 +203,103 @@ public class View extends ZView {
 
 	@Override
 	public void mouseMoved(MouseEvent me) {
-
+		if(polylineMode) {
+			dragLine = new Line(previousPoint, new Point((double)me.getX(), me.getY()));
+		}
+		if(movingPoint) {
+			
+		}
+		mousePosition.setX(me.getX());
+		mousePosition.setY(me.getY());
 	}
 
-}
+		/**
+	 * 
+	 * @param ke
+	 * @return		true, pokud klavesa zpracovana, false, pokud se ma poslat dal
+	 */
+	public boolean myKeyTyped(KeyEvent ke) {
+		if (defaultFont == null)
+			return false;
+		
+		boolean keyUsed;
+		char c = ke.getKeyChar();
+		
+		if(typing) {
+			keyUsed = true;
+			if (defaultFont.canDisplay(c) && c != KeyEvent.VK_ENTER) {
+				tmpDescription += Character.toString(c);
+			}
+			else if (c == KeyEvent.VK_BACK_SPACE) {
+				if (tmpDescription.length() != 0) {
+					tmpDescription = tmpDescription.substring(0, tmpDescription.length() - 1);
+				}
+			}
+			else if (c == KeyEvent.VK_ESCAPE) {
+				tmpDescription = null;
+				typing = false;
+				keyUsed = true;
+			}
+			else if (c == KeyEvent.VK_ENTER) {
+				for(IndependentPoint iP : world.independentPoints) {
+					if(iP.isSelected()) {
+						iP.setDescription(tmpDescription);
+					}
+				}
+				tmpDescription = null;
+				typing = false;
+				keyUsed = true;
+			}
+			else {
+				keyUsed = false;
+			}
+		}
+		else {
+			keyUsed = true;
+			if(Character.toUpperCase(c) == 'T') {
+				typing = true;
+				tmpDescription = "";
+			}
+			else if(c == KeyEvent.VK_DELETE) {
+				world.delSelectedPoints();
+			} 
+			else if(c == KeyEvent.VK_ESCAPE) {
+				keyUsed = false;
+				for (IndependentPoint p : world.independentPoints) {
+					if (p.isSelected()) {
+						p.setSelected(false);
+						keyUsed = true;
+					}
+				}
+			} else {
+				keyUsed = false;
+			}
+		}
+
+		return keyUsed;
+	}
+
+	
+	public void myKeyPressed(KeyEvent ke) {
+		
+	}
+
+	public void myKeyReleased(KeyEvent ke) {
+		
+	}
+	
+	@Override
+	public void keyTyped(KeyEvent ke) {
+		if (!myKeyTyped(ke))
+			zFrame.keyTyped(ke);
+	}
+
+	@Override
+	public void keyPressed(KeyEvent ke) {
+		zFrame.keyPressed(ke);
+	}
+
+	@Override
+	public void keyReleased(KeyEvent ke) {
+		zFrame.keyReleased(ke);
+	}}

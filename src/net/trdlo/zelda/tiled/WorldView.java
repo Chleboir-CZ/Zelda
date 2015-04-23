@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import net.trdlo.zelda.GameObjectInstance;
 import net.trdlo.zelda.ZFrame;
@@ -184,5 +185,20 @@ public class WorldView extends ZView {
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
+	}
+
+	@Override
+	public void keyTyped(KeyEvent ke) {
+		zFrame.keyTyped(ke);
+	}
+
+	@Override
+	public void keyPressed(KeyEvent ke) {
+		zFrame.keyPressed(ke);
+	}
+
+	@Override
+	public void keyReleased(KeyEvent ke) {
+		zFrame.keyReleased(ke);
 	}
 }

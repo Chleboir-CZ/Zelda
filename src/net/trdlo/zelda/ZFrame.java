@@ -10,7 +10,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferStrategy;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -19,7 +18,7 @@ import net.trdlo.zelda.exceptions.ZException;
 
 public abstract class ZFrame extends JFrame implements WindowListener, KeyListener {
 
-	private boolean terminate = false;
+	protected boolean terminate = false;
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
