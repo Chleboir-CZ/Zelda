@@ -17,6 +17,8 @@ public class Line {
 		this.A = A;
 		this.B = B;
 		refreshCoefs();
+		A.addChangeListener(this);
+		B.addChangeListener(this);
 	}
 	
 	/**
@@ -31,6 +33,8 @@ public class Line {
 		this.a = a;
 		this.b = b;
 		c = -a * A.x - b * A.y;
+		A.addChangeListener(this);
+		B.addChangeListener(this);
 	}
 	
 	private Line() {
@@ -38,24 +42,26 @@ public class Line {
 	}
 	
 	public static Line constructLineFromPointAndNormal(Point A, double a, double b) {
-		//return new Line(A, new Point(A.x + a, A.y + b));		
 		Line l = new Line();
 		l.a = a;
 		l.b = b;
 		l.A = A;
 		l.B = new Point(A.x - b, A.y + a);
 		l.c = -a * A.x - b * A.y;
+		l.A.addChangeListener(l);
+		l.B.addChangeListener(l);		
 		return l;
 	}
 
 	public static Line constructLineFromPointAndVector(Point A, double a, double b) {		
-		//return new Line(A, new Point(A.x + b, A.y - a));		
 		Line l = new Line();
 		l.a = -b;
 		l.b = a;
 		l.A = A;
 		l.B = new Point(A.x + a, A.y + b);
 		l.c = b * A.x - a * A.y;
+		l.A.addChangeListener(l);
+		l.B.addChangeListener(l);		
 		return l;
 	}
 
@@ -64,7 +70,6 @@ public class Line {
 		b = B.x - A.x;
 		c = -a * A.x - b * A.y;
 	}
-	
 	
 	public Point getA() {
 		return A;
@@ -75,12 +80,18 @@ public class Line {
 	}
 	
 	public void setA(Point A) {
+		if (this.A != null) 
+			this.A.removeChangeListener(this);
 		this.A = A;
+		A.addChangeListener(this);
 		refreshCoefs();
 	}
 	
 	public void setB(Point B) {
+		if (this.B != null) 
+			this.B.removeChangeListener(this);
 		this.B = B;
+		B.addChangeListener(this);
 		refreshCoefs();
 	}
 	
@@ -161,6 +172,10 @@ public class Line {
 		return returnList;
 	}
 	
+	public void unregister() {
+		A.removeChangeListener(this);
+		B.removeChangeListener(this);
+	}
 	
 //	public Collection<Line> rayPurifier(List<Line> rayCollection) {
 //		Collection<Line> purifiedRay = new ArrayList<>();
