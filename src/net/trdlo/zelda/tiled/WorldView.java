@@ -201,4 +201,9 @@ public class WorldView extends ZView {
 	public void keyReleased(KeyEvent ke) {
 		zFrame.keyReleased(ke);
 	}
+
+	@Override
+	public void update() {
+
+	}
 }

@@ -89,6 +89,7 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 	}
 
 	protected void update() {
+		mainView.update();
 		world.update();
 
 		updateFrame++;

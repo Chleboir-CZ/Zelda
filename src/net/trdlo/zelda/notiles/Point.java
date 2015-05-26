@@ -1,17 +1,28 @@
+
 package net.trdlo.zelda.notiles;
 
 import java.util.Collection;
-
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class Point {
+	private static Collection<Line> lineInsertCollection;
+
+	//TODO - logiku přesunout do view (tam bude kolekce výběru - množina)
+	private boolean selected;
 	
 	protected double x, y;
-	private static Collection<Line> linesCollection;
+	private String description;
+	
+	private Set<Line> changeListeners;
+	
 	
 	Point(double x, double y) {
 		this.x = x;
 		this.y = y;
+		selected = false;
+		changeListeners = new HashSet<>(); 
 	}
 	
 	public java.awt.Point getJavaPoint() {
@@ -19,11 +30,11 @@ public class Point {
 	}
 	
 	public static void setLinesCollection(Collection<Line> lines) {
-		linesCollection = lines;
+		lineInsertCollection = lines;
 	}
 	
 	public Point lineTo(Point B) {
-		linesCollection.add(new Line(this, B));
+		lineInsertCollection.add(new Line(this, B));
 		return B;
 	}
 	
@@ -60,12 +71,49 @@ public class Point {
 	}
 
 	public void setX(double x) {
-		//TODO inform listeners
-		this.x = x;		
+		this.x = x;
+		notifyListeners();
 	}
 
 	public void setY(double y) {
-		//TODO inform listeners
 		this.y = y;
+		notifyListeners();
+	}
+	
+	public void setXY(double x, double y) {
+		this.x = x;
+		this.y = y;
+		notifyListeners();
+	}
+	
+	public String getDescription() {
+		return description;
+	}
+	
+	public void setSelected(boolean selected) {
+		this.selected = selected;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public boolean isSelected() {
+		return selected;
+	}
+	
+	public void addChangeListener(Line line) {
+		changeListeners.add(line);
+	}
+	
+	public void removeChangeListener(Line line) {
+		if (!changeListeners.remove(line))
+			throw new RuntimeException("Line was not a listener of this point!");
+	}
+	
+	private void notifyListeners() {
+		for(Line line : changeListeners) {
+			line.refreshCoefs();
+		}
 	}
 }
