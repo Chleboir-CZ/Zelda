@@ -46,6 +46,9 @@ public class View extends ZView {
 	private SynchronousQueue<MouseEvent> mouseEventQueue;
 	private SynchronousQueue<KeyEvent> keyEventQueue;
 
+	List<Point> selectedPoints; 
+
+	
 	private Line dragLine;
 	private Point dragStart;
 	private Point dragEnd;
@@ -68,6 +71,8 @@ public class View extends ZView {
 
 		mouseEventQueue = new SynchronousQueue<>();
 		keyEventQueue = new SynchronousQueue<>();
+		
+		selectedPoints = new ArrayList<>();		
 
 		dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 		selectionStroke = new BasicStroke(2);
@@ -77,30 +82,15 @@ public class View extends ZView {
 
 	@Override
 	public void update() {
-		KeyEvent ke;
-		while ((ke = keyEventQueue.poll()) != null) {
-			switch (ke.getID()) {
-				case KeyEvent.KEY_PRESSED:
-					zFrame.keyPressed(ke);
-					break;
-				case KeyEvent.KEY_RELEASED:
-					zFrame.keyReleased(ke);
-					break;
-				case KeyEvent.KEY_TYPED:
-					if (!myKeyTyped(ke)) {
-						zFrame.keyTyped(ke);
-					}
-					break;
-			}
-		}
+		MouseEvent me = null;
 
-		MouseEvent me;
 		while ((me = mouseEventQueue.poll()) != null) {
+
 			Point clickedPoint = this.getPointAt(me.getX(), me.getY());
 			Point tempPoint = new Point(me.getX(), me.getY());
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED: {
-					console.add("Event! Count = " + me.getClickCount() + "; Thread-ID: " + Thread.currentThread().getId() + "\n");
+//					console.add("Event! Count = " + me.getClickCount() + "; Thread-ID: " + Thread.currentThread().getId() + "\n");
 					if (me.getClickCount() > 1) {
 						switch (state) {
 							case DRAG_LINE:
@@ -111,7 +101,12 @@ public class View extends ZView {
 								break;
 							case POLY_LINE:
 								if (me.getButton() == MouseEvent.BUTTON1) {
-									world.independentPoints.add(dragLine.B);
+									if (clickedPoint != null) {
+										world.independentPoints.add(clickedPoint);
+//										world.lines.add()
+									} else {
+										world.independentPoints.add(dragLine.B);
+									}
 									world.lines.add(dragLine);
 									dragLine = null;
 									state = ViewState.NORMAL;
@@ -122,8 +117,12 @@ public class View extends ZView {
 								break;
 							case NORMAL:
 								if (me.getButton() == MouseEvent.BUTTON1) {
-									world.independentPoints.add(tempPoint);
-									dragLine = new Line(tempPoint, tempPoint);
+									if (clickedPoint != null) {
+										dragLine = new Line(clickedPoint, clickedPoint);
+									} else {
+										world.independentPoints.add(tempPoint);
+										dragLine = new Line(tempPoint, tempPoint);
+									}
 									state = ViewState.POLY_LINE;
 								}
 								break;
@@ -140,23 +139,15 @@ public class View extends ZView {
 
 								break;
 							case POLY_LINE:
-								world.independentPoints.add(dragLine.B);
-								world.lines.add(dragLine);
-
-								dragLine = new Line(dragLine.B, new Point(me.getX(), me.getY()));
-								break;
+								
 							case TYPING:
 
 								break;
 							case NORMAL:
-								if (clickedPoint == null && me.getButton() == MouseEvent.BUTTON1) {
-									world.independentPoints.add(new Point(me.getX(), me.getY()));
-								} else {
-									if (me.getButton() == MouseEvent.BUTTON2) {
-										world.removePoint(clickedPoint);
-									} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
-										clickedPoint.setSelected(!clickedPoint.isSelected());
-									}
+								if (me.getButton() == MouseEvent.BUTTON2) {
+									world.removePoint(clickedPoint);
+								} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
+									clickedPoint.setSelected(!clickedPoint.isSelected());
 								}
 								break;
 							default:
@@ -337,7 +328,7 @@ public class View extends ZView {
 
 							break;
 						case NORMAL:
-
+							
 							break;
 						default:
 							//tak nedelej nic...
@@ -346,11 +337,28 @@ public class View extends ZView {
 					break;
 			}
 		}
+
+		KeyEvent ke = null;
+		while ((ke = keyEventQueue.poll()) != null) {
+			switch (ke.getID()) {
+				case KeyEvent.KEY_PRESSED:
+					zFrame.keyPressed(ke);
+					break;
+				case KeyEvent.KEY_RELEASED:
+					zFrame.keyReleased(ke);
+					break;
+				case KeyEvent.KEY_TYPED:
+					if (!myKeyTyped(ke)) {
+						zFrame.keyTyped(ke);
+					}
+					break;
+			}
+		}
+
 	}
 
 	@Override
-	public void render(Graphics2D graphics, float renderFraction
-	) {
+	public void render(Graphics2D graphics, float renderFraction) {
 		for (Line line : world.lines) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
@@ -383,6 +391,8 @@ public class View extends ZView {
 			} else {
 				textToDraw = p.getDescription();
 			}
+			
+			textToDraw = Integer.toString(p.changeListeners.size());
 
 			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
 			if (textToDraw != null) {
@@ -491,6 +501,12 @@ public class View extends ZView {
 					keyUsed = true;
 					return keyUsed;
 				}
+				if(c == KeyEvent.VK_SPACE) {
+					world.independentPoints.add(dragLine.B);
+					world.lines.add(dragLine);
+
+					dragLine = new Line(dragLine.B, dragLine.B);					
+				}
 				break;
 			case TYPING:
 				keyUsed = true;
@@ -526,6 +542,12 @@ public class View extends ZView {
 				}
 				if (c == KeyEvent.VK_DELETE) {
 					world.delSelectedPoints();
+				}
+				if (c == KeyEvent.VK_SPACE) {
+					Point mp = new Point(zFrame.getMousePosition());
+					if (this.getPointAt(mp.x, mp.y) == null) {
+						world.independentPoints.add(new Point(mp.x, mp.y));
+					}
 				}
 				break;
 			default:
@@ -593,14 +615,17 @@ public class View extends ZView {
 		 */
 		return keyUsed;
 	}
-	
-	public Point getPointAt(int x, int y) {
-		for(Point p : world.independentPoints) {
+
+	public Point getPointAt(double x, double y) {
+		for (Point p : world.independentPoints) {
 			if (Math.abs(p.x - x) < POINT_DISPLAY_SIZE / 2 && Math.abs(p.y - y) < POINT_DISPLAY_SIZE / 2) {
 				return p;
 			}
 		}
 		return null;
+	}
+	
+	private void selectPoint(Point p) {
 	}
 
 	@Override

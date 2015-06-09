@@ -27,10 +27,22 @@ public class World extends ZWorld {
 		}
 	}
 	
+//	private class LineDeletingPointList extends ArrayList<Point> {
+//		@Override
+//		public boolean remove(Object o) {
+//			if(o instanceof Point) {
+//				for(Line l : ((Point)o).changeListeners) {
+//					
+//				}
+//			}
+//		}
+//	}
+//	
 	
 	Collection<Line> lines;
 	Collection<Line> collidableLines;
 	List<Point> independentPoints;
+	List<Point> selectedPoints;
 
 	Line ray;
 
@@ -92,7 +104,7 @@ public class World extends ZWorld {
 			deleted = false;
 			for(Point iP : independentPoints) {
 				if(iP.isSelected()) {
-					independentPoints.remove(iP);
+					removePoint(iP);
 					deleted = true;
 					break;
 				}
@@ -116,6 +128,10 @@ public class World extends ZWorld {
 	}
 	
 	public void removePoint(Point iP) {
+		iP.setIgnoreUnregisters();
+		for(Line l : iP.changeListeners) {
+			lines.remove(l);
+		}
 		independentPoints.remove(iP);
 	}
 }

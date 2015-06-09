@@ -15,14 +15,19 @@ public class Point {
 	protected double x, y;
 	private String description;
 	
-	private Set<Line> changeListeners;
+	public Set<Line> changeListeners;
+	boolean ignoreUnregisters = false;
 	
 	
-	Point(double x, double y) {
+	public Point(double x, double y) {
 		this.x = x;
 		this.y = y;
 		selected = false;
 		changeListeners = new HashSet<>(); 
+	}
+	
+	public Point(java.awt.Point awtPoint) {
+		this(awtPoint.x, awtPoint.y);
 	}
 	
 	public java.awt.Point getJavaPoint() {
@@ -107,6 +112,9 @@ public class Point {
 	}
 	
 	public void removeChangeListener(Line line) {
+		if (ignoreUnregisters)
+			return;
+		
 		if (!changeListeners.remove(line))
 			throw new RuntimeException("Line was not a listener of this point!");
 	}
@@ -116,4 +124,9 @@ public class Point {
 			line.refreshCoefs();
 		}
 	}
+	
+	public void setIgnoreUnregisters() {
+		ignoreUnregisters = true;
+	}
+	
 }
