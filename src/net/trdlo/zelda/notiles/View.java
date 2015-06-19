@@ -102,7 +102,7 @@ public class View extends ZView {
 							case POLY_LINE:
 								if (me.getButton() == MouseEvent.BUTTON1) {
 									if (clickedPoint != null) {
-										world.independentPoints.add(clickedPoint);
+										dragLine.setB(clickedPoint);
 //										world.lines.add()
 									} else {
 										world.independentPoints.add(dragLine.B);
@@ -118,10 +118,10 @@ public class View extends ZView {
 							case NORMAL:
 								if (me.getButton() == MouseEvent.BUTTON1) {
 									if (clickedPoint != null) {
-										dragLine = new Line(clickedPoint, clickedPoint);
+										dragLine = new Line(clickedPoint, tempPoint);
 									} else {
 										world.independentPoints.add(tempPoint);
-										dragLine = new Line(tempPoint, tempPoint);
+										dragLine = new Line(tempPoint, new Point(tempPoint.getX() + 1, tempPoint.getY() + 1));
 									}
 									state = ViewState.POLY_LINE;
 								}
@@ -174,7 +174,7 @@ public class View extends ZView {
 						case NORMAL:
 							if (me.getButton() == MouseEvent.BUTTON1) {
 								if (clickedPoint != null) {
-									dragLine = new Line(clickedPoint, new Point(me.getX(), me.getY()));
+									dragLine = new Line(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
 									state = ViewState.DRAG_LINE;
 								} else {
 									dragStart = new Point(me.getX(), me.getY());
@@ -189,23 +189,20 @@ public class View extends ZView {
 							//tak nedelej nic...
 							break;
 					}
-
-					if (me.getButton() == MouseEvent.BUTTON1) {
-						Point startPoint = clickedPoint;
-						if (startPoint != null) {
-							dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
-						} else {
-							dragStart = new Point(me.getX(), me.getY());
-							dragEnd = new Point(me.getX(), me.getY());
-						}
-					} else if (me.getButton() == MouseEvent.BUTTON3) {
-						if (clickedPoint != null) {
-							movingPoint = clickedPoint;
-						}
-					}
-
 					break;
-
+//					if (me.getButton() == MouseEvent.BUTTON1) {
+//						Point startPoint = clickedPoint;
+//						if (startPoint != null) {
+//							dragLine = new Line(startPoint, new Point(me.getX(), me.getY()));
+//						} else {
+//							dragStart = new Point(me.getX(), me.getY());
+//							dragEnd = new Point(me.getX(), me.getY());
+//						}
+//					} else if (me.getButton() == MouseEvent.BUTTON3) {
+//						if (clickedPoint != null) {
+//							movingPoint = clickedPoint;
+//						}
+//					}
 //					if (me.getClickCount() < 2) {
 //						if (polylineMode) {
 //							//				Point iP = new Point((double)me.getX(), (double)me.getY());
@@ -227,10 +224,12 @@ public class View extends ZView {
 				case MouseEvent.MOUSE_RELEASED:
 					switch (state) {
 						case DRAG_LINE:
-							Point endPoint = this.getPointAt(me.getX(), me.getY());
-							if (endPoint != null) {
-								dragLine.setB(endPoint);
+							if (clickedPoint != null) {
+								dragLine.setB(clickedPoint);
 								world.lines.add(dragLine);
+							}
+							else {
+								dragLine.unregister();
 							}
 							dragLine = null;
 							state = ViewState.NORMAL;
@@ -288,7 +287,7 @@ public class View extends ZView {
 				case MouseEvent.MOUSE_DRAGGED:
 					switch (state) {
 						case DRAG_LINE:
-							dragLine.setB(new Point(me.getX(), me.getY()));
+							dragLine.setB(tempPoint);
 							break;
 						case DRAG_RECT:
 							dragEnd.setX(me.getX());
@@ -322,7 +321,7 @@ public class View extends ZView {
 
 							break;
 						case POLY_LINE:
-							dragLine.setB(new Point(me.getX(), me.getY()));
+							dragLine.setB(tempPoint);
 							break;
 						case TYPING:
 
@@ -497,15 +496,22 @@ public class View extends ZView {
 			case POLY_LINE:
 				if (c == KeyEvent.VK_ESCAPE) {
 					state = ViewState.NORMAL;
+					dragLine.unregister();
 					dragLine = null;
 					keyUsed = true;
 					return keyUsed;
 				}
 				if(c == KeyEvent.VK_SPACE) {
+					Point clickedPoint = world.getPointAt((int)dragLine.B.getX(), (int)dragLine.B.getY());
+					if(clickedPoint != null) {
+						dragLine.setB(clickedPoint);
+						world.lines.add(dragLine);
+						dragLine = new Line(clickedPoint, new Point(dragLine.getB().x + 1, dragLine.getB().y + 1));
+					}
 					world.independentPoints.add(dragLine.B);
 					world.lines.add(dragLine);
 
-					dragLine = new Line(dragLine.B, dragLine.B);					
+					dragLine = new Line(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
 				}
 				break;
 			case TYPING:
