@@ -8,8 +8,13 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,9 +51,8 @@ public class View extends ZView {
 	private SynchronousQueue<MouseEvent> mouseEventQueue;
 	private SynchronousQueue<KeyEvent> keyEventQueue;
 
-	List<Point> selectedPoints; 
+	Set<Point> selectedPoints;
 
-	
 	private Line dragLine;
 	private Point dragStart;
 	private Point dragEnd;
@@ -71,8 +75,8 @@ public class View extends ZView {
 
 		mouseEventQueue = new SynchronousQueue<>();
 		keyEventQueue = new SynchronousQueue<>();
-		
-		selectedPoints = new ArrayList<>();		
+
+		selectedPoints = new HashSet<>();
 
 		dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 		selectionStroke = new BasicStroke(2);
@@ -105,7 +109,7 @@ public class View extends ZView {
 										dragLine.setB(clickedPoint);
 //										world.lines.add()
 									} else {
-										world.independentPoints.add(dragLine.B);
+										world.points.add(dragLine.B);
 									}
 									world.lines.add(dragLine);
 									dragLine = null;
@@ -120,7 +124,7 @@ public class View extends ZView {
 									if (clickedPoint != null) {
 										dragLine = new Line(clickedPoint, tempPoint);
 									} else {
-										world.independentPoints.add(tempPoint);
+										world.points.add(tempPoint);
 										dragLine = new Line(tempPoint, new Point(tempPoint.getX() + 1, tempPoint.getY() + 1));
 									}
 									state = ViewState.POLY_LINE;
@@ -139,16 +143,16 @@ public class View extends ZView {
 
 								break;
 							case POLY_LINE:
-								
+
 							case TYPING:
 
 								break;
 							case NORMAL:
 								if (me.getButton() == MouseEvent.BUTTON2) {
 									world.removePoint(clickedPoint);
-								} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
-									clickedPoint.setSelected(!clickedPoint.isSelected());
 								}
+								//TODO
+								selectedPoints.clear();
 								break;
 							default:
 								break;
@@ -213,9 +217,9 @@ public class View extends ZView {
 //						polylineMode = !polylineMode;
 //						if (polylineMode) {
 //							dragLine = new Line(new Point(me.getX(), me.getY()), new Point(me.getX(), me.getY()));
-//							world.independentPoints.add(dragLine.A);
+//							world.points.add(dragLine.A);
 //						} else {
-//							world.independentPoints.add(dragLine.B);
+//							world.points.add(dragLine.B);
 //							world.lines.add(dragLine);
 //							dragLine = null;
 //						}
@@ -227,8 +231,7 @@ public class View extends ZView {
 							if (clickedPoint != null) {
 								dragLine.setB(clickedPoint);
 								world.lines.add(dragLine);
-							}
-							else {
+							} else {
 								dragLine.unregister();
 							}
 							dragLine = null;
@@ -293,7 +296,7 @@ public class View extends ZView {
 							dragEnd.setX(me.getX());
 							dragEnd.setY(me.getY());
 							for (Point iP : world.pointsInRect(dragStart, dragEnd)) {
-								iP.setSelected((me.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != MouseEvent.SHIFT_DOWN_MASK);
+								selectedPoints.add(iP);
 							}
 							break;
 						case POLY_LINE:
@@ -327,7 +330,7 @@ public class View extends ZView {
 
 							break;
 						case NORMAL:
-							
+
 							break;
 						default:
 							//tak nedelej nic...
@@ -341,7 +344,9 @@ public class View extends ZView {
 		while ((ke = keyEventQueue.poll()) != null) {
 			switch (ke.getID()) {
 				case KeyEvent.KEY_PRESSED:
-					zFrame.keyPressed(ke);
+					if (!myKeyPressed(ke)) {
+						zFrame.keyPressed(ke);
+					}
 					break;
 				case KeyEvent.KEY_RELEASED:
 					zFrame.keyReleased(ke);
@@ -375,9 +380,9 @@ public class View extends ZView {
 			graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
 
-		for (Point p : world.independentPoints) {
+		for (Point p : world.points) {
 			String textToDraw;
-			if (p.isSelected()) {
+			if (selectedPoints.contains(p)) {
 				graphics.setStroke(selectionStroke);
 				graphics.setColor(Color.PINK);
 			} else {
@@ -385,19 +390,21 @@ public class View extends ZView {
 				graphics.setColor(Color.WHITE);
 			}
 
-			if (p.isSelected() && tmpDescription != null) {
+			if (selectedPoints.contains(p) && tmpDescription != null) {
 				textToDraw = tmpDescription;
 			} else {
 				textToDraw = p.getDescription();
 			}
-			
+
 			textToDraw = Integer.toString(p.changeListeners.size());
 
 			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
+
 			if (textToDraw != null) {
 				graphics.drawString(textToDraw, (int) p.x + POINT_DISPLAY_SIZE, (int) p.y + POINT_DISPLAY_SIZE);
 			}
 		}
+
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
 
@@ -501,17 +508,18 @@ public class View extends ZView {
 					keyUsed = true;
 					return keyUsed;
 				}
-				if(c == KeyEvent.VK_SPACE) {
-					Point clickedPoint = world.getPointAt((int)dragLine.B.getX(), (int)dragLine.B.getY());
-					if(clickedPoint != null) {
+				if (c == KeyEvent.VK_SPACE) {
+					Point clickedPoint = world.getPointAt((int) dragLine.B.getX(), (int) dragLine.B.getY());
+					if (clickedPoint != null) {
 						dragLine.setB(clickedPoint);
+						world.points.add(dragLine.B);
 						world.lines.add(dragLine);
-						dragLine = new Line(clickedPoint, new Point(dragLine.getB().x + 1, dragLine.getB().y + 1));
+						state = ViewState.NORMAL;
+					} else {
+						world.lines.add(dragLine);
+						world.points.add(dragLine.B);
+						dragLine = new Line(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
 					}
-					world.independentPoints.add(dragLine.B);
-					world.lines.add(dragLine);
-
-					dragLine = new Line(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
 				}
 				break;
 			case TYPING:
@@ -529,8 +537,8 @@ public class View extends ZView {
 					state = ViewState.NORMAL;
 					keyUsed = true;
 				} else if (c == KeyEvent.VK_ENTER) {
-					for (Point iP : world.independentPoints) {
-						if (iP.isSelected()) {
+					for (Point iP : world.points) {
+						if (selectedPoints.contains(iP)) {
 							iP.setDescription(tmpDescription);
 						}
 					}
@@ -547,12 +555,12 @@ public class View extends ZView {
 					keyUsed = true;
 				}
 				if (c == KeyEvent.VK_DELETE) {
-					world.delSelectedPoints();
+					delSelectedPoints();
 				}
 				if (c == KeyEvent.VK_SPACE) {
 					Point mp = new Point(zFrame.getMousePosition());
 					if (this.getPointAt(mp.x, mp.y) == null) {
-						world.independentPoints.add(new Point(mp.x, mp.y));
+						world.points.add(new Point(mp.x, mp.y));
 					}
 				}
 				break;
@@ -588,7 +596,7 @@ public class View extends ZView {
 		 typing = false;
 		 keyUsed = true;
 		 } else if (c == KeyEvent.VK_ENTER) {
-		 for (Point iP : world.independentPoints) {
+		 for (Point iP : world.points) {
 		 if (iP.isSelected()) {
 		 iP.setDescription(tmpDescription);
 		 }
@@ -608,7 +616,7 @@ public class View extends ZView {
 		 world.delSelectedPoints();
 		 } else if (c == KeyEvent.VK_ESCAPE) {
 		 keyUsed = false;
-		 for (Point p : world.independentPoints) {
+		 for (Point p : world.points) {
 		 if (p.isSelected()) {
 		 p.setSelected(false);
 		 keyUsed = true;
@@ -622,15 +630,42 @@ public class View extends ZView {
 		return keyUsed;
 	}
 
+	public boolean myKeyPressed(KeyEvent ke) {
+		switch (state) {
+			case NORMAL:
+				if (ke.getKeyCode() == KeyEvent.VK_F2) {
+					//JOptionPane.showMessageDialog(zFrame, "123");//Žluťoučký kůň úpěl ďábelské ódy.");
+					String fileName = "save.map";
+					try {
+						Writer w = new FileWriter(fileName);
+						w.write(world.toString());
+						
+						w.close();
+					} catch (IOException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+				return true;
+		}
+		return false;
+	}
+
 	public Point getPointAt(double x, double y) {
-		for (Point p : world.independentPoints) {
+		for (Point p : world.points) {
 			if (Math.abs(p.x - x) < POINT_DISPLAY_SIZE / 2 && Math.abs(p.y - y) < POINT_DISPLAY_SIZE / 2) {
 				return p;
 			}
 		}
 		return null;
 	}
-	
+
+	public void delSelectedPoints() {
+		for (Point iP : selectedPoints) {
+			world.removePoint(iP);
+		}
+		selectedPoints.clear();
+	}
+
 	private void selectPoint(Point p) {
 	}
 
@@ -646,6 +681,7 @@ public class View extends ZView {
 	@Override
 	public void keyPressed(KeyEvent ke) {
 		try {
+//JOptionPane.showMessageDialog(zFrame, "123");//Žluťoučký kůň úpěl ďábelské ódy.");
 			keyEventQueue.put(ke);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(View.class.getName()).log(Level.SEVERE, null, ex);

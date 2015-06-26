@@ -10,7 +10,6 @@ public class Point {
 	private static Collection<Line> lineInsertCollection;
 
 	//TODO - logiku přesunout do view (tam bude kolekce výběru - množina)
-	private boolean selected;
 	
 	protected double x, y;
 	private String description;
@@ -22,7 +21,6 @@ public class Point {
 	public Point(double x, double y) {
 		this.x = x;
 		this.y = y;
-		selected = false;
 		changeListeners = new HashSet<>(); 
 	}
 	
@@ -47,24 +45,24 @@ public class Point {
 		return lineTo(new Point(x,y));
 	}
 	
-	@Override
-	public boolean equals(Object o) {
-		if (o instanceof Point) {
-			Point p = (Point)o;
-			return p.x == x && p.y == y;
-		}
-		else
-			return false;
-	}
-
-	@Override
-	public int hashCode() {
-		return (int)(255.0 * x + 65535.0 * y);
-	}
+//	@Override
+//	public boolean equals(Object o) {
+//		if (o instanceof Point) {
+//			Point p = (Point)o;
+//			return p.x == x && p.y == y;
+//		}
+//		else
+//			return false;
+//	}
+//
+//	@Override
+//	public int hashCode() {
+//		return (int)(255.0 * x + 65535.0 * y);
+//	}
 	
 	@Override
 	public String toString() {
-		return "[" + x + "; " + y + "]";
+		return "[" + x + "; " + y + "] \"" + (description != null ? description : "") + "\"";
 	}
 
 	public double getX() {
@@ -95,17 +93,11 @@ public class Point {
 		return description;
 	}
 	
-	public void setSelected(boolean selected) {
-		this.selected = selected;
-	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public boolean isSelected() {
-		return selected;
-	}
 	
 	public void addChangeListener(Line line) {
 		changeListeners.add(line);

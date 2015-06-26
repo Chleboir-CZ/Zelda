@@ -18,15 +18,16 @@ import net.trdlo.zelda.ZWorld;
 public class World extends ZWorld {
 
 	private class UnregisteringLineList extends ArrayList<Line> {
+
 		@Override
 		public boolean remove(Object o) {
-			if (o instanceof Line) {				
-				((Line)o).unregister();
+			if (o instanceof Line) {
+				((Line) o).unregister();
 			}
 			return super.remove(o);
 		}
 	}
-	
+
 //	private class LineDeletingPointList extends ArrayList<Point> {
 //		@Override
 //		public boolean remove(Object o) {
@@ -38,25 +39,23 @@ public class World extends ZWorld {
 //		}
 //	}
 //	
-	
-	Collection<Line> lines;
-	Collection<Line> collidableLines;
-	List<Point> independentPoints;
-	List<Point> selectedPoints;
+	List<Line> lines;
+	//Collection<Line> collidableLines;
+	List<Point> points;
 
 	Line ray;
 
 	public World() {
 		lines = new UnregisteringLineList();
-		collidableLines = new ArrayList<>();
-		independentPoints = new ArrayList<>();
+		//collidableLines = new ArrayList<>();
+		points = new ArrayList<>();
 //		lines.add(new Line(new Point(789, 150), new Point(900, 300)));
 		Point.setLinesCollection(lines);
 
-		independentPoints.add(new Point(200, 200));
-		independentPoints.add(new Point(200, 390));
-		independentPoints.add(new Point(407, 400));
-		independentPoints.get(0).lineTo(independentPoints.get(1)).lineTo(independentPoints.get(2));
+		points.add(new Point(200, 200));
+		points.add(new Point(200, 390));
+		points.add(new Point(407, 400));
+		points.get(0).lineTo(points.get(1)).lineTo(points.get(2));
 		ray = new Line(new Point(500, 400), new Point(180, 100));
 		//lines.addAll(ray.rayTraceEffect(lines));
 //		Line ray = new Line(X, new Point(300, 300));
@@ -74,22 +73,21 @@ public class World extends ZWorld {
 	}
 
 	public Point getPointAt(int x, int y) {
-		for(Point p : this.independentPoints) {
-			if (Math.abs(p.x - x) < 6 && Math.abs(p.y - y) < 6) {
+		for (Point p : this.points) {
+			if (Math.abs(p.x - x) < View.POINT_DISPLAY_SIZE && Math.abs(p.y - y) < View.POINT_DISPLAY_SIZE) {
 				return p;
 			}
 		}
 		return null;
 	}
-	
+
 	public Collection<Point> pointsInRect(Point A, Point B) {
 		Collection<Point> pointsInRect = new ArrayList<>();
-		
+
 		Rectangle rect = new Rectangle(A.getJavaPoint());
 		rect.add(B.getJavaPoint());
-		
-		
-		for(Point p : independentPoints) {
+
+		for (Point p : points) {
 			//if(p.x > A.x && p.x < B.x && p.y > A.y && p.y < B.y) {
 			if (rect.contains(p.getJavaPoint())) {
 				pointsInRect.add(p);
@@ -97,50 +95,60 @@ public class World extends ZWorld {
 		}
 		return pointsInRect;
 	}
-	
-	public void delSelectedPoints() {
-		boolean deleted;
-		do {
-			deleted = false;
-			for(Point iP : independentPoints) {
-				if(iP.isSelected()) {
-					removePoint(iP);
-					deleted = true;
-					break;
-				}
-			}
-		} while (deleted);
-	}
-	
+
+//	public void delSelectedPoints() {
+//		boolean deleted;
+//		do {
+//			deleted = false;
+//			for(Point iP : selectedPoints) {
+//				if(iP.isSelected()) {
+//					removePoint(iP);
+//					deleted = true;
+//					break;
+//				}
+//			}
+//		} while (deleted);
+//	}
 	public Collection<LineAndBool> linesPoint(Point iP) {
 		Collection<LineAndBool> linesLeadingInto = new ArrayList<>();
-		
-		for(Line line : lines) {
-			if(line.A.equals(iP)) {
+
+		for (Line line : lines) {
+			if (line.A.equals(iP)) {
 				linesLeadingInto.add(new LineAndBool(true, line));
 			}
-			if(line.B.equals(iP)) {
+			if (line.B.equals(iP)) {
 				linesLeadingInto.add(new LineAndBool(false, line));
-				
+
 			}
 		}
 		return linesLeadingInto;
 	}
-	
+
 	public void removePoint(Point iP) {
 		iP.setIgnoreUnregisters();
-		for(Line l : iP.changeListeners) {
+		for (Line l : iP.changeListeners) {
 			lines.remove(l);
 		}
-		independentPoints.remove(iP);
+		points.remove(iP);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (Point p : points) {
+			sb.append(p.toString());
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }
 
 class LineAndBool {
+
 	public Line line;
 	public boolean whichLine;
 	// true means A, false means B
-	
+
 	public LineAndBool(boolean whichLine, Line line) {
 		this.whichLine = whichLine;
 		this.line = line;
