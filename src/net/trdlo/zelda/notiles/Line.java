@@ -1,4 +1,3 @@
-
 package net.trdlo.zelda.notiles;
 
 import java.util.ArrayList;
@@ -6,16 +5,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-
 public class Line {
+
 	protected Point A, B;
 	protected double a, b, c;
-	
+
 	/**
-	 * construct empty object - used by local static methods
+	 * Prázdný konstruktor používaný jen místními statickými továrními metodami
 	 */
-	private Line() { }
-	
+	private Line() {
+	}
+
 	public static Line constructFromTwoPoints(Point A, Point B) {
 		Line l = new Line();
 		l.A = A;
@@ -23,7 +23,7 @@ public class Line {
 		l.refreshCoefs();
 		return l;
 	}
-	
+
 	public static Line constructFromPointAndNormal(Point A, double a, double b) {
 		Line l = new Line();
 		l.a = a;
@@ -32,11 +32,11 @@ public class Line {
 		l.B = new Point(A.x - b, A.y + a);
 		l.c = -a * A.x - b * A.y;
 		l.A.addChangeListener(l);
-		l.B.addChangeListener(l);		
+		l.B.addChangeListener(l);
 		return l;
 	}
 
-	public static Line constructFromPointAndVector(Point A, double a, double b) {		
+	public static Line constructFromPointAndVector(Point A, double a, double b) {
 		Line l = new Line();
 		l.a = -b;
 		l.b = a;
@@ -44,7 +44,7 @@ public class Line {
 		l.B = new Point(A.x + a, A.y + b);
 		l.c = b * A.x - a * A.y;
 		l.A.addChangeListener(l);
-		l.B.addChangeListener(l);		
+		l.B.addChangeListener(l);
 		return l;
 	}
 
@@ -53,7 +53,7 @@ public class Line {
 		b = B.x - A.x;
 		c = -a * A.x - b * A.y;
 	}
-	
+
 	public Point getA() {
 		return A;
 	}
@@ -61,136 +61,75 @@ public class Line {
 	public Point getB() {
 		return B;
 	}
-	
+
 	public void setA(Point A) {
-		if (this.A != null) 
+		if (this.A != null) {
 			this.A.removeChangeListener(this);
+		}
 		this.A = A;
 		A.addChangeListener(this);
 		refreshCoefs();
 	}
-	
+
 	public void setB(Point B) {
-		if (this.B != null) 
+		if (this.B != null) {
 			this.B.removeChangeListener(this);
+		}
 		this.B = B;
 		B.addChangeListener(this);
 		refreshCoefs();
 	}
-	
+
+	/**
+	 * Nalezne průsečík této a jiné přímky
+	 *
+	 * @param line	druhá přímka
+	 * @return	bod, kde se protnou, nebo null, pokud se neprotnou
+	 */
 	public Point intersectPoint(Line line) {
-		double denominator = (a*line.b - line.a*b);
-		if(denominator == 0)
+		double denominator = (a * line.b - line.a * b);
+		if (denominator == 0) {
 			return null;
-		return new Point((b*line.c - c * line.b) / denominator, -(a*line.c - line.a * c) / denominator);
+		}
+		return new Point((b * line.c - c * line.b) / denominator, -(a * line.c - line.a * c) / denominator);
 	}
 
-	public double getAngle(Line line) {
-		return Math.acos((a*line.a + b*line.b) / (Math.sqrt(a*a + b*b) * Math.sqrt(line.a*line.a + line.b*line.b)));
-	}
-	
 	/**
-	 * Spocita obraz teto primky v zrcadle line
-	 * @param line zrcadlo
-	 * @return odraz sebe pres line
+	 * Vypočítá úhel, který svírají tato přímka s další
+	 *
+	 * @param line	druhá přímka
+	 * @return	úhel v radiánech v protisměru hodinových ručiček, který tato přímka svírá s druhou dodanou
 	 */
-	public Line mirrorReflection(Line line) {
-		Point intersect = this.intersectPoint(line);
-		Line lineNormal = constructFromPointAndVector(intersect, line.a, line.b);
-		Line lineParalell = constructFromPointAndNormal(A, line.a, line.b);
+	public double getAngle(Line line) {
+		return Math.acos((a * line.a + b * line.b) / (Math.sqrt(a * a + b * b) * Math.sqrt(line.a * line.a + line.b * line.b)));
+	}
+
+	/**
+	 * Vytvoří obraz réro přímky souměrný přes osu danou přímkou
+	 *
+	 * @param mirror	osa souměrnosti
+	 * @return	obraz přes osu souměrnosti mirror
+	 */
+	public Line mirrorReflection(Line mirror) {
+		Point intersect = this.intersectPoint(mirror);
+		Line lineNormal = constructFromPointAndVector(intersect, mirror.a, mirror.b);
+		Line lineParalell = constructFromPointAndNormal(A, mirror.a, mirror.b);
 		Point S = lineParalell.intersectPoint(lineNormal);
 		Point reflectedA = new Point(2 * S.x - A.x, 2 * S.y - A.y);
 		return Line.constructFromTwoPoints(intersect, reflectedA);
 	}
-	
-	
-	public List<Line> rayTraceEffect(Collection<Line> collidableLines) {
-		Line currentLine = this;
-		List<Line> returnList = new ArrayList<>();
-		returnList.add(currentLine);
-		
-		int i = 0;
-		while(i++ < 64) {
-			double rayvx = currentLine.B.x - currentLine.A.x;
-			double rayvy = currentLine.B.y - currentLine.A.y;
-			
-			List<PointAndDistanceAndLine> intersectPoints = new ArrayList<>();
-			for(Line line : collidableLines) {
-				Point intersectPoint = currentLine.intersectPoint(line);
-				if (intersectPoint == null)
-					continue;
-				
-				double mirrorvx = line.B.x - line.A.x;
-				double mirrorvy = line.B.y - line.A.y;
-				double rayDist;
-				double mirrorDist;
-				
-				if(Math.abs(rayvx) > Math.abs(rayvy)) {
-					rayDist = (intersectPoint.x - currentLine.A.x) / rayvx;
-				} else {
-					rayDist = (intersectPoint.y - currentLine.A.y) / rayvy;
-				}
-				if(Math.abs(mirrorvx) > Math.abs(mirrorvy)) {
-					mirrorDist = (intersectPoint.x - line.A.x) / mirrorvx;
-				}
-				else {
-					mirrorDist = (intersectPoint.y - line.A.y) / mirrorvy;
-				}
-				
-				if(rayDist > 0.00001 && mirrorDist > 0.00001 && mirrorDist < 1) {
-					intersectPoints.add(new PointAndDistanceAndLine(rayDist, intersectPoint, line));
-				}
-			}
-			Collections.sort(intersectPoints);
-			if(intersectPoints.isEmpty())
-				break;
-			PointAndDistanceAndLine firstContact = intersectPoints.get(0);
-			currentLine = currentLine.mirrorReflection(firstContact.line); 
-			returnList.add(currentLine);
-		}
-		for(int j = 0; j < returnList.size() - 1; j++) {
-			returnList.get(j).setB(returnList.get(j+1).A);
-//			returnList.set(j, new Line(returnList.get(j).A, returnList.get(j + 1).A));
-		}
-		return returnList;
-	}
-	
+
+	/**
+	 *
+	 */
 	public void unregister() {
 		A.removeChangeListener(this);
 		B.removeChangeListener(this);
 	}
-	
+
 //	public Collection<Line> rayPurifier(List<Line> rayCollection) {
 //		Collection<Line> purifiedRay = new ArrayList<>();
 //
 //		return purifiedRay;
 //	}
-}
-
-
-
-
-
-class PointAndDistanceAndLine implements Comparable<PointAndDistanceAndLine> {
-	double dist;
-	Point p;
-	Line line;
-
-	public PointAndDistanceAndLine(double dist, Point p, Line line) {
-		this.dist = dist;
-		this.p = p;
-		this.line = line;
-	}
-	
-/*	public static Comparator<GameObjectInstance> zIndexComparator = new Comparator<GameObjectInstance>() {
-		@Override
-		public int compare(GameObjectInstance go1, GameObjectInstance go2) {
-			return go1.getZIndex() - go2.getZIndex();
-		}
-	};*/
-
-	@Override
-	public int compareTo(PointAndDistanceAndLine t) {
-		return (dist - t.dist) > 0 ? 1 : -1;
-	}
 }

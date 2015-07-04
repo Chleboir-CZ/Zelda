@@ -370,7 +370,7 @@ public class View extends ZView {
 		defaultStroke = graphics.getStroke();
 		defaultFont = graphics.getFont();
 		graphics.setStroke(dashedStroke);
-		for (Line line : world.ray.rayTraceEffect(world.lines)) {
+		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
 		if (dragStart != null && dragEnd != null) {

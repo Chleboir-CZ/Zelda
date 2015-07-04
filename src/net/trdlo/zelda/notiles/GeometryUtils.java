@@ -1,19 +1,101 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.trdlo.zelda.notiles;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
  * @author chleboir
  */
 public class GeometryUtils {
-	public static Point intersectPoint(Line line, Line line2) {
-		double denominator = (line2.a*line.b - line.a*line2.b);
-		if(denominator == 0)
-			return null;
-		return new Point((line2.b*line.c - line2.c * line.b) / denominator, -(line2.a*line.c - line.a * line2.c) / denominator);
-	}	
+
+	private static final int RAYTRACE_MAX_DEPTH = 64;
+
+	/**
+	 *
+	 * @param currentLine
+	 * @param collidableLines
+	 * @return
+	 */
+	public static List<Line> constructRayPath(Line currentLine, Collection<Line> collidableLines) {
+		List<Line> returnList = new ArrayList<>(RAYTRACE_MAX_DEPTH);
+		returnList.add(currentLine);
+
+		List<PointAndDistanceAndLine> intersectPoints = new ArrayList<>();
+
+		int i = 0;
+		while (i++ < RAYTRACE_MAX_DEPTH) {
+			//vektor paprsku A -> B
+			double rayVX = currentLine.B.x - currentLine.A.x;
+			double rayVY = currentLine.B.y - currentLine.A.y;
+
+			intersectPoints.clear();
+
+			for (Line line : collidableLines) {
+				Point intersectPoint = currentLine.intersectPoint(line);
+				if (intersectPoint == null) {
+					continue;
+				}
+
+				//vektor potenciálního zrcadla A -> B
+				double mirrorVX = line.B.x - line.A.x;
+				double mirrorVY = line.B.y - line.A.y;
+
+				//vzdálenost průsečíku na polopřímce paprsku (jednotka je délka paprsku)
+				double rayStartToIntersectDistance;
+				if (Math.abs(rayVX) > Math.abs(rayVY)) {
+					rayStartToIntersectDistance = (intersectPoint.x - currentLine.A.x) / rayVX;
+				} else {
+					rayStartToIntersectDistance = (intersectPoint.y - currentLine.A.y) / rayVY;
+				}
+
+				//vzdálenost průsečíku na od počátku zrcadla (jednotka je délka zrcadla)
+				double mirrorStartToIntesectDistance;
+				if (Math.abs(mirrorVX) > Math.abs(mirrorVY)) {
+					mirrorStartToIntesectDistance = (intersectPoint.x - line.A.x) / mirrorVX;
+				} else {
+					mirrorStartToIntesectDistance = (intersectPoint.y - line.A.y) / mirrorVY;
+				}
+
+				//vzdálenost bodu A paprsku od průniku musí být kladná (průsečík na správné straně polopřímky)
+				//vzdálenost bodu A zrcadla od průniku musí být v intervalu (0; 1) (průsečík je na úsečce vyjma krajních bodů)
+				if (rayStartToIntersectDistance > 0.00001 && mirrorStartToIntesectDistance > 0.00001 && mirrorStartToIntesectDistance < 1) {
+					intersectPoints.add(new PointAndDistanceAndLine(rayStartToIntersectDistance, intersectPoint, line));
+				}
+			}
+
+			if (intersectPoints.isEmpty()) {
+				break;
+			}
+
+			Collections.sort(intersectPoints);
+			PointAndDistanceAndLine firstContact = intersectPoints.get(0);
+			currentLine = currentLine.mirrorReflection(firstContact.line);
+			returnList.add(currentLine);
+		}
+		for (int j = 0; j < returnList.size() - 1; j++) {
+			returnList.get(j).setB(returnList.get(j + 1).A);
+		}
+		return returnList;
+	}
+}
+
+class PointAndDistanceAndLine implements Comparable<PointAndDistanceAndLine> {
+
+	double dist;
+	Point p;
+	Line line;
+
+	public PointAndDistanceAndLine(double dist, Point p, Line line) {
+		this.dist = dist;
+		this.p = p;
+		this.line = line;
+	}
+
+	@Override
+	public int compareTo(PointAndDistanceAndLine t) {
+		return (dist - t.dist) > 0 ? 1 : -1;
+	}
 }
