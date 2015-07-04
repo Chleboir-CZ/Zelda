@@ -1,10 +1,5 @@
 package net.trdlo.zelda.notiles;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
 public class Line {
 
 	protected Point A, B;
@@ -120,16 +115,11 @@ public class Line {
 	}
 
 	/**
-	 *
+	 * Odregistruje se z role listenera u svývh koncových bodů
 	 */
 	public void unregister() {
 		A.removeChangeListener(this);
 		B.removeChangeListener(this);
 	}
 
-//	public Collection<Line> rayPurifier(List<Line> rayCollection) {
-//		Collection<Line> purifiedRay = new ArrayList<>();
-//
-//		return purifiedRay;
-//	}
 }
