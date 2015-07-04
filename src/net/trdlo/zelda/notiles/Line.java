@@ -11,37 +11,20 @@ public class Line {
 	protected Point A, B;
 	protected double a, b, c;
 	
-	public Line(Point A, Point B) {
-//		if (A.equals(B))
-//			throw new IllegalArgumentException("Two identical points don't form a line.");
-		this.A = A;
-		this.B = B;
-		refreshCoefs();
-		A.addChangeListener(this);
-		B.addChangeListener(this);
-	}
-	
 	/**
-	 * 
-	 * @param a
-	 * @param b
-	 * @param A 
+	 * construct empty object - used by local static methods
 	 */
-	public Line(double a, double b, Point A) {
-		B = new Point(A.x + b, A.y - a);
-		this.A = A;
-		this.a = a;
-		this.b = b;
-		c = -a * A.x - b * A.y;
-		A.addChangeListener(this);
-		B.addChangeListener(this);
+	private Line() { }
+	
+	public static Line constructFromTwoPoints(Point A, Point B) {
+		Line l = new Line();
+		l.A = A;
+		l.B = B;
+		l.refreshCoefs();
+		return l;
 	}
 	
-	private Line() {
-		
-	}
-	
-	public static Line constructLineFromPointAndNormal(Point A, double a, double b) {
+	public static Line constructFromPointAndNormal(Point A, double a, double b) {
 		Line l = new Line();
 		l.a = a;
 		l.b = b;
@@ -53,7 +36,7 @@ public class Line {
 		return l;
 	}
 
-	public static Line constructLineFromPointAndVector(Point A, double a, double b) {		
+	public static Line constructFromPointAndVector(Point A, double a, double b) {		
 		Line l = new Line();
 		l.a = -b;
 		l.b = a;
@@ -113,11 +96,11 @@ public class Line {
 	 */
 	public Line mirrorReflection(Line line) {
 		Point intersect = this.intersectPoint(line);
-		Line lineNormal = constructLineFromPointAndVector(intersect, line.a, line.b);
-		Line lineParalell = constructLineFromPointAndNormal(A, line.a, line.b);
+		Line lineNormal = constructFromPointAndVector(intersect, line.a, line.b);
+		Line lineParalell = constructFromPointAndNormal(A, line.a, line.b);
 		Point S = lineParalell.intersectPoint(lineNormal);
 		Point reflectedA = new Point(2 * S.x - A.x, 2 * S.y - A.y);
-		return new Line(intersect, reflectedA);
+		return Line.constructFromTwoPoints(intersect, reflectedA);
 	}
 	
 	

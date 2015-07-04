@@ -37,7 +37,7 @@ public class Point {
 	}
 	
 	public Point lineTo(Point B) {
-		lineInsertCollection.add(new Line(this, B));
+		lineInsertCollection.add(Line.constructFromTwoPoints(this, B));
 		return B;
 	}
 	

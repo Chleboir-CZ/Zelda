@@ -56,7 +56,7 @@ public class World extends ZWorld {
 		points.add(new Point(200, 390));
 		points.add(new Point(407, 400));
 		points.get(0).lineTo(points.get(1)).lineTo(points.get(2));
-		ray = new Line(new Point(500, 400), new Point(180, 100));
+		ray = Line.constructFromTwoPoints(new Point(500, 400), new Point(180, 100));
 		//lines.addAll(ray.rayTraceEffect(lines));
 //		Line ray = new Line(X, new Point(300, 300));
 //		Line mirror = new Line(new Point(200, 400), new Point(600, 320));
