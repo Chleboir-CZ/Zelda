@@ -123,12 +123,8 @@ public class Line {
 		A.removeChangeListener(this);
 		B.removeChangeListener(this);
 	}
-	
-//	public Collection<Line> rayPurifier(List<Line> rayCollection) {
-//		Collection<Line> purifiedRay = new ArrayList<>();
-//
-//		return purifiedRay;
-//	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Line");

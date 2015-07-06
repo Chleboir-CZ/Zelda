@@ -1,4 +1,4 @@
-package net.trdlo.zelda;
+package net.trdlo.zelda.tiled;
 
 
 public interface Identifiable {

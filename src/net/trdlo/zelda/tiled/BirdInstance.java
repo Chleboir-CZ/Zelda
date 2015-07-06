@@ -2,7 +2,6 @@ package net.trdlo.zelda.tiled;
 
 import java.awt.Graphics2D;
 import java.util.Random;
-import net.trdlo.zelda.GameObjectInstance;
 import net.trdlo.zelda.ZFrame;
 
 public class BirdInstance extends GameObjectInstance {

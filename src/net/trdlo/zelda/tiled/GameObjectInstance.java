@@ -1,4 +1,4 @@
-package net.trdlo.zelda;
+package net.trdlo.zelda.tiled;
 
 import java.awt.Graphics2D;
 import java.util.Comparator;

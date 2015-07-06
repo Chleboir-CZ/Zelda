@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -18,6 +19,9 @@ import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileFilter;
 import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.ZView;
 
@@ -44,30 +48,28 @@ public class View extends ZView {
 	public static final int POINT_DISPLAY_SIZE = 32;
 
 	private final World world;
-	private ZFrame zFrame;
+	private final ZFrame zFrame;
 
 	private ViewState state = ViewState.NORMAL;
-	private List<String> console;
-	private SynchronousQueue<MouseEvent> mouseEventQueue;
-	private SynchronousQueue<KeyEvent> keyEventQueue;
+	private final List<String> console;
+	private final SynchronousQueue<MouseEvent> mouseEventQueue;
+	private final SynchronousQueue<KeyEvent> keyEventQueue;
 
 	Set<Point> selectedPoints;
 
 	private Line dragLine;
 	private Point dragStart;
 	private Point dragEnd;
-	//private boolean typing;
+
 	private String tmpDescription;
-	//private boolean polylineMode;
 	private Point movingPoint;
-//	private Point movingIndependentPoint;
-	private boolean leftMouseDown;
-	private boolean rightMouseDown;
 
 	private Stroke defaultStroke;
 	private final Stroke dashedStroke;
 	private final Stroke selectionStroke;
 	private Font defaultFont;
+
+	JFileChooser fileChooser;
 
 	public View(World world, ZFrame zFrame) {
 		this.world = world;
@@ -82,11 +84,23 @@ public class View extends ZView {
 		selectionStroke = new BasicStroke(2);
 
 		console = new ArrayList<>();
+
+		fileChooser = new JFileChooser();
+		fileChooser.addChoosableFileFilter(new FileFilter(){
+			@Override
+			public boolean accept(File f) {
+				return f.isDirectory() || f.getName().endsWith(".txt");
+			}
+			@Override
+			public String getDescription() {
+				return "Zelda files";
+			}
+		});
 	}
 
 	@Override
 	public void update() {
-		MouseEvent me = null;
+		MouseEvent me;
 
 		while ((me = mouseEventQueue.poll()) != null) {
 
@@ -340,7 +354,7 @@ public class View extends ZView {
 			}
 		}
 
-		KeyEvent ke = null;
+		KeyEvent ke;
 		while ((ke = keyEventQueue.poll()) != null) {
 			switch (ke.getID()) {
 				case KeyEvent.KEY_PRESSED:
@@ -396,7 +410,7 @@ public class View extends ZView {
 				textToDraw = p.getDescription();
 			}
 
-			textToDraw = Integer.toString(p.changeListeners.size());
+			textToDraw = textToDraw + "(" + Integer.toString(p.changeListeners.size()) + ")";
 
 			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
 
@@ -427,6 +441,7 @@ public class View extends ZView {
 		}
 	}
 
+	@Override
 	public void mouseClicked(MouseEvent me) {
 		try {
 			mouseEventQueue.put(me);
@@ -568,82 +583,32 @@ public class View extends ZView {
 
 				break;
 		}
-		/*if (defaultFont == null) {
-		 return false;
-		 }
-
-		 boolean keyUsed;
-		 char c = ke.getKeyChar();
-
-		 if (polylineMode) {
-		 if (c == KeyEvent.VK_ESCAPE) {
-		 polylineMode = false;
-		 keyUsed = true;
-		 return keyUsed;
-		 }
-		 }
-
-		 if (typing) {
-		 keyUsed = true;
-		 if (defaultFont.canDisplay(c) && c != KeyEvent.VK_ENTER) {
-		 tmpDescription += Character.toString(c);
-		 } else if (c == KeyEvent.VK_BACK_SPACE) {
-		 if (tmpDescription.length() != 0) {
-		 tmpDescription = tmpDescription.substring(0, tmpDescription.length() - 1);
-		 }
-		 } else if (c == KeyEvent.VK_ESCAPE) {
-		 tmpDescription = null;
-		 typing = false;
-		 keyUsed = true;
-		 } else if (c == KeyEvent.VK_ENTER) {
-		 for (Point iP : world.points) {
-		 if (iP.isSelected()) {
-		 iP.setDescription(tmpDescription);
-		 }
-		 }
-		 tmpDescription = null;
-		 typing = false;
-		 keyUsed = true;
-		 } else {
-		 keyUsed = false;
-		 }
-		 } else {
-		 keyUsed = true;
-		 if (Character.toUpperCase(c) == 'T') {
-		 typing = true;
-		 tmpDescription = "";
-		 } else if (c == KeyEvent.VK_DELETE) {
-		 world.delSelectedPoints();
-		 } else if (c == KeyEvent.VK_ESCAPE) {
-		 keyUsed = false;
-		 for (Point p : world.points) {
-		 if (p.isSelected()) {
-		 p.setSelected(false);
-		 keyUsed = true;
-		 }
-		 }
-		 } else {
-		 keyUsed = false;
-		 }
-		 }
-		 */
 		return keyUsed;
+	}
+
+	private void save() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				int returnVal = fileChooser.showSaveDialog(zFrame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fileChooser.getSelectedFile();
+					try (Writer w = new FileWriter(file)) {
+						w.write(world.toString());
+					} catch (IOException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+			}
+		});
+
 	}
 
 	public boolean myKeyPressed(KeyEvent ke) {
 		switch (state) {
 			case NORMAL:
 				if (ke.getKeyCode() == KeyEvent.VK_F2) {
-					//JOptionPane.showMessageDialog(zFrame, "123");//Žluťoučký kůň úpěl ďábelské ódy.");
-					String fileName = "save.map";
-					try {
-						Writer w = new FileWriter(fileName);
-						w.write(world.toString());
-						
-						w.close();
-					} catch (IOException ex) {
-						throw new RuntimeException(ex);
-					}
+					save();
 				}
 				return true;
 		}
@@ -660,13 +625,10 @@ public class View extends ZView {
 	}
 
 	public void delSelectedPoints() {
-		for (Point iP : selectedPoints) {
-			world.removePoint(iP);
+		for (Point point : selectedPoints) {
+			world.removePoint(point);
 		}
 		selectedPoints.clear();
-	}
-
-	private void selectPoint(Point p) {
 	}
 
 	@Override

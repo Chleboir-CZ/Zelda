@@ -4,8 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import net.trdlo.zelda.GameObjectInstance;
-import net.trdlo.zelda.SimplyAnimatedObject;
 import net.trdlo.zelda.exceptions.MapLoadException;
 
 

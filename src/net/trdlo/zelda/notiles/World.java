@@ -1,12 +1,12 @@
 package net.trdlo.zelda.notiles;
 
 import java.awt.Rectangle;
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.trdlo.zelda.ZWorld;
+import net.trdlo.zelda.exceptions.ZException;
 
 /**
  *
@@ -125,5 +125,11 @@ public class World extends ZWorld {
 ////				world.points.add(new Point(Integer.parseInt(readLine[1].split(" ")[0]), Integer.parseInt(readLine[1].split(" ")[1]), readLine[2]));
 //		}
 //	}
+	
+	@Override
+	protected void saveToWriter(BufferedWriter writer) throws ZException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+	
 }
 
