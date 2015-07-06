@@ -1,8 +1,13 @@
 package net.trdlo.zelda.notiles;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.trdlo.zelda.exceptions.ZException;
 
 public class Point {
 
@@ -64,10 +69,17 @@ public class Point {
 //	}
 	@Override
 	public String toString() {
-		//"".matches("patern", array)
 		return "Point [" + x + ";" + y + "]" + (description != null ? description : "");
 	}
 
+	public void saveToWriter(BufferedWriter writer, int saveId) throws ZException {
+		try {
+			writer.write("Point " + saveId + " [" + x + ";" + y + "]" + (description != null ? description : ""));
+		} catch (IOException ex) {
+			throw new ZException("An IO exception occured while writing point.", ex);
+		}
+	}
+	
 	public double getX() {
 		return x;
 	}

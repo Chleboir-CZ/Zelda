@@ -20,10 +20,12 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.ZView;
+import net.trdlo.zelda.exceptions.ZException;
 
 /*
  TODO
@@ -86,11 +88,12 @@ public class View extends ZView {
 		console = new ArrayList<>();
 
 		fileChooser = new JFileChooser();
-		fileChooser.addChoosableFileFilter(new FileFilter(){
+		fileChooser.addChoosableFileFilter(new FileFilter() {
 			@Override
 			public boolean accept(File f) {
 				return f.isDirectory() || f.getName().endsWith(".txt");
 			}
+
 			@Override
 			public String getDescription() {
 				return "Zelda files";
@@ -593,24 +596,42 @@ public class View extends ZView {
 				int returnVal = fileChooser.showSaveDialog(zFrame);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fileChooser.getSelectedFile();
-					try (Writer w = new FileWriter(file)) {
-						w.write(world.toString());
-					} catch (IOException ex) {
-						throw new RuntimeException(ex);
+					try {
+						world.saveToFile(file, false);
+					} catch (ZException ex) {
+						JOptionPane.showMessageDialog(zFrame, "Saving failed.");
+						Logger.getLogger(View.class.getName()).log(Level.SEVERE, "Saving failed.", ex);
 					}
 				}
 			}
 		});
-
 	}
-
+	
+	private void load() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				int returnVal = fileChooser.showOpenDialog(zFrame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fileChooser.getSelectedFile();
+					//TODO
+				}
+			}
+		});
+	}
+	
 	public boolean myKeyPressed(KeyEvent ke) {
 		switch (state) {
 			case NORMAL:
 				if (ke.getKeyCode() == KeyEvent.VK_F2) {
 					save();
+					return true;
 				}
-				return true;
+				if (ke.getKeyCode() == KeyEvent.VK_F3) {
+					load();
+					return true;
+				}
+
 		}
 		return false;
 	}

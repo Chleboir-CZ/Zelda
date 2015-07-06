@@ -1,4 +1,5 @@
-Point [200.0;200.0] ""
-Point [407.0;400.0] ""
+Point 0 [200.0;200.0]
+Point 1 [200.0;390.0]blbost
+Point 2 [407.0;400.0]blbost
 Line 0 1
 Line 1 2
