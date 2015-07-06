@@ -1,7 +1,6 @@
 package net.trdlo.zelda.tiled;
 
 import java.awt.image.BufferedImage;
-import net.trdlo.zelda.Identifiable;
 
 
 public class Tile implements Identifiable {

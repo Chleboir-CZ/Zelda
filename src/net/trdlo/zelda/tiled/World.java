@@ -2,6 +2,7 @@ package net.trdlo.zelda.tiled;
 
 import net.trdlo.zelda.exceptions.MapLoadException;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -13,13 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import net.trdlo.zelda.GameObject;
-import net.trdlo.zelda.GameObjectInstance;
-import net.trdlo.zelda.Identifiable;
-import net.trdlo.zelda.Tree;
 import net.trdlo.zelda.ZWorld;
-
+import net.trdlo.zelda.exceptions.ZException;
 
 public class World extends ZWorld {
 
@@ -45,7 +44,7 @@ public class World extends ZWorld {
 			objects.add(new Tree());
 			objects.add(new Bird(this));
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			throw new MapLoadException("Map could not be loaded: an I/O Exception occurred", ex);
 		}
 
 		BufferedReader r;
@@ -63,17 +62,7 @@ public class World extends ZWorld {
 			map = new TileInstance[mapWidth * mapHeight];
 			int row = 0;
 
-			Map<Character, Identifiable> dictionary = new HashMap<>();
-			for (Identifiable idable : tiles) {
-				if (dictionary.put(idable.getIdentifier(), idable) != null) {
-					throw new MapLoadException("Duplicate key usage: " + idable.getIdentifier());
-				}
-			}
-			for (Identifiable idable : objects) {
-				if (dictionary.put(idable.getIdentifier(), idable) != null) {
-					throw new MapLoadException("Duplicate key usage: " + idable.getIdentifier());
-				}
-			}
+			Map<Character, Identifiable> dictionary = buildIdentifiableDictionary();
 
 			while ((line = r.readLine()) != null) {
 				if (row == mapHeight) {
@@ -99,7 +88,7 @@ public class World extends ZWorld {
 							GameObjectInstance goInstance = gObject.getInstance(i, row, null);
 							objectInstances.add(goInstance);
 						} else if (idable == null) {
-							System.err.println("No object or tile defined for '" + tileChar + "'!");
+							throw new MapLoadException("No known object or tile defined for '" + tileChar + "' found");
 						}
 
 					}
@@ -116,16 +105,48 @@ public class World extends ZWorld {
 			Collections.sort(objectInstances, GameObjectInstance.zIndexComparator);
 
 		} catch (FileNotFoundException ex) {
-			throw new MapLoadException("Map file not found (" + fileName + ")", ex);
+			throw new MapLoadException("Map file not found (" + fileName + ").", ex);
 		} catch (IOException ex) {
-			throw new MapLoadException("Some IO error occured...", ex);
+			throw new MapLoadException("Some I/O error occured.", ex);
+		} catch (ZException ex) {
+			throw new MapLoadException("Could not bulid dictionaty.", ex);
 		}
+	}
+
+	private Map<Character, Identifiable> buildIdentifiableDictionary() throws ZException {
+		Map<Character, Identifiable> dictionary = new HashMap<>();
+		for (Identifiable idable : tiles) {
+			if (dictionary.put(idable.getIdentifier(), idable) != null) {
+				throw new ZException("Duplicate key usage: " + idable.getIdentifier());
+			}
+		}
+		for (Identifiable idable : objects) {
+			if (dictionary.put(idable.getIdentifier(), idable) != null) {
+				throw new ZException("Duplicate key usage: " + idable.getIdentifier());
+			}
+		}
+		return dictionary;
 	}
 
 	@Override
 	public void update() {
 		for (GameObjectInstance obj : objectInstances) {
 			obj.update();
+		}
+	}
+
+	@Override
+	protected void saveToWriter(BufferedWriter writer) throws ZException {
+		try {
+			writer.write(String.valueOf(mapWidth) + "\n" + String.valueOf(mapHeight) + "\n");
+			for (int y = 0; y < mapHeight; y++) {
+				for (int x = 0; x < mapWidth; x++) {
+					writer.write(map[x + y * mapWidth].getTile().getIdentifier());
+				}
+				writer.write("\n");
+			}
+		} catch (IOException ex) {
+			throw new ZException("Could not save, I/O error occurred.", ex);
 		}
 	}
 }

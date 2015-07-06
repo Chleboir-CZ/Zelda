@@ -7,7 +7,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import net.trdlo.zelda.GameObjectInstance;
 import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.ZView;
 
