@@ -16,6 +16,8 @@ public class Line {
 		l.A = A;
 		l.B = B;
 		l.refreshCoefs();
+		l.A.addChangeListener(l);
+		l.B.addChangeListener(l);
 		return l;
 	}
 
