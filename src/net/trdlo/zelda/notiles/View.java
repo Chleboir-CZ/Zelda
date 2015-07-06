@@ -122,10 +122,10 @@ public class View extends ZView {
 							case NORMAL:
 								if (me.getButton() == MouseEvent.BUTTON1) {
 									if (clickedPoint != null) {
-										dragLine = new Line(clickedPoint, tempPoint);
+										dragLine = Line.constructFromTwoPoints(clickedPoint, tempPoint);
 									} else {
 										world.points.add(tempPoint);
-										dragLine = new Line(tempPoint, new Point(tempPoint.getX() + 1, tempPoint.getY() + 1));
+										dragLine = Line.constructFromTwoPoints(tempPoint, new Point(tempPoint.getX() + 1, tempPoint.getY() + 1));
 									}
 									state = ViewState.POLY_LINE;
 								}
@@ -178,7 +178,7 @@ public class View extends ZView {
 						case NORMAL:
 							if (me.getButton() == MouseEvent.BUTTON1) {
 								if (clickedPoint != null) {
-									dragLine = new Line(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
+									dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
 									state = ViewState.DRAG_LINE;
 								} else {
 									dragStart = new Point(me.getX(), me.getY());
@@ -370,7 +370,7 @@ public class View extends ZView {
 		defaultStroke = graphics.getStroke();
 		defaultFont = graphics.getFont();
 		graphics.setStroke(dashedStroke);
-		for (Line line : world.ray.rayTraceEffect(world.lines)) {
+		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
 			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
 		}
 		if (dragStart != null && dragEnd != null) {
@@ -518,7 +518,7 @@ public class View extends ZView {
 					} else {
 						world.lines.add(dragLine);
 						world.points.add(dragLine.B);
-						dragLine = new Line(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
+						dragLine = Line.constructFromTwoPoints(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
 					}
 				}
 				break;
