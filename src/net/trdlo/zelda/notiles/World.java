@@ -9,6 +9,8 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.trdlo.zelda.ZWorld;
 
 /**
@@ -135,12 +137,36 @@ public class World extends ZWorld {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		for (Point p : points) {
-			sb.append(p.toString());
+		
+		for (int i = 0; i < points.size(); i++) {
+//			sb.append(i);
+			sb.append(points.get(i).toString());
+			sb.append("\n");
+			i++;
+		}
+		
+		for (Line l : lines) {
+			sb.append("Line ");
+			sb.append(points.indexOf(l.A) + " " + points.indexOf(l.B));
 			sb.append("\n");
 		}
 		return sb.toString();
 	}
+	
+//	public static World fromString(String s) {
+//		World world = new World();
+//		Pattern intPattern = Pattern.compile("");
+//		Pattern descrPattern = Pattern.compile("\".*\"");
+//		String[] stgArray = s.split("\n");
+//		for(int i = 0; i < stgArray.length; i++) {
+//			Matcher intMatcher = intPattern.matcher(stgArray[i]);
+//			
+////			String[] readLine = stgArray[i].split(" ");
+////			if("Point".equals(readLine[0])) {
+////				readLine[1] = readLine[1].replaceAll("\\D+", " ");
+////				world.points.add(new Point(Integer.parseInt(readLine[1].split(" ")[0]), Integer.parseInt(readLine[1].split(" ")[1]), readLine[2]));
+//		}
+//	}
 }
 
 class LineAndBool {

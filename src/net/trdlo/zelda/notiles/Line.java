@@ -182,6 +182,15 @@ public class Line {
 //
 //		return purifiedRay;
 //	}
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Line");
+		sb.append(this.A.toString());
+		sb.append(";");
+		sb.append(B.toString());
+		sb.append("\n");
+		return sb.toString();
+	}
 }
 
 

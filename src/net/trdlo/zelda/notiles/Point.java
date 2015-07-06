@@ -18,14 +18,19 @@ public class Point {
 	boolean ignoreUnregisters = false;
 	
 	
-	public Point(double x, double y) {
+	public Point(double x, double y, String description) {
 		this.x = x;
 		this.y = y;
+		this.description = description;
 		changeListeners = new HashSet<>(); 
 	}
 	
+	public Point(double x, double y) {
+		this(x, y, "");
+	}	
+		
 	public Point(java.awt.Point awtPoint) {
-		this(awtPoint.x, awtPoint.y);
+		this(awtPoint.x, awtPoint.y, "");
 	}
 	
 	public java.awt.Point getJavaPoint() {
@@ -62,7 +67,8 @@ public class Point {
 	
 	@Override
 	public String toString() {
-		return "[" + x + "; " + y + "] \"" + (description != null ? description : "") + "\"";
+		//"".matches("patern", array)
+		return "Point [" + x + ";" + y + "]" + (description != null ? description : "");
 	}
 
 	public double getX() {
