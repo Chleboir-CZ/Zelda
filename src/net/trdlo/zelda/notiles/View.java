@@ -9,9 +9,6 @@ import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -614,7 +611,12 @@ public class View extends ZView {
 				int returnVal = fileChooser.showOpenDialog(zFrame);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fileChooser.getSelectedFile();
-					//TODO
+					/*try {
+						world = World.loadFromFile(file, false);
+					} catch (ZException ex) {
+						JOptionPane.showMessageDialog(zFrame, "Saving failed.");
+						Logger.getLogger(View.class.getName()).log(Level.SEVERE, "Saving failed.", ex);
+					}*/
 				}
 			}
 		});
