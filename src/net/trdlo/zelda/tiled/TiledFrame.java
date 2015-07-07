@@ -1,9 +1,8 @@
 package net.trdlo.zelda.tiled;
 
+import java.io.File;
 import net.trdlo.zelda.ZFrame;
-import net.trdlo.zelda.exceptions.MapLoadException;
 import net.trdlo.zelda.exceptions.ZException;
-
 
 public class TiledFrame extends ZFrame {
 
@@ -14,11 +13,7 @@ public class TiledFrame extends ZFrame {
 		addKeyListener(this);
 //		addMouseListener(this);
 
-		try {
-			world = new World("maps/small.txt");
-		} catch (MapLoadException ex) {
-			throw new ZException("Game can't begin, map did no load well.", ex);
-		}
+		world = World.loadFromFile(new File("maps/small.txt"), false);
 
 		mainView = new WorldView((World) world, this);
 		addMouseListener(mainView);
