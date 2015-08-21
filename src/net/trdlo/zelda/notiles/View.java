@@ -42,7 +42,7 @@ import net.trdlo.zelda.exceptions.ZException;
  */
 enum ViewState {
 
-	NORMAL, DRAG_LINE, DRAG_RECT, POLY_LINE, TYPING
+	NORMAL, DRAG_LINE, DRAG_RECT, POLY_LINE, TYPING, MOVING_POINTS
 }
 
 public class View extends ZView {
@@ -70,7 +70,11 @@ public class View extends ZView {
 	private final Stroke dashedStroke;
 	private final Stroke selectionStroke;
 	private Font defaultFont;
-
+	
+	private java.awt.Point lastMPosition;
+	double offsetX;
+	double offsetY;	
+	
 	JFileChooser fileChooser;
 
 	public View(World world, ZFrame zFrame) {
@@ -108,7 +112,7 @@ public class View extends ZView {
 		while ((me = mouseEventQueue.poll()) != null) {
 
 			Point clickedPoint = this.getPointAt(me.getX(), me.getY());
-			Point tempPoint = new Point(me.getX(), me.getY());
+			//Point tempPoint = ;
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED: {
 //					console.add("Event! Count = " + me.getClickCount() + "; Thread-ID: " + Thread.currentThread().getId() + "\n");
@@ -138,11 +142,13 @@ public class View extends ZView {
 								break;
 							case NORMAL:
 								if (me.getButton() == MouseEvent.BUTTON1) {
+									
 									if (clickedPoint != null) {
-										dragLine = Line.constructFromTwoPoints(clickedPoint, tempPoint);
+										dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(me.getX(), me.getY()));
 									} else {
-										world.points.add(tempPoint);
-										dragLine = Line.constructFromTwoPoints(tempPoint, new Point(tempPoint.getX() + 1, tempPoint.getY() + 1));
+										Point newPoint = new Point(me.getX(), me.getY());
+										world.points.add(newPoint);
+										dragLine = Line.constructFromTwoPoints(newPoint, new Point(me.getX(), me.getY()));
 									}
 									state = ViewState.POLY_LINE;
 								}
@@ -203,8 +209,12 @@ public class View extends ZView {
 									state = ViewState.DRAG_RECT;
 								}
 							} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
-								movingPoint = clickedPoint;
+								double offsetX = clickedPoint.getX() - me.getX();
+								double offsetY = clickedPoint.getY() - me.getY();
 							}
+							break;
+						case MOVING_POINTS:
+							
 							break;
 						default:
 							//tak nedelej nic...
@@ -307,7 +317,7 @@ public class View extends ZView {
 				case MouseEvent.MOUSE_DRAGGED:
 					switch (state) {
 						case DRAG_LINE:
-							dragLine.setB(tempPoint);
+							dragLine.setB(new Point(me.getX(), me.getY()));
 							break;
 						case DRAG_RECT:
 							dragEnd.setX(me.getX());
@@ -324,8 +334,17 @@ public class View extends ZView {
 							break;
 						case NORMAL:
 							if (movingPoint != null) {
-								movingPoint.setXY(me.getX(), me.getY());
+								double offsetX = movingPoint.getX() - me.getX();
+								double offsetY = movingPoint.getY() - me.getY();
+								movingPoint.setXY(me.getX() + offsetX, me.getY() + offsetY);
+								for(Point p : selectedPoints) {
+									offsetX = p.getX() - lastMPosition.x;
+									offsetY = p.getY() - lastMPosition.y;
+									p.setXY(me.getX() + offsetX, me.getY() + offsetY);
+								}
 							}
+							break;
+						case MOVING_POINTS:
 							break;
 						default:
 							//tak nedelej nic...
@@ -341,7 +360,7 @@ public class View extends ZView {
 
 							break;
 						case POLY_LINE:
-							dragLine.setB(tempPoint);
+							dragLine.setB(new Point(me.getX(), me.getY()));
 							break;
 						case TYPING:
 
@@ -355,6 +374,7 @@ public class View extends ZView {
 					}
 					break;
 			}
+			lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		}
 
 		KeyEvent ke;

@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.trdlo.zelda.exceptions.ZException;
 
 public class Point {
