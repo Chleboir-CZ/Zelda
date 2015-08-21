@@ -3,6 +3,7 @@ package net.trdlo.zelda.notiles;
 import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +56,9 @@ public class World extends ZWorld {
 		return world;
 	}
 
-	public static World loadWorldFromReader(BufferedReader reader) throws ZException {
+	public static World loadFromFile(File file, boolean compress) throws ZException {
+		BufferedReader reader = getReader(file, compress);
+		
 		String inputLine;
 		World world = new World();
 		Pattern pointPattern = Pattern.compile("^\\s*point\\s*(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
