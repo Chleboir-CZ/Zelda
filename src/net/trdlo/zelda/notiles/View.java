@@ -68,16 +68,24 @@ public class View extends ZView {
 	private final Stroke selectionStroke;
 	private Font defaultFont;
 	
+	private double x;
+	private double y;
+	
+	public int viewSizeX;
+	public int viewSizeY;
+	
 	private java.awt.Point lastMPosition;
-	double offsetX;
-	double offsetY;	
+	private double zoom;
+	
+	private double offsetX;
+	private double offsetY;
 	
 	JFileChooser fileChooser;
 
 	public View(World world, ZFrame zFrame) {
 		this.world = world;
 		this.zFrame = zFrame;
-
+		
 		mouseEventQueue = new SynchronousQueue<>();
 		keyEventQueue = new SynchronousQueue<>();
 
@@ -87,7 +95,9 @@ public class View extends ZView {
 		selectionStroke = new BasicStroke(2);
 
 		console = new ArrayList<>();
-
+		x = 0;
+		y = 0;
+		
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
 			@Override
@@ -143,9 +153,9 @@ public class View extends ZView {
 									if (clickedPoint != null) {
 										dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(me.getX(), me.getY()));
 									} else {
-										Point newPoint = new Point(me.getX(), me.getY());
+										Point newPoint = new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY()));
 										world.points.add(newPoint);
-										dragLine = Line.constructFromTwoPoints(newPoint, new Point(me.getX(), me.getY()));
+										dragLine = Line.constructFromTwoPoints(newPoint, new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY())));
 									}
 									state = ViewState.POLY_LINE;
 								}
@@ -171,8 +181,12 @@ public class View extends ZView {
 								if (me.getButton() == MouseEvent.BUTTON2) {
 									world.removePoint(clickedPoint);
 								}
-								//TODO
-								selectedPoints.clear();
+								if(me.getButton() == MouseEvent.BUTTON3) {
+									selectedPoints.add(clickedPoint);
+								}
+								else {
+									selectedPoints.clear();
+								}
 								break;
 							default:
 								break;
@@ -201,13 +215,14 @@ public class View extends ZView {
 									dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
 									state = ViewState.DRAG_LINE;
 								} else {
-									dragStart = new Point(me.getX(), me.getY());
-									dragEnd = new Point(me.getX(), me.getY());
+									dragStart = new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY()));
+									dragEnd = new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY()));
 									state = ViewState.DRAG_RECT;
 								}
 							} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
-								double offsetX = clickedPoint.getX() - me.getX();
-								double offsetY = clickedPoint.getY() - me.getY();
+								movingPoint = clickedPoint;
+								offsetX = worldToViewX(clickedPoint.getX() - me.getX());
+								offsetY = worldToViewY(clickedPoint.getY() - me.getY());
 							}
 							break;
 						case MOVING_POINTS:
@@ -314,11 +329,11 @@ public class View extends ZView {
 				case MouseEvent.MOUSE_DRAGGED:
 					switch (state) {
 						case DRAG_LINE:
-							dragLine.setB(new Point(me.getX(), me.getY()));
+							dragLine.setB(new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY())));
 							break;
 						case DRAG_RECT:
-							dragEnd.setX(me.getX());
-							dragEnd.setY(me.getY());
+							dragEnd.setX(viewToWorldX(me.getX()));
+							dragEnd.setY(viewToWorldY(me.getY()));
 							for (Point iP : world.pointsInRect(dragStart, dragEnd)) {
 								selectedPoints.add(iP);
 							}
@@ -331,14 +346,17 @@ public class View extends ZView {
 							break;
 						case NORMAL:
 							if (movingPoint != null) {
-								double offsetX = movingPoint.getX() - me.getX();
-								double offsetY = movingPoint.getY() - me.getY();
-								movingPoint.setXY(me.getX() + offsetX, me.getY() + offsetY);
+								movingPoint.setXY(viewToWorldX(me.getX() + offsetX), viewToWorldY(me.getY() + offsetY));								
 								for(Point p : selectedPoints) {
-									offsetX = p.getX() - lastMPosition.x;
-									offsetY = p.getY() - lastMPosition.y;
-									p.setXY(me.getX() + offsetX, me.getY() + offsetY);
+									if (p == movingPoint) {
+										continue;
+									}
+									offsetX = worldToViewX(p.getX() - lastMPosition.x);
+									offsetY = worldToViewY(p.getY() - lastMPosition.y);
+									p.setXY(viewToWorldX(me.getX() + offsetX), viewToWorldY(me.getY() + offsetY));
 								}
+								offsetX = worldToViewX(movingPoint.getX() - me.getX());
+								offsetY = worldToViewY(movingPoint.getY() - me.getY());
 							}
 							break;
 						case MOVING_POINTS:
@@ -357,7 +375,7 @@ public class View extends ZView {
 
 							break;
 						case POLY_LINE:
-							dragLine.setB(new Point(me.getX(), me.getY()));
+							dragLine.setB(new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY())));
 							break;
 						case TYPING:
 
@@ -398,18 +416,18 @@ public class View extends ZView {
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
 		for (Line line : world.lines) {
-			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
+			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
 		}
 
 		defaultStroke = graphics.getStroke();
 		defaultFont = graphics.getFont();
 		graphics.setStroke(dashedStroke);
 		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
-			graphics.drawLine((int) line.A.x, (int) line.A.y, (int) line.B.x, (int) line.B.y);
+			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
 		}
 		if (dragStart != null && dragEnd != null) {
-			Rectangle rect = new Rectangle(dragStart.getJavaPoint());
-			rect.add(dragEnd.getJavaPoint());
+			Rectangle rect = new Rectangle(new java.awt.Point(worldToViewXr(dragStart.x), worldToViewYr(dragStart.y)));
+			rect.add(new java.awt.Point(worldToViewXr(dragEnd.x), worldToViewYr(dragEnd.y)));
 
 			graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
@@ -432,10 +450,10 @@ public class View extends ZView {
 
 			textToDraw = textToDraw + "(" + Integer.toString(p.changeListeners.size()) + ")";
 
-			graphics.drawRect((int) p.x - POINT_DISPLAY_SIZE / 2, (int) p.y - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
+			graphics.drawRect(worldToViewXr(p.x) - POINT_DISPLAY_SIZE / 2, worldToViewYr(p.y) - POINT_DISPLAY_SIZE / 2, POINT_DISPLAY_SIZE, POINT_DISPLAY_SIZE);
 
 			if (textToDraw != null) {
-				graphics.drawString(textToDraw, (int) p.x + POINT_DISPLAY_SIZE, (int) p.y + POINT_DISPLAY_SIZE);
+				graphics.drawString(textToDraw, worldToViewXr(p.x) + POINT_DISPLAY_SIZE, worldToViewYr(p.y) + POINT_DISPLAY_SIZE);
 			}
 		}
 
@@ -444,15 +462,15 @@ public class View extends ZView {
 
 		if (dragLine != null) {
 			graphics.setStroke(dashedStroke);
-			graphics.drawLine((int) dragLine.A.x, (int) dragLine.A.y, (int) dragLine.B.x, (int) dragLine.B.y);
+			graphics.drawLine(worldToViewXr(dragLine.A.x), worldToViewYr(dragLine.A.y), worldToViewXr(dragLine.B.x), worldToViewYr(dragLine.B.y));
 			graphics.setStroke(defaultStroke);
 		}
 
 		//graphics.drawString("Paint thread-ID: " + Thread.currentThread().getId() + "\n", 10, 20);
-		int outY = 0;
-		for (String s : console) {
-			graphics.drawString(s, 10, (outY += 16));
-		}
+//		int outY = 0;
+//		for (String s : console) {
+//			graphics.drawString(s, 10, (outY += 16));
+//		}
 
 		try {
 			Thread.sleep(1);
@@ -593,7 +611,7 @@ public class View extends ZView {
 					delSelectedPoints();
 				}
 				if (c == KeyEvent.VK_SPACE) {
-					Point mp = new Point(zFrame.getMousePosition());
+					Point mp = new Point(viewToWorldX(zFrame.getMousePosition().getX()), viewToWorldY(zFrame.getMousePosition().getY()));
 					if (this.getPointAt(mp.x, mp.y) == null) {
 						world.points.add(new Point(mp.x, mp.y));
 					}
@@ -653,20 +671,64 @@ public class View extends ZView {
 					load();
 					return true;
 				}
-
+				if (ke.getKeyCode() == KeyEvent.VK_LEFT)
+					this.x -= 1;
+				if (ke.getKeyCode() == KeyEvent.VK_RIGHT)
+					this.x += 1;
+				if (ke.getKeyCode() == KeyEvent.VK_UP)
+					this.y -= 1;
+				if (ke.getKeyCode() == KeyEvent.VK_DOWN)
+					this.y += 1;
+				break;
 		}
 		return false;
 	}
 
 	public Point getPointAt(double x, double y) {
 		for (Point p : world.points) {
-			if (Math.abs(p.x - x) < POINT_DISPLAY_SIZE / 2 && Math.abs(p.y - y) < POINT_DISPLAY_SIZE / 2) {
+			if (Math.abs(p.x - x - this.x) < POINT_DISPLAY_SIZE / 2 && Math.abs(p.y - y - this.y) < POINT_DISPLAY_SIZE / 2) {
 				return p;
 			}
 		}
 		return null;
 	}
+	
+	public Point createPointAt(double x, double y, String description) {
+		return new Point(viewToWorldX(x), viewToWorldY(y), description);
+	}
+	
+	public double worldToViewX(double x) {
+		return x - this.x;
+	}
+	
+	public double worldToViewY(double y) {
+		return y - this.y;
+	}
+		
+	public double viewToWorldX(double x) {
+		return x + this.x;
+	}
+	
+	public double viewToWorldY(double y) {
+		return y + this.y;
+	}
 
+	public int worldToViewXr(double x) {
+		return (int)worldToViewX(x);
+	}
+	
+	public int worldToViewYr(double y) {
+		return (int)worldToViewY(y);
+	}
+		
+	public int viewToWorldXr(double x) {
+		return (int)viewToWorldX(x);
+	}
+	
+	public int viewToWorldYr(double y) {
+		return (int)viewToWorldY(y);
+	}
+	
 	public void delSelectedPoints() {
 		for (Point point : selectedPoints) {
 			world.removePoint(point);
@@ -700,5 +762,13 @@ public class View extends ZView {
 		} catch (InterruptedException ex) {
 			Logger.getLogger(View.class.getName()).log(Level.SEVERE, null, ex);
 		}
+	}
+	
+	public double getX() {
+		return x;
+	}
+	
+	public double getY() {
+		return y;
 	}
 }

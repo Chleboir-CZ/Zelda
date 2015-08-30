@@ -34,6 +34,9 @@ public class World extends ZWorld {
 
 	List<Line> lines;
 	List<Point> points;
+	
+	public double worldSizeX;
+	public double worldSizeY;
 
 	//dočasný pokusný paprsek, časem pude do kšá
 	Line ray;

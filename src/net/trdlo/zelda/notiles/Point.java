@@ -28,7 +28,10 @@ public class Point {
 	public Point(double x, double y) {
 		this(x, y, "");
 	}	
-		
+	
+	public static Point constructPointFromView(double x, double y, String description, View view) {
+		return view.createPointAt(x, y, description);
+	}
 
 	public Point(java.awt.Point awtPoint) {
 		this(awtPoint.x, awtPoint.y, "");
