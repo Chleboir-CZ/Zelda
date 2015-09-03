@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -97,6 +98,7 @@ public class View extends ZView {
 		console = new ArrayList<>();
 		x = 0;
 		y = 0;
+		zoom = 1.5;
 		
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
@@ -195,7 +197,7 @@ public class View extends ZView {
 				}
 				break;
 				case MouseEvent.MOUSE_PRESSED:
-					Point temp = this.getPointAt(me.getX(), me.getY());
+//					Point temp = this.getPointAt(me.getX(), me.getY());
 					switch (state) {
 						case DRAG_LINE:
 
@@ -221,8 +223,8 @@ public class View extends ZView {
 								}
 							} else if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
 								movingPoint = clickedPoint;
-								offsetX = worldToViewX(clickedPoint.getX() - me.getX());
-								offsetY = worldToViewY(clickedPoint.getY() - me.getY());
+								offsetX = (clickedPoint.getX() - viewToWorldX(me.getX()));
+								offsetY = (clickedPoint.getY() - viewToWorldY(me.getY()));
 							}
 							break;
 						case MOVING_POINTS:
@@ -342,21 +344,21 @@ public class View extends ZView {
 
 							break;
 						case TYPING:
-
+							
 							break;
 						case NORMAL:
 							if (movingPoint != null) {
-								movingPoint.setXY(viewToWorldX(me.getX() + offsetX), viewToWorldY(me.getY() + offsetY));								
+								movingPoint.setXY(viewToWorldX(me.getX()) + offsetX, viewToWorldY(me.getY()) + offsetY);								
 								for(Point p : selectedPoints) {
 									if (p == movingPoint) {
 										continue;
 									}
-									offsetX = worldToViewX(p.getX() - lastMPosition.x);
-									offsetY = worldToViewY(p.getY() - lastMPosition.y);
-									p.setXY(viewToWorldX(me.getX() + offsetX), viewToWorldY(me.getY() + offsetY));
+									double xDiff = (p.getX() - viewToWorldX(lastMPosition.x));
+									double yDiff = (p.getY() - viewToWorldY(lastMPosition.y));
+									p.setXY(viewToWorldX(me.getX()) + xDiff, viewToWorldY(me.getY()) + yDiff);
 								}
-								offsetX = worldToViewX(movingPoint.getX() - me.getX());
-								offsetY = worldToViewY(movingPoint.getY() - me.getY());
+								//offsetX = (movingPoint.getX() - viewToWorldX(me.getX()));
+								//offsetY = (movingPoint.getY() - viewToWorldY(me.getY()));
 							}
 							break;
 						case MOVING_POINTS:
@@ -388,6 +390,31 @@ public class View extends ZView {
 							break;
 					}
 					break;
+				//case MouseWheelEvent.
+				case MouseEvent.MOUSE_WHEEL:
+					switch (state) {
+						case DRAG_LINE:
+
+							break;
+						case DRAG_RECT:
+
+							break;
+						case POLY_LINE:
+							
+							break;
+						case TYPING:
+
+							break;
+						case NORMAL:
+							int scroll = ((MouseWheelEvent)me).getWheelRotation();
+							zoom *= Math.pow(1.25, scroll);
+							break;
+						default:
+							//tak nedelej nic...
+							break;
+					}
+					break;
+					
 			}
 			lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		}
@@ -526,7 +553,6 @@ public class View extends ZView {
 		} catch (InterruptedException ex) {
 			Logger.getLogger(View.class.getName()).log(Level.SEVERE, null, ex);
 		}
-
 	}
 
 	@Override
@@ -616,6 +642,10 @@ public class View extends ZView {
 						world.points.add(new Point(mp.x, mp.y));
 					}
 				}
+				if (c == KeyEvent.VK_ADD)
+					zoom *= 1.25;
+				if (c == KeyEvent.VK_MINUS)
+					zoom /= 1.25;
 				break;
 			default:
 
@@ -686,7 +716,7 @@ public class View extends ZView {
 
 	public Point getPointAt(double x, double y) {
 		for (Point p : world.points) {
-			if (Math.abs(p.x - x - this.x) < POINT_DISPLAY_SIZE / 2 && Math.abs(p.y - y - this.y) < POINT_DISPLAY_SIZE / 2) {
+			if (Math.abs((p.x - viewToWorldX(x))) < POINT_DISPLAY_SIZE / 2 && Math.abs((p.y - viewToWorldY(y))) < POINT_DISPLAY_SIZE / 2) {
 				return p;
 			}
 		}
@@ -698,19 +728,23 @@ public class View extends ZView {
 	}
 	
 	public double worldToViewX(double x) {
-		return x - this.x;
+		double dx = x - (this.x + zFrame.getBounds().width / 2);
+		return ((x - dx) + dx * zoom) - this.x;
 	}
 	
 	public double worldToViewY(double y) {
-		return y - this.y;
+		double dy = y - (this.y + zFrame.getBounds().height / 2);
+		return ((y - dy) + dy * zoom) - this.y;
 	}
 		
 	public double viewToWorldX(double x) {
-		return x + this.x;
+		double dx = x - (zFrame.getBounds().width / 2);		
+		return ((x - dx) + (dx / zoom) + this.x);
 	}
 	
 	public double viewToWorldY(double y) {
-		return y + this.y;
+		double dy = y - (zFrame.getBounds().height / 2);		
+		return ((y - dy) + (dy / zoom) + this.y);
 	}
 
 	public int worldToViewXr(double x) {
@@ -770,5 +804,16 @@ public class View extends ZView {
 	
 	public double getY() {
 		return y;
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent mwe) {
+		try {
+			mouseEventQueue.put(mwe);
+			//int scroll = mwe.getWheelRotation();
+			//zoom *= Math.pow(1.25, scroll);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(View.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 }

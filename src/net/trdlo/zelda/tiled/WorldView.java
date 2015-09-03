@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import net.trdlo.zelda.ZFrame;
 import net.trdlo.zelda.ZView;
 
@@ -204,5 +205,10 @@ public class WorldView extends ZView {
 	@Override
 	public void update() {
 
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent mwe) {
+//		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 }

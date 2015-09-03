@@ -17,6 +17,7 @@ public class NoTilesFrame extends ZFrame {
 		mainView = new View((World) world, this);
 		addMouseListener(mainView);
 		addMouseMotionListener(mainView);
+		addMouseWheelListener(mainView);
 		addKeyListener(mainView);
 	}
 
