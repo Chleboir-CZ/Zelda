@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import net.trdlo.zelda.exceptions.MapLoadException;
 
 
 public class Bird extends SimplyAnimatedObject {
@@ -13,7 +12,7 @@ public class Bird extends SimplyAnimatedObject {
 	private World world;
 	public final int FRAME_COUNT = 2;
 
-	public Bird(World world) throws MapLoadException {
+	public Bird(World world) throws Exception {
 		super('^', 1.0f, Z_BIRDSPACE);
 		this.world = world;
 
@@ -24,7 +23,7 @@ public class Bird extends SimplyAnimatedObject {
 			}
 			setImages(img);
 		} catch (IOException ex) {
-			throw new MapLoadException("Bird instantion did not load it's graphics correctly.", ex);
+			throw new Exception("Bird instantion did not load it's graphics correctly.", ex);
 		}
 	}
 

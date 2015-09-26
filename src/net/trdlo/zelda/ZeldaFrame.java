@@ -8,17 +8,23 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
+import java.util.concurrent.SynchronousQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
-import net.trdlo.zelda.exceptions.ZException;
 
+public final class ZeldaFrame extends JFrame implements WindowListener, KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 
-public abstract class ZFrame extends JFrame implements WindowListener, KeyListener {
-
-	protected boolean terminate = false;
+	private boolean terminate = false;
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
@@ -30,21 +36,19 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 	private long totalRenderLength = 0;
 	private int lastRenderCount;
 
-	GraphicsDevice gDevice;
-	BufferStrategy bufferStrategy;
+	private final GraphicsDevice gDevice;
+	private final BufferStrategy bufferStrategy;
 
-	protected Font defaultFont;
+	private final Font defaultFont;
 
-	protected ZWorld world;
-	protected ZView mainView;
+	private final GameInterface gameInterface;
 
-	public ZFrame(String frameCaption) throws ZException {
+	private final SynchronousQueue<KeyEvent> keyEventQueue;
+	private final SynchronousQueue<MouseEvent> mouseEventQueue;
+
+	public ZeldaFrame(String frameCaption, GameInterface gameInterface) {
 		super(frameCaption);
-		initFrame();
-		defaultFont = new Font("Monospaced", Font.BOLD, 12);
-	}
 
-	private void initFrame() {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 		setIgnoreRepaint(true);
@@ -53,7 +57,6 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		//GraphicsDevice[] screenDevices = ge.getScreenDevices(); //u mě dostanu 2 zařízení - levý a pravý monitor
 		gDevice = ge.getDefaultScreenDevice();
-
 		gDevice.setFullScreenWindow(this);
 
 		//if (gDevice.isDisplayChangeSupported()) {
@@ -61,9 +64,25 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 		//}
 		createBufferStrategy(2);
 		bufferStrategy = getBufferStrategy();
+		defaultFont = new Font("Monospaced", Font.BOLD, 12);
+
+		keyEventQueue = new SynchronousQueue<>();
+		mouseEventQueue = new SynchronousQueue<>();
+
+		this.gameInterface = gameInterface;
+		
+		setListeners();
 	}
 
-	protected void render(float renderFraction) {
+	public void setListeners() {
+		addWindowListener(this);
+		addKeyListener(this);
+		addMouseListener(this);
+		addMouseMotionListener(this);
+		addMouseWheelListener(this);
+	}
+
+	private void render(float renderFraction) {
 		long renderStart = getTime();
 
 		Graphics2D g = (Graphics2D) bufferStrategy.getDrawGraphics();
@@ -75,7 +94,7 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 		g.setFont(defaultFont);
 		g.setColor(Color.WHITE);
 
-		mainView.render(g, renderFraction);
+		gameInterface.render(g, renderFraction);
 
 		g.setColor(Color.GREEN);
 
@@ -88,14 +107,59 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 		setRenderLength(getTime() - renderStart);
 	}
 
-	protected void update() {
-		mainView.update();
-		world.update();
+	public void dispatchInput() {
+		KeyEvent e;
+		while ((e = keyEventQueue.poll()) != null) {
+			switch (e.getID()) {
+				case KeyEvent.KEY_TYPED:
+					gameInterface.keyTyped(e);
+					break;
+				case KeyEvent.KEY_PRESSED:
+					gameInterface.keyPressed(e);
+					break;
+				case KeyEvent.KEY_RELEASED:
+					gameInterface.keyReleased(e);
+					break;
+			}
+		}
+		MouseEvent me;
+		while ((me = mouseEventQueue.poll()) != null) {
+			switch (me.getID()) {
+				case MouseEvent.MOUSE_CLICKED:
+					gameInterface.mouseClicked(me);
+					break;
+				case MouseEvent.MOUSE_PRESSED:
+					gameInterface.mousePressed(me);
+					break;
+				case MouseEvent.MOUSE_RELEASED:
+					gameInterface.mouseReleased(me);
+					break;
+				case MouseEvent.MOUSE_MOVED:
+					gameInterface.mouseMoved(me);
+					break;
+				case MouseEvent.MOUSE_ENTERED:
+					gameInterface.mouseEntered(me);
+					break;
+				case MouseEvent.MOUSE_EXITED:
+					gameInterface.mouseExited(me);
+					break;
+				case MouseEvent.MOUSE_DRAGGED:
+					gameInterface.mouseDragged(me);
+					break;
+				case MouseEvent.MOUSE_WHEEL:
+					gameInterface.mouseWheelMoved((MouseWheelEvent) me);
+					break;
+			}
+		}
+	}
 
+	private void update() {
+		dispatchInput();
+		gameInterface.update();
 		updateFrame++;
 	}
 
-	protected void run() {
+	public void run() {
 		while (!terminate) {
 			long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
 
@@ -148,6 +212,9 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 				}
 			}
 		}
+
+		gDevice.setFullScreenWindow(null);
+		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
 	private long getTime() {
@@ -165,11 +232,6 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 
 	private long getAvgRenderLenth() {
 		return totalRenderLength / renderFrame;
-	}
-
-	protected void doneFrame() {
-		gDevice.setFullScreenWindow(null);
-		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
 	public static float getHzFromUpdateCount(float updateCount) {
@@ -196,11 +258,8 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 		return frameStep * UPDATES_FREQ;
 	}
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			terminate = true;
-		}
+	public void terminate() {
+		terminate = true;
 	}
 
 	@Override
@@ -231,13 +290,74 @@ public abstract class ZFrame extends JFrame implements WindowListener, KeyListen
 	public void windowDeactivated(WindowEvent e) {
 	}
 
+	private void keyEvent(KeyEvent e) {
+		try {
+			keyEventQueue.put(e);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
+
 	@Override
 	public void keyTyped(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
-			terminate = true;
+		keyEvent(e);
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		keyEvent(e);
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
+		keyEvent(e);
+	}
+
+	private void mouseEvent(MouseEvent me) {
+		try {
+			mouseEventQueue.put(me);
+		} catch (InterruptedException ex) {
+			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mousePressed(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseExited(MouseEvent me) {
+		mouseEvent(me);
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent mwe) {
+		mouseEvent(mwe);
 	}
 }

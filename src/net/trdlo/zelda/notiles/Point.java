@@ -1,11 +1,8 @@
 package net.trdlo.zelda.notiles;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import net.trdlo.zelda.exceptions.ZException;
 
 public class Point {
 
@@ -29,7 +26,7 @@ public class Point {
 		this(x, y, "");
 	}	
 	
-	public static Point constructPointFromView(double x, double y, String description, View view) {
+	public static Point constructPointFromView(double x, double y, String description, NoTilesGame view) {
 		return view.createPointAt(x, y, description);
 	}
 
@@ -73,13 +70,13 @@ public class Point {
 		return "Point [" + x + ";" + y + "]" + (description != null ? description : "");
 	}
 
-	public void saveToWriter(BufferedWriter writer, int saveId) throws ZException {
+	/*public void saveToWriter(BufferedWriter writer, int saveId) throws ZException {
 		try {
 			writer.write("Point " + saveId + " [" + x + ";" + y + "]" + (description != null ? description : ""));
 		} catch (IOException ex) {
 			throw new ZException("An IO exception occured while writing point.", ex);
 		}
-	}
+	}*/
 	
 	public double getX() {
 		return x;
