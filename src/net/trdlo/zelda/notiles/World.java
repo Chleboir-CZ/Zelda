@@ -1,26 +1,16 @@
 package net.trdlo.zelda.notiles;
 
 import java.awt.Rectangle;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.trdlo.zelda.ZWorld;
-import net.trdlo.zelda.exceptions.ZException;
 
 /**
  *
  * @author chleboir
  */
-public class World extends ZWorld {
+public class World {
 
 	private class UnregisteringLineList extends ArrayList<Line> {
 
@@ -65,7 +55,7 @@ public class World extends ZWorld {
 		return world;
 	}
 
-	public static World loadFromFile(File file, boolean compress) throws ZException {
+	/*public static World loadFromFile(File file, boolean compress) throws ZException {
 		BufferedReader reader = getReader(file, compress);
 
 		String inputLine;
@@ -96,16 +86,11 @@ public class World extends ZWorld {
 			throw new ZException("Could not load. IO error occured", ex);
 		}
 		return world;
-	}
-
-	@Override
-	public void update() {
-		//independentPoints.get(0).y += 1;
-	}
+	}*/
 
 	public Point getPointAt(int x, int y) {
 		for (Point p : this.points) {
-			if (Math.abs(p.x - x) < View.POINT_DISPLAY_SIZE && Math.abs(p.y - y) < View.POINT_DISPLAY_SIZE) {
+			if (Math.abs(p.x - x) < NoTilesGame.POINT_DISPLAY_SIZE && Math.abs(p.y - y) < NoTilesGame.POINT_DISPLAY_SIZE) {
 				return p;
 			}
 		}
@@ -113,7 +98,7 @@ public class World extends ZWorld {
 	}
 
 	/**
-	 * TODO: zobecnit na 4úhelník! Bude potřeba, pokud bude View perspektiva Vrátí kolekci bodů, která je uvnitř obdélníku zadaného dvěma protilehlými rohy
+	 * TODO: zobecnit na 4úhelník! Bude potřeba, pokud bude NoTilesGame perspektiva Vrátí kolekci bodů, která je uvnitř obdélníku zadaného dvěma protilehlými rohy
 	 *
 	 * @param A	jeden roh
 	 * @param B	druhý roh
@@ -179,7 +164,7 @@ public class World extends ZWorld {
 ////				world.points.add(new Point(Integer.parseInt(readLine[1].split(" ")[0]), Integer.parseInt(readLine[1].split(" ")[1]), readLine[2]));
 //		}
 //	}
-	@Override
+	/*@Override
 	protected void saveToWriter(BufferedWriter writer) throws ZException {
 		try {
 			int i = 0;
@@ -196,7 +181,7 @@ public class World extends ZWorld {
 		} catch (IOException ex) {
 			throw new ZException("An IO exception occured.", ex);
 		}
-	}
+	}*/
 
 	public void randomPointGenerator(int number, Point main, Point v, Point u) {
 		Random r = new Random();

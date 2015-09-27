@@ -2,7 +2,7 @@ package net.trdlo.zelda.tiled;
 
 import java.awt.Graphics2D;
 import java.util.Random;
-import net.trdlo.zelda.ZFrame;
+import net.trdlo.zelda.ZeldaFrame;
 
 public class BirdInstance extends GameObjectInstance {
 
@@ -36,8 +36,8 @@ public class BirdInstance extends GameObjectInstance {
 	}
 
 	private void randomSpeedBird() {
-		flatterSpeed = ZFrame.getUpdateCountFromHz(2.0f + r.nextFloat() * 3.0f); //udává, jakou frekvencí se přepínají snímky, ne jakou se opakuje celý cyklus
-		flightSpeed = ZFrame.getFrameStepFromTps(0.5f + r.nextFloat() * 1.5f);
+		flatterSpeed = ZeldaFrame.getUpdateCountFromHz(2.0f + r.nextFloat() * 3.0f); //udává, jakou frekvencí se přepínají snímky, ne jakou se opakuje celý cyklus
+		flightSpeed = ZeldaFrame.getFrameStepFromTps(0.5f + r.nextFloat() * 1.5f);
 		//směr se dává do celého kruhu, tedy i ven, namísto dovnitř mapy, pokud startuje mimo ni
 		//několikanásobné přegenerování není za tak hrozné, za tu logiku to teď nestojí
 		float angle = r.nextFloat() * 2 * (float) Math.PI;

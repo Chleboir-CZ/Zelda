@@ -8,32 +8,36 @@ import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import net.trdlo.zelda.ZFrame;
-import net.trdlo.zelda.ZView;
+import java.io.File;
+import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.GameInterface;
 
 
-public class WorldView extends ZView {
+public class TiledGame implements GameInterface {
 
 	private World world;
 	private float viewX, viewY, dx, dy;
 	private Rectangle bounds;
 
-	private ZFrame zFrame;
+	private ZeldaFrame zFrame;
 
 	private String debugString;
 
-	public WorldView(World world, float startX, float startY, ZFrame zFrame) {
+	public TiledGame(World world, float startX, float startY) {
 		this.world = world;
 		this.viewX = startX;
 		this.viewY = startY;
-		this.zFrame = zFrame;
 
 		dx = -0.1f; //tohle se má brát z vůle hráče a ne být přednastaveno, je to posun o 0.1 * 32px za jeden render
 		dy = -0.1f;
 	}
 
-	public WorldView(World world, ZFrame zFrame) {
-		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f, zFrame);
+	public TiledGame(World world) {
+		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f);
+	}
+	
+	public void setZeldaFrame(ZeldaFrame frame) {
+		this.zFrame = frame;
 	}
 
 	@Override
@@ -189,26 +193,37 @@ public class WorldView extends ZView {
 
 	@Override
 	public void keyTyped(KeyEvent ke) {
-		zFrame.keyTyped(ke);
 	}
 
 	@Override
 	public void keyPressed(KeyEvent ke) {
-		zFrame.keyPressed(ke);
+		if (ke.getKeyCode() == KeyEvent.VK_ESCAPE) {
+			zFrame.terminate();
+		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent ke) {
-		zFrame.keyReleased(ke);
 	}
 
 	@Override
 	public void update() {
-
+		world.update();
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent mwe) {
 //		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
+	
+	public static void main(String[] args) {
+		try {
+			TiledGame game = new TiledGame(World.loadFromFile(new File("maps/small.txt"), false));
+			ZeldaFrame frame = new ZeldaFrame("Tiled Zelda game demo", game);
+			game.setZeldaFrame(frame);			
+			frame.run();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}	
 }
