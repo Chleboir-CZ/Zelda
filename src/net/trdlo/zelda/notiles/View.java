@@ -45,7 +45,7 @@ enum ViewState {
 
 public class View extends ZView {
 
-	public static final int POINT_DISPLAY_SIZE = 32;
+	public static final int POINT_DISPLAY_SIZE = 12;
 
 	private final World world;
 	private final ZFrame zFrame;
@@ -135,7 +135,7 @@ public class View extends ZView {
 								break;
 							case POLY_LINE:
 								if (me.getButton() == MouseEvent.BUTTON1) {
-									if (clickedPoint != null) {
+									if (clickedPoint != null && clickedPoint != dragLine.A) {
 										dragLine.setB(clickedPoint);
 //										world.lines.add()
 									} else {
@@ -184,7 +184,10 @@ public class View extends ZView {
 									world.removePoint(clickedPoint);
 								}
 								if(me.getButton() == MouseEvent.BUTTON3) {
-									selectedPoints.add(clickedPoint);
+									if (clickedPoint != null && !selectedPoints.contains(clickedPoint))
+										selectedPoints.add(clickedPoint);
+									else if (clickedPoint != null)
+										selectedPoints.remove(clickedPoint);
 								}
 								else {
 									selectedPoints.clear();
@@ -269,7 +272,7 @@ public class View extends ZView {
 				case MouseEvent.MOUSE_RELEASED:
 					switch (state) {
 						case DRAG_LINE:
-							if (clickedPoint != null) {
+							if (clickedPoint != null && clickedPoint != dragLine.A) {
 								dragLine.setB(clickedPoint);
 								world.lines.add(dragLine);
 							} else {
@@ -450,7 +453,7 @@ public class View extends ZView {
 		defaultFont = graphics.getFont();
 		graphics.setStroke(dashedStroke);
 		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
-			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
+			//graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
 		}
 		if (dragStart != null && dragEnd != null) {
 			Rectangle rect = new Rectangle(new java.awt.Point(worldToViewXr(dragStart.x), worldToViewYr(dragStart.y)));
@@ -589,7 +592,7 @@ public class View extends ZView {
 				}
 				if (c == KeyEvent.VK_SPACE) {
 					Point clickedPoint = world.getPointAt((int) dragLine.B.getX(), (int) dragLine.B.getY());
-					if (clickedPoint != null) {
+					if (clickedPoint != null && clickedPoint != dragLine.A) {
 						dragLine.setB(clickedPoint);
 						world.points.add(dragLine.B);
 						world.lines.add(dragLine);
@@ -682,8 +685,8 @@ public class View extends ZView {
 					/*try {
 						world = World.loadFromFile(file, false);
 					} catch (ZException ex) {
-						JOptionPane.showMessageDialog(zFrame, "Saving failed.");
-						Logger.getLogger(View.class.getName()).log(Level.SEVERE, "Saving failed.", ex);
+						JOptionPane.showMessageDialog(zFrame, "Loading failed.");
+						Logger.getLogger(View.class.getName()).log(Level.SEVERE, "Loading failed.", ex);
 					}*/
 				}
 			}

@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.ZWorld;
@@ -34,7 +35,7 @@ public class World extends ZWorld {
 
 	List<Line> lines;
 	List<Point> points;
-	
+
 	public double worldSizeX;
 	public double worldSizeY;
 
@@ -46,22 +47,27 @@ public class World extends ZWorld {
 		points = new ArrayList<>();
 		Point.setLinesCollection(lines);
 
-		ray = Line.constructFromTwoPoints(new Point(500, 400), new Point(180, 100));
+//		ray = Line.constructFromTwoPoints(new Point(500, 400), getPointAt(200, 200));
 	}
 
 	public static World createTestWorld() {
 		World world = new World();
-
-		world.points.add(new Point(200, 200));
-		world.points.add(new Point(200, 390));
-		world.points.add(new Point(407, 400));
-		world.points.get(0).lineTo(world.points.get(1)).lineTo(world.points.get(2));
+		Point p = new Point(500, 800);
+		Point q = new Point(200, 200);
+		Point r = new Point(800, 200);
+		
+		world.points.add(p);
+		world.points.add(q);
+		world.points.add(r);
+		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));		
+		world.ray = Line.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
+		world.points.get(0).lineTo(world.points.get(1)).lineTo(world.points.get(2)).lineTo(world.points.get(0));
 		return world;
 	}
 
 	public static World loadFromFile(File file, boolean compress) throws ZException {
 		BufferedReader reader = getReader(file, compress);
-		
+
 		String inputLine;
 		World world = new World();
 		Pattern pointPattern = Pattern.compile("^\\s*point\\s*(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
@@ -192,4 +198,23 @@ public class World extends ZWorld {
 		}
 	}
 
+	public void randomPointGenerator(int number, Point main, Point v, Point u) {
+		Random r = new Random();
+		List<Point> pointsList = new ArrayList<>();
+		
+		for (int i = 0; i < number; i++) {
+			double r1, r2;
+			do {
+				r1 = r.nextDouble();
+				r2 = r.nextDouble();
+			} while (r1 + r2 > 1);
+			double x = main.x + r1 * v.x + r2 * u.x;
+			double y = main.y + r1 * v.y + r2 * u.y;
+			Point p = new Point(x, y);
+			pointsList.add(p);
+			if(pointsList.indexOf(p) >= 1)
+				p.lineTo(pointsList.get(pointsList.indexOf(p) - 1));
+		}
+		points.addAll(pointsList);
+	}
 }
