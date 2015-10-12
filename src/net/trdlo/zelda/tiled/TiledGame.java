@@ -11,9 +11,10 @@ import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import net.trdlo.zelda.ZeldaFrame;
 import net.trdlo.zelda.GameInterface;
+import net.trdlo.zelda.InputListener;
 
 
-public class TiledGame implements GameInterface {
+public class TiledGame implements GameInterface, InputListener {
 
 	private World world;
 	private float viewX, viewY, dx, dy;
@@ -226,4 +227,9 @@ public class TiledGame implements GameInterface {
 			ex.printStackTrace();
 		}
 	}	
+
+	@Override
+	public InputListener getInputListener() {
+		return this;
+	}
 }
