@@ -112,13 +112,13 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((e = keyEventQueue.poll()) != null) {
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
-					gameInterface.getInputListener().keyTyped(e);
+					gameInterface.keyTyped(e);
 					break;
 				case KeyEvent.KEY_PRESSED:
-					gameInterface.getInputListener().keyPressed(e);
+					gameInterface.keyPressed(e);
 					break;
 				case KeyEvent.KEY_RELEASED:
-					gameInterface.getInputListener().keyReleased(e);
+					gameInterface.keyReleased(e);
 					break;
 			}
 		}
@@ -126,28 +126,28 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((me = mouseEventQueue.poll()) != null) {
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
-					gameInterface.getInputListener().mouseClicked(me);
+					gameInterface.mouseClicked(me);
 					break;
 				case MouseEvent.MOUSE_PRESSED:
-					gameInterface.getInputListener().mousePressed(me);
+					gameInterface.mousePressed(me);
 					break;
 				case MouseEvent.MOUSE_RELEASED:
-					gameInterface.getInputListener().mouseReleased(me);
+					gameInterface.mouseReleased(me);
 					break;
 				case MouseEvent.MOUSE_MOVED:
-					gameInterface.getInputListener().mouseMoved(me);
+					gameInterface.mouseMoved(me);
 					break;
 				case MouseEvent.MOUSE_ENTERED:
-					gameInterface.getInputListener().mouseEntered(me);
+					gameInterface.mouseEntered(me);
 					break;
 				case MouseEvent.MOUSE_EXITED:
-					gameInterface.getInputListener().mouseExited(me);
+					gameInterface.mouseExited(me);
 					break;
 				case MouseEvent.MOUSE_DRAGGED:
-					gameInterface.getInputListener().mouseDragged(me);
+					gameInterface.mouseDragged(me);
 					break;
 				case MouseEvent.MOUSE_WHEEL:
-					gameInterface.getInputListener().mouseWheelMoved((MouseWheelEvent) me);
+					gameInterface.mouseWheelMoved((MouseWheelEvent) me);
 					break;
 			}
 		}

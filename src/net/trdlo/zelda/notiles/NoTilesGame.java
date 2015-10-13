@@ -668,9 +668,4 @@ public class NoTilesGame implements GameInterface, InputListener {
 			ex.printStackTrace();
 		}
 	}
-
-	@Override
-	public InputListener getInputListener() {
-		return this;
-	}
 }
