@@ -19,6 +19,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
+import net.trdlo.zelda.GameInterface;
+import net.trdlo.zelda.InputListener;
 import net.trdlo.zelda.ZeldaFrame;
 
 /*
@@ -39,7 +41,7 @@ enum ViewState {
 	NORMAL, DRAG_LINE, DRAG_RECT, POLY_LINE, TYPING, MOVING_POINTS
 }
 
-public class NoTilesGame implements net.trdlo.zelda.GameInterface {
+public class NoTilesGame implements GameInterface, InputListener {
 
 	public static final int POINT_DISPLAY_SIZE = 32;
 
@@ -715,5 +717,10 @@ public class NoTilesGame implements net.trdlo.zelda.GameInterface {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public InputListener getInputListener() {
+		return this;
 	}
 }
