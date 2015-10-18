@@ -8,7 +8,7 @@ public class Line {
 	/**
 	 * Prázdný konstruktor používaný jen místními statickými továrními metodami
 	 */
-	private Line() {
+	protected Line() {
 	}
 
 	public static Line constructFromTwoPoints(Point A, Point B) {
@@ -16,8 +16,6 @@ public class Line {
 		l.A = A;
 		l.B = B;
 		l.refreshCoefs();
-		l.A.addChangeListener(l);
-		l.B.addChangeListener(l);
 		return l;
 	}
 
@@ -28,8 +26,6 @@ public class Line {
 		l.A = A;
 		l.B = new Point(A.x - b, A.y + a);
 		l.c = -a * A.x - b * A.y;
-		l.A.addChangeListener(l);
-		l.B.addChangeListener(l);
 		return l;
 	}
 
@@ -40,8 +36,6 @@ public class Line {
 		l.A = A;
 		l.B = new Point(A.x + a, A.y + b);
 		l.c = b * A.x - a * A.y;
-		l.A.addChangeListener(l);
-		l.B.addChangeListener(l);
 		return l;
 	}
 
@@ -60,20 +54,12 @@ public class Line {
 	}
 
 	public void setA(Point A) {
-		if (this.A != null) {
-			this.A.removeChangeListener(this);
-		}
 		this.A = A;
-		A.addChangeListener(this);
 		refreshCoefs();
 	}
 
 	public void setB(Point B) {
-		if (this.B != null) {
-			this.B.removeChangeListener(this);
-		}
 		this.B = B;
-		B.addChangeListener(this);
 		refreshCoefs();
 	}
 
@@ -107,21 +93,13 @@ public class Line {
 	 * @param mirror	osa souměrnosti
 	 * @return	obraz přes osu souměrnosti mirror
 	 */
-	public Line mirrorReflection(Line mirror) {
+	public Line mirrorReflection(WorldLine mirror) {
 		Point intersect = this.intersectPoint(mirror);
 		Line lineNormal = constructFromPointAndVector(intersect, mirror.a, mirror.b);
 		Line lineParalell = constructFromPointAndNormal(A, mirror.a, mirror.b);
 		Point S = lineParalell.intersectPoint(lineNormal);
 		Point reflectedA = new Point(2 * S.x - A.x, 2 * S.y - A.y);
 		return Line.constructFromTwoPoints(intersect, reflectedA);
-	}
-
-	/**
-	 * Odregistruje se z role listenera u svývh koncových bodů
-	 */
-	public void unregister() {
-		A.removeChangeListener(this);
-		B.removeChangeListener(this);
 	}
 
 	@Override
