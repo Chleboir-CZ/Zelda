@@ -12,32 +12,32 @@ import java.util.Random;
  */
 public class World {
 
-	private class UnregisteringLineList extends ArrayList<Line> {
+	private class UnregisteringLineList extends ArrayList<WorldLine> {
 
 		@Override
 		public boolean remove(Object o) {
-			if (o instanceof Line) {
-				((Line) o).unregister();
+			if (o instanceof WorldLine) {
+				((WorldLine) o).unregister();
 			}
 			return super.remove(o);
 		}
 	}
 
-	List<Line> lines;
+	List<WorldLine> lines;
 	List<Point> points;
 
 	public double worldSizeX;
 	public double worldSizeY;
 
 	//dočasný pokusný paprsek, časem pude do kšá
-	Line ray;
+	WorldLine ray;
 
 	private World() {
 		lines = new UnregisteringLineList();
 		points = new ArrayList<>();
-		Point.setLinesCollection(lines);
+		Point.setWorldLinesCollection(lines);
 
-//		ray = Line.constructFromTwoPoints(new Point(500, 400), getPointAt(200, 200));
+//		ray = WorldLine.constructFromTwoPoints(new Point(500, 400), getPointAt(200, 200));
 	}
 
 	public static World createTestWorld() {
@@ -45,49 +45,48 @@ public class World {
 		Point p = new Point(500, 800);
 		Point q = new Point(200, 200);
 		Point r = new Point(800, 200);
-		
+
 		world.points.add(p);
 		world.points.add(q);
 		world.points.add(r);
-		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));		
-		world.ray = Line.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
-		world.points.get(0).lineTo(world.points.get(1)).lineTo(world.points.get(2)).lineTo(world.points.get(0));
+		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));
+		world.ray = WorldLine.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
+		world.points.get(0).worldLineTo(world.points.get(1)).worldLineTo(world.points.get(2)).worldLineTo(world.points.get(0));
 		return world;
 	}
 
 	/*public static World loadFromFile(File file, boolean compress) throws ZException {
-		BufferedReader reader = getReader(file, compress);
+	 BufferedReader reader = getReader(file, compress);
 
-		String inputLine;
-		World world = new World();
-		Pattern pointPattern = Pattern.compile("^\\s*point\\s*(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
-		Pattern linePattern = Pattern.compile("^\\s*line\\s*(\\d+)\\s*(\\d+)\\s*$", Pattern.CASE_INSENSITIVE);
-		Map<Integer, Point> pointMap = new HashMap<>();
-		try {
-			while ((inputLine = reader.readLine()) != null) {
-				Matcher matcher;
-				if ((matcher = pointPattern.matcher(inputLine)).matches()) {
-					Point p = new Point(Double.valueOf(matcher.group(2)), Double.valueOf(matcher.group(3)), matcher.group(4));
-					pointMap.put(Integer.valueOf(matcher.group(1)), p);
+	 String inputLine;
+	 World world = new World();
+	 Pattern pointPattern = Pattern.compile("^\\s*point\\s*(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
+	 Pattern linePattern = Pattern.compile("^\\s*line\\s*(\\d+)\\s*(\\d+)\\s*$", Pattern.CASE_INSENSITIVE);
+	 Map<Integer, Point> pointMap = new HashMap<>();
+	 try {
+	 while ((inputLine = reader.readLine()) != null) {
+	 Matcher matcher;
+	 if ((matcher = pointPattern.matcher(inputLine)).matches()) {
+	 Point p = new Point(Double.valueOf(matcher.group(2)), Double.valueOf(matcher.group(3)), matcher.group(4));
+	 pointMap.put(Integer.valueOf(matcher.group(1)), p);
 
-					world.points.add(p);
-				} else if ((matcher = linePattern.matcher(inputLine)).matches()) {
-					Point A = pointMap.get(Integer.valueOf(matcher.group(1)));
-					Point B = pointMap.get(Integer.valueOf(matcher.group(2)));
+	 world.points.add(p);
+	 } else if ((matcher = linePattern.matcher(inputLine)).matches()) {
+	 Point A = pointMap.get(Integer.valueOf(matcher.group(1)));
+	 Point B = pointMap.get(Integer.valueOf(matcher.group(2)));
 
-					if (A == null || B == null) {
-						throw new ZException("Invalid input format.");
-					}
-					Line line = Line.constructFromTwoPoints(A, B);
-					world.lines.add(line);
-				}
-			}
-		} catch (IOException ex) {
-			throw new ZException("Could not load. IO error occured", ex);
-		}
-		return world;
-	}*/
-
+	 if (A == null || B == null) {
+	 throw new ZException("Invalid input format.");
+	 }
+	 WorldLine line = WorldLine.constructFromTwoPoints(A, B);
+	 world.lines.add(line);
+	 }
+	 }
+	 } catch (IOException ex) {
+	 throw new ZException("Could not load. IO error occured", ex);
+	 }
+	 return world;
+	 }*/
 	public Point getPointAt(int x, int y) {
 		for (Point p : this.points) {
 			if (Math.abs(p.x - x) < NoTilesGame.POINT_DISPLAY_SIZE && Math.abs(p.y - y) < NoTilesGame.POINT_DISPLAY_SIZE) {
@@ -125,7 +124,7 @@ public class World {
 	 */
 	public void removePoint(Point point) {
 		point.setIgnoreUnregisters();
-		for (Line l : point.changeListeners) {
+		for (WorldLine l : point.changeListeners) {
 			lines.remove(l);
 		}
 		points.remove(point);
@@ -142,8 +141,8 @@ public class World {
 			i++;
 		}
 
-		for (Line l : lines) {
-			sb.append("Line ");
+		for (WorldLine l : lines) {
+			sb.append("WorldLine ");
 			sb.append(points.indexOf(l.A)).append(" ").append(points.indexOf(l.B));
 			sb.append("\n");
 		}
@@ -165,28 +164,27 @@ public class World {
 //		}
 //	}
 	/*@Override
-	protected void saveToWriter(BufferedWriter writer) throws ZException {
-		try {
-			int i = 0;
-			for (Point p : points) {
-				p.saveToWriter(writer, i++);
-				writer.write("\n");
-			}
+	 protected void saveToWriter(BufferedWriter writer) throws ZException {
+	 try {
+	 int i = 0;
+	 for (Point p : points) {
+	 p.saveToWriter(writer, i++);
+	 writer.write("\n");
+	 }
 
-			for (Line l : lines) {
-				writer.write("Line ");
-				writer.write(points.indexOf(l.A) + " " + points.indexOf(l.B));
-				writer.write("\n");
-			}
-		} catch (IOException ex) {
-			throw new ZException("An IO exception occured.", ex);
-		}
-	}*/
-
+	 for (WorldLine l : lines) {
+	 writer.write("WorldLine ");
+	 writer.write(points.indexOf(l.A) + " " + points.indexOf(l.B));
+	 writer.write("\n");
+	 }
+	 } catch (IOException ex) {
+	 throw new ZException("An IO exception occured.", ex);
+	 }
+	 }*/
 	public void randomPointGenerator(int number, Point main, Point v, Point u) {
 		Random r = new Random();
 		List<Point> pointsList = new ArrayList<>();
-		
+
 		for (int i = 0; i < number; i++) {
 			double r1, r2;
 			do {
@@ -197,8 +195,9 @@ public class World {
 			double y = main.y + r1 * v.y + r2 * u.y;
 			Point p = new Point(x, y);
 			pointsList.add(p);
-			if(pointsList.indexOf(p) >= 1)
-				p.lineTo(pointsList.get(pointsList.indexOf(p) - 1));
+			if (pointsList.size() >= 2) {
+				p.worldLineTo(pointsList.get(pointsList.size() - 2));
+			}
 		}
 		points.addAll(pointsList);
 	}

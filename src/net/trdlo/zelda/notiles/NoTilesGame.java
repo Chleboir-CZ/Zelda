@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,7 +53,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	Set<Point> selectedPoints;
 
-	private Line dragLine;
+	private WorldLine dragLine;
 	private Point dragStart;
 	private Point dragEnd;
 
@@ -69,6 +70,8 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	public int viewSizeX;
 	public int viewSizeY;
+
+	double sight;
 
 	private java.awt.Point lastMPosition;
 	private double zoom;
@@ -90,6 +93,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 		x = 0;
 		y = 0;
 		zoom = 1.5;
+		sight = 500;
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
@@ -116,7 +120,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
-		for (Line line : world.lines) {
+		for (WorldLine line : world.lines) {
 			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
 		}
 
@@ -224,10 +228,47 @@ public class NoTilesGame implements GameInterface, InputListener {
 		return null;
 	}
 
+	public Collection<Point> getPointsInPoly(List<Point> polyList) {
+		Collection<Point> pointsInPoly = new ArrayList<>();
+		for (Point p : world.points) {
+			int intersectCount = 0;
+			Line l = Line.constructFromTwoPoints(p, new Point(p.x - 100, p.y));
+			for (int i = 0; i < polyList.size(); i++) {
+				Line n = Line.constructFromTwoPoints(polyList.get(i), polyList.get((i + 1) % polyList.size()));
+				Point iP = l.intersectPoint(n);
+				if (iP != null) {
+					if (iP.x <= p.x) {
+						double vx = l.B.x - l.A.x;
+						double nx = n.B.x - n.A.x;
+						double ny = n.B.y - n.A.y;
+						if (Math.abs(nx) > Math.abs(ny)) {
+							double distToInterFromNx = (iP.x - n.A.x) / nx;
+							if (distToInterFromNx >= 0 && distToInterFromNx < 1) {
+								intersectCount++;
+							}
+						} else {
+							double distToInterFromNy = (iP.y - n.A.y) / ny;
+							if (distToInterFromNy >= 0 && distToInterFromNy < 1) {
+								intersectCount++;
+							}
+						}
+					}
+				}
+			}
+			if (intersectCount % 2 == 1) {
+				pointsInPoly.add(p);
+			}
+		}
+		return pointsInPoly;
+	}
+
 	public Point createPointAt(double x, double y, String description) {
 		return new Point(viewToWorldX(x), viewToWorldY(y), description);
 	}
 
+//	public Collection<Point> getViewPoly(double viewRange, int viewAngle) {
+//		
+//	}
 	public double worldToViewX(double x) {
 		double dx = x - (this.x + zFrame.getBounds().width / 2);
 		return ((x - dx) + dx * zoom) - this.x;
@@ -305,7 +346,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 					} else {
 						world.lines.add(dragLine);
 						world.points.add(dragLine.B);
-						dragLine = Line.constructFromTwoPoints(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
+						dragLine = WorldLine.constructFromTwoPoints(dragLine.B, new Point(dragLine.B.x + 1, dragLine.B.y + 1));
 					}
 				}
 				break;
@@ -349,6 +390,15 @@ public class NoTilesGame implements GameInterface, InputListener {
 				}
 				if (c == KeyEvent.VK_MINUS) {
 					zoom /= 1.25;
+				}
+				if (Character.toUpperCase(c) == 'P') {
+					List<Point> polygon;
+					polygon = new ArrayList<>();
+					polygon.add(new Point(500, 800));
+					polygon.add(new Point(200, 200));
+					polygon.add(new Point(800, 200));
+
+					selectedPoints.addAll(getPointsInPoly(polygon));
 				}
 				break;
 			default:
@@ -426,11 +476,11 @@ public class NoTilesGame implements GameInterface, InputListener {
 					if (me.getButton() == MouseEvent.BUTTON1) {
 
 						if (clickedPoint != null) {
-							dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(me.getX(), me.getY()));
+							dragLine = WorldLine.constructFromTwoPoints(clickedPoint, new Point(me.getX(), me.getY()));
 						} else {
 							Point newPoint = new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY()));
 							world.points.add(newPoint);
-							dragLine = Line.constructFromTwoPoints(newPoint, new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY())));
+							dragLine = WorldLine.constructFromTwoPoints(newPoint, new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY())));
 						}
 						state = ViewState.POLY_LINE;
 					}
@@ -490,7 +540,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 			case NORMAL:
 				if (me.getButton() == MouseEvent.BUTTON1) {
 					if (clickedPoint != null) {
-						dragLine = Line.constructFromTwoPoints(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
+						dragLine = WorldLine.constructFromTwoPoints(clickedPoint, new Point(clickedPoint.x + 1, clickedPoint.y + 1));
 						state = ViewState.DRAG_LINE;
 					} else {
 						dragStart = new Point(viewToWorldX(me.getX()), viewToWorldY(me.getY()));
@@ -650,7 +700,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 				break;
 			case NORMAL:
 				int scroll = mwe.getWheelRotation();
-				zoom *= Math.pow(1.25, scroll);
+				zoom *= Math.pow(1.25, -scroll);
 				break;
 			default:
 				//tak nedelej nic...

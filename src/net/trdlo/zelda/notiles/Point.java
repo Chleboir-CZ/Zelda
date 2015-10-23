@@ -6,12 +6,12 @@ import java.util.Set;
 
 public class Point {
 
-	private static Collection<Line> lineInsertCollection;
+	private static Collection<WorldLine> lineInsertCollection;
 
 	protected double x, y;
 	private String description;
 
-	public Set<Line> changeListeners;
+	public Set<WorldLine> changeListeners;
 	boolean ignoreUnregisters = false;
 	
 	
@@ -38,17 +38,17 @@ public class Point {
 		return new java.awt.Point((int) x, (int) y);
 	}
 
-	public static void setLinesCollection(Collection<Line> lines) {
+	public static void setWorldLinesCollection(Collection<WorldLine> lines) {
 		lineInsertCollection = lines;
 	}
 
-	public Point lineTo(Point B) {
-		lineInsertCollection.add(Line.constructFromTwoPoints(this, B));
+	public Point worldLineTo(Point B) {
+		lineInsertCollection.add(WorldLine.constructFromTwoPoints(this, B));
 		return B;
 	}
 
-	public Point lineTo(double x, double y) {
-		return lineTo(new Point(x, y));
+	public Point worldLineTo(double x, double y) {
+		return Point.this.worldLineTo(new Point(x, y));
 	}
 
 //	@Override
@@ -110,18 +110,18 @@ public class Point {
 		this.description = description;
 	}
 
-	public void addChangeListener(Line line) {
+	public void addChangeListener(WorldLine line) {
 		changeListeners.add(line);
 	}
 
-	public void removeChangeListener(Line line) {
+	public void removeChangeListener(WorldLine line) {
 		if (!ignoreUnregisters && !changeListeners.remove(line)) {
 			throw new RuntimeException("Line was not a listener of this point!");
 		}
 	}
 
 	private void notifyListeners() {
-		for (Line line : changeListeners) {
+		for (WorldLine line : changeListeners) {
 			line.refreshCoefs();
 		}
 	}

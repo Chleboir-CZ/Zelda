@@ -19,7 +19,7 @@ public class GeometryUtils {
 	 * @param collidableLines
 	 * @return
 	 */
-	public static List<Line> constructRayPath(Line currentLine, Collection<Line> collidableLines) {
+	public static List<Line> constructRayPath(Line currentLine, Collection<WorldLine> collidableLines) {
 		List<Line> returnList = new ArrayList<>(RAYTRACE_MAX_DEPTH);
 		returnList.add(currentLine);
 
@@ -33,7 +33,7 @@ public class GeometryUtils {
 
 			intersectPoints.clear();
 
-			for (Line line : collidableLines) {
+			for (WorldLine line : collidableLines) {
 				Point intersectPoint = currentLine.intersectPoint(line);
 				if (intersectPoint == null) {
 					continue;
@@ -86,9 +86,9 @@ class PointAndDistanceAndLine implements Comparable<PointAndDistanceAndLine> {
 
 	double dist;
 	Point p;
-	Line line;
+	WorldLine line;
 
-	public PointAndDistanceAndLine(double dist, Point p, Line line) {
+	public PointAndDistanceAndLine(double dist, Point p, WorldLine line) {
 		this.dist = dist;
 		this.p = p;
 		this.line = line;
