@@ -31,6 +31,7 @@ public class World {
 
 	//dočasný pokusný paprsek, časem pude do kšá
 	WorldLine ray;
+	Point hero, h2, h3;
 
 	private World() {
 		lines = new UnregisteringLineList();
@@ -45,6 +46,7 @@ public class World {
 		Point p = new Point(500, 800);
 		Point q = new Point(200, 200);
 		Point r = new Point(800, 200);
+		world.hero = p;
 
 		world.points.add(p);
 		world.points.add(q);

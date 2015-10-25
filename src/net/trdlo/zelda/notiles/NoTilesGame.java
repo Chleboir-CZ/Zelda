@@ -1,5 +1,6 @@
 package net.trdlo.zelda.notiles;
 
+import com.sun.j3d.utils.universe.Viewer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -12,9 +13,12 @@ import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -72,6 +76,8 @@ public class NoTilesGame implements GameInterface, InputListener {
 	public int viewSizeY;
 
 	double sight;
+	double orientation;
+	double fOV;
 
 	private java.awt.Point lastMPosition;
 	private double zoom;
@@ -94,6 +100,8 @@ public class NoTilesGame implements GameInterface, InputListener {
 		y = 0;
 		zoom = 1.5;
 		sight = 500;
+		fOV = Math.PI;
+		orientation = 0;
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
@@ -115,7 +123,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void update() {
-
+		getBoundsofView(world.points, world.hero, orientation, sight, fOV);
 	}
 
 	@Override
@@ -260,6 +268,38 @@ public class NoTilesGame implements GameInterface, InputListener {
 			}
 		}
 		return pointsInPoly;
+	}
+
+//	static class NestedShit implements Comparator<Point> {
+//		@Override
+//		public int compare(Point t, Point t1) {
+//			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//		}
+//	}
+	public List<Point> getBoundsofView(Collection<Point> pointColl, Point heroPos, double orientation, double sight, double fOV) {
+//		class LocalShit implements Comparator<Point> {
+//			@Override
+//			public int compare(Point t, Point t1) {
+//				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//			}
+//		}
+		for (Point p : pointColl) {
+			p.tempAngle = Math.atan2(p.y - heroPos.y, p.x - heroPos.x) - orientation;
+			p.setDescription(String.format("%.0f", 180 / Math.PI * p.tempAngle));
+		}
+
+		/*SortedSet<Point> sortedPointMap = new TreeSet<>(new Comparator<Point>() {
+			@Override
+			public int compare(Point p, Point q) {
+				double delta = p.tempAngle - q.tempAngle;
+				return delta < 0 ? -1 : (delta > 0 ? 1 : 0);
+			}
+		});
+
+		Point leftPoint = new Point(sight * Math.cos(orientation - fOV / 2), sight * Math.sin(orientation - fOV / 2));
+		Point rightPoint = new Point(sight * Math.cos(orientation + fOV / 2), sight * Math.sin(orientation + fOV / 2));*/
+
+		return null;
 	}
 
 	public Point createPointAt(double x, double y, String description) {

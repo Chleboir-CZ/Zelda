@@ -9,6 +9,7 @@ public class Point {
 	private static Collection<WorldLine> lineInsertCollection;
 
 	protected double x, y;
+	public double tempAngle;
 	private String description;
 
 	public Set<WorldLine> changeListeners;
