@@ -36,8 +36,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	private long totalRenderLength = 0;
 	private int lastRenderCount;
 
-	private final GraphicsDevice gDevice;
-	private final BufferStrategy bufferStrategy;
+	private GraphicsDevice gDevice;
+	private BufferStrategy bufferStrategy;
 
 	private final Font defaultFont;
 
@@ -49,28 +49,13 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	public ZeldaFrame(String frameCaption, GameInterface gameInterface) {
 		super(frameCaption);
 
-		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-		setIgnoreRepaint(true);
-		setUndecorated(true);
-
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		//GraphicsDevice[] screenDevices = ge.getScreenDevices(); //u mě dostanu 2 zařízení - levý a pravý monitor
-		gDevice = ge.getDefaultScreenDevice();
-		gDevice.setFullScreenWindow(this);
-
-		//if (gDevice.isDisplayChangeSupported()) {
-		//	gDevice.setDisplayMode(new DisplayMode(1680, 1050, 32, DisplayMode.REFRESH_RATE_UNKNOWN));
-		//}
-		createBufferStrategy(2);
-		bufferStrategy = getBufferStrategy();
-		defaultFont = new Font("Monospaced", Font.BOLD, 12);
+		this.gameInterface = gameInterface;
 
 		keyEventQueue = new SynchronousQueue<>();
 		mouseEventQueue = new SynchronousQueue<>();
 
-		this.gameInterface = gameInterface;
-		
+		defaultFont = new Font("Monospaced", Font.BOLD, 12);
+
 		setListeners();
 	}
 
@@ -112,13 +97,13 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((e = keyEventQueue.poll()) != null) {
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
-					gameInterface.getInputListener().keyTyped(e);
+					gameInterface.keyTyped(e);
 					break;
 				case KeyEvent.KEY_PRESSED:
-					gameInterface.getInputListener().keyPressed(e);
+					gameInterface.keyPressed(e);
 					break;
 				case KeyEvent.KEY_RELEASED:
-					gameInterface.getInputListener().keyReleased(e);
+					gameInterface.keyReleased(e);
 					break;
 			}
 		}
@@ -126,28 +111,28 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((me = mouseEventQueue.poll()) != null) {
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
-					gameInterface.getInputListener().mouseClicked(me);
+					gameInterface.mouseClicked(me);
 					break;
 				case MouseEvent.MOUSE_PRESSED:
-					gameInterface.getInputListener().mousePressed(me);
+					gameInterface.mousePressed(me);
 					break;
 				case MouseEvent.MOUSE_RELEASED:
-					gameInterface.getInputListener().mouseReleased(me);
+					gameInterface.mouseReleased(me);
 					break;
 				case MouseEvent.MOUSE_MOVED:
-					gameInterface.getInputListener().mouseMoved(me);
+					gameInterface.mouseMoved(me);
 					break;
 				case MouseEvent.MOUSE_ENTERED:
-					gameInterface.getInputListener().mouseEntered(me);
+					gameInterface.mouseEntered(me);
 					break;
 				case MouseEvent.MOUSE_EXITED:
-					gameInterface.getInputListener().mouseExited(me);
+					gameInterface.mouseExited(me);
 					break;
 				case MouseEvent.MOUSE_DRAGGED:
-					gameInterface.getInputListener().mouseDragged(me);
+					gameInterface.mouseDragged(me);
 					break;
 				case MouseEvent.MOUSE_WHEEL:
-					gameInterface.getInputListener().mouseWheelMoved((MouseWheelEvent) me);
+					gameInterface.mouseWheelMoved((MouseWheelEvent) me);
 					break;
 			}
 		}
@@ -160,61 +145,80 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	public void run() {
-		while (!terminate) {
-			long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-			if (updatesPending < 1) {
-				updatesPending = 1; //one update minimum!
-			} else if (updatesPending > MAX_FRAME_DROPS) {
-				updatesPending = MAX_FRAME_DROPS;
-			}
+		setIgnoreRepaint(true);
+		setUndecorated(true);
 
-			//System.err.print("pending: " + updatesPending + ",\t");
-			while (updatesPending-- > 0) {
-				update();
-			}
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		//GraphicsDevice[] screenDevices = ge.getScreenDevices(); //u mě dostanu 2 zařízení - levý a pravý monitor
+		gDevice = ge.getDefaultScreenDevice();
 
-			render(0);
+		try {
+			gDevice.setFullScreenWindow(this);
 
-			long nextUpdateTime = updateFrame * UPDATE_PERIOD;
+		//if (gDevice.isDisplayChangeSupported()) {
+			//	gDevice.setDisplayMode(new DisplayMode(1680, 1050, 32, DisplayMode.REFRESH_RATE_UNKNOWN));
+			//}
+			createBufferStrategy(2);
+			bufferStrategy = getBufferStrategy();
 
-			long remainingToUpdate = nextUpdateTime - getTime();
+			while (!terminate) {
+				long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
 
-			int renderCounter = 1;
-
-			while (remainingToUpdate > getAvgRenderLenth()) {
-				int approxRenderCount = renderCounter + (int) (remainingToUpdate / getAvgRenderLenth());
-				float approxProgres = renderCounter / (float) approxRenderCount;
-
-				int rendersPerFrame;
-				if (lastRenderCount == 0) {
-					rendersPerFrame = approxRenderCount;
-				} else {
-					rendersPerFrame = (int) (lastRenderCount * (1.0f - approxProgres) + approxRenderCount * approxProgres);
+				if (updatesPending < 1) {
+					updatesPending = 1; //one update minimum!
+				} else if (updatesPending > MAX_FRAME_DROPS) {
+					updatesPending = MAX_FRAME_DROPS;
 				}
+
+				//System.err.print("pending: " + updatesPending + ",\t");
+				while (updatesPending-- > 0) {
+					update();
+				}
+
+				render(0);
+
+				long nextUpdateTime = updateFrame * UPDATE_PERIOD;
+
+				long remainingToUpdate = nextUpdateTime - getTime();
+
+				int renderCounter = 1;
+
+				while (remainingToUpdate > getAvgRenderLenth()) {
+					int approxRenderCount = renderCounter + (int) (remainingToUpdate / getAvgRenderLenth());
+					float approxProgres = renderCounter / (float) approxRenderCount;
+
+					int rendersPerFrame;
+					if (lastRenderCount == 0) {
+						rendersPerFrame = approxRenderCount;
+					} else {
+						rendersPerFrame = (int) (lastRenderCount * (1.0f - approxProgres) + approxRenderCount * approxProgres);
+					}
 				//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
-				//System.err.print(updateFrame + ": " + renderCounter + "/" + rendersPerFrame + ",\t");
+					//System.err.print(updateFrame + ": " + renderCounter + "/" + rendersPerFrame + ",\t");
 
-				float renderFraction = renderCounter / (float) rendersPerFrame;
-				render(renderFraction);
-				remainingToUpdate = nextUpdateTime - getTime();
-				renderCounter++;
-			}
-			//System.err.println("total: " + renderCounter);
+					float renderFraction = renderCounter / (float) rendersPerFrame;
+					render(renderFraction);
+					remainingToUpdate = nextUpdateTime - getTime();
+					renderCounter++;
+				}
+				//System.err.println("total: " + renderCounter);
 
-			lastRenderCount = renderCounter;
+				lastRenderCount = renderCounter;
 
-			if (remainingToUpdate > 0) {
-				try {
-					//System.err.println("Sleep for " + remainingToUpdate + " / " + getAvgRenderLenth());
-					Thread.sleep((int) remainingToUpdate);
-				} catch (InterruptedException ex) {
+				if (remainingToUpdate > 0) {
+					try {
+						//System.err.println("Sleep for " + remainingToUpdate + " / " + getAvgRenderLenth());
+						Thread.sleep((int) remainingToUpdate);
+					} catch (InterruptedException ex) {
+					}
 				}
 			}
+		} finally {
+			gDevice.setFullScreenWindow(null);
+			dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 		}
-
-		gDevice.setFullScreenWindow(null);
-		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
 	private long getTime() {

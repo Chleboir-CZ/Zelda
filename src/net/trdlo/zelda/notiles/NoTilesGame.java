@@ -740,7 +740,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 				break;
 			case NORMAL:
 				int scroll = mwe.getWheelRotation();
-				zoom *= Math.pow(1.25, scroll);
+				zoom *= Math.pow(1.25, -scroll);
 				break;
 			default:
 				//tak nedelej nic...
@@ -757,10 +757,5 @@ public class NoTilesGame implements GameInterface, InputListener {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-	}
-
-	@Override
-	public InputListener getInputListener() {
-		return this;
 	}
 }

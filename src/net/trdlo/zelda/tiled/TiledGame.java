@@ -13,7 +13,6 @@ import net.trdlo.zelda.ZeldaFrame;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
 
-
 public class TiledGame implements GameInterface, InputListener {
 
 	private World world;
@@ -36,7 +35,7 @@ public class TiledGame implements GameInterface, InputListener {
 	public TiledGame(World world) {
 		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f);
 	}
-	
+
 	public void setZeldaFrame(ZeldaFrame frame) {
 		this.zFrame = frame;
 	}
@@ -216,20 +215,15 @@ public class TiledGame implements GameInterface, InputListener {
 	public void mouseWheelMoved(MouseWheelEvent mwe) {
 //		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
-	
+
 	public static void main(String[] args) {
 		try {
 			TiledGame game = new TiledGame(World.loadFromFile(new File("maps/small.txt"), false));
 			ZeldaFrame frame = new ZeldaFrame("Tiled Zelda game demo", game);
-			game.setZeldaFrame(frame);			
+			game.setZeldaFrame(frame);
 			frame.run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-	}	
-
-	@Override
-	public InputListener getInputListener() {
-		return this;
 	}
 }
