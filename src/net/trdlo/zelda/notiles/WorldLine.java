@@ -74,8 +74,8 @@ public class WorldLine extends Line {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("WorldLine");
-		sb.append(this.A.toString());
+		sb.append("Line");
+		sb.append(A.toString());
 		sb.append(";");
 		sb.append(B.toString());
 		sb.append("\n");

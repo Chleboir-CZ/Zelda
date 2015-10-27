@@ -109,6 +109,11 @@ public class NoTilesGame implements GameInterface, InputListener {
 		});
 	}
 
+	public NoTilesGame() {
+		this(World.createTestWorld());
+	}
+
+	@Override
 	public void setZeldaFrame(ZeldaFrame frame) {
 		this.zFrame = frame;
 	}
@@ -708,12 +713,14 @@ public class NoTilesGame implements GameInterface, InputListener {
 		}
 	}
 
+	@Override
+	public String getWindowCaption() {
+		return "Some freakin' title here!";
+	}
+
 	public static void main(String[] args) {
 		try {
-			NoTilesGame game = new NoTilesGame(World.createTestWorld());
-			ZeldaFrame frame = new ZeldaFrame("Tiled Zelda game demo", game);
-			game.setZeldaFrame(frame);
-			frame.run();
+			ZeldaFrame.buildZeldaFrame(new NoTilesGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

@@ -35,7 +35,12 @@ public class TiledGame implements GameInterface, InputListener {
 	public TiledGame(World world) {
 		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f);
 	}
+	
+	public TiledGame() throws Exception {
+		this(World.loadFromFile(new File("maps/small.txt"), false));
+	}
 
+	@Override
 	public void setZeldaFrame(ZeldaFrame frame) {
 		this.zFrame = frame;
 	}
@@ -218,12 +223,14 @@ public class TiledGame implements GameInterface, InputListener {
 
 	public static void main(String[] args) {
 		try {
-			TiledGame game = new TiledGame(World.loadFromFile(new File("maps/small.txt"), false));
-			ZeldaFrame frame = new ZeldaFrame("Tiled Zelda game demo", game);
-			game.setZeldaFrame(frame);
-			frame.run();
+			ZeldaFrame.buildZeldaFrame(new TiledGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public String getWindowCaption() {
+		return "Tiled Zelda game demo";
 	}
 }

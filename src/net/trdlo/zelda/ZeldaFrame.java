@@ -46,7 +46,16 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	private final SynchronousQueue<KeyEvent> keyEventQueue;
 	private final SynchronousQueue<MouseEvent> mouseEventQueue;
 
-	public ZeldaFrame(String frameCaption, GameInterface gameInterface) {
+	private boolean keyMap[];
+	
+	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
+		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
+		zFrame.setListeners();
+		game.setZeldaFrame(zFrame);
+		return zFrame;
+	}
+
+	private ZeldaFrame(String frameCaption, GameInterface gameInterface) {
 		super(frameCaption);
 
 		this.gameInterface = gameInterface;
@@ -55,11 +64,11 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		mouseEventQueue = new SynchronousQueue<>();
 
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
-
-		setListeners();
+		
+		keyMap = new boolean[256];
 	}
 
-	public void setListeners() {
+	private void setListeners() {
 		addWindowListener(this);
 		addKeyListener(this);
 		addMouseListener(this);
@@ -91,6 +100,10 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 		setRenderLength(getTime() - renderStart);
 	}
+	
+	public boolean isPressed(int keyCode) {
+		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
+	}
 
 	public void dispatchInput() {
 		KeyEvent e;
@@ -100,9 +113,15 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					gameInterface.keyTyped(e);
 					break;
 				case KeyEvent.KEY_PRESSED:
+					if (e.getKeyCode() < 256) {
+						keyMap[e.getKeyCode()] = true;
+					}
 					gameInterface.keyPressed(e);
 					break;
 				case KeyEvent.KEY_RELEASED:
+					if (e.getKeyCode() < 256) {
+						keyMap[e.getKeyCode()] = false;
+					}
 					gameInterface.keyReleased(e);
 					break;
 			}
@@ -157,7 +176,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		try {
 			gDevice.setFullScreenWindow(this);
 
-		//if (gDevice.isDisplayChangeSupported()) {
+			//if (gDevice.isDisplayChangeSupported()) {
 			//	gDevice.setDisplayMode(new DisplayMode(1680, 1050, 32, DisplayMode.REFRESH_RATE_UNKNOWN));
 			//}
 			createBufferStrategy(2);
@@ -195,7 +214,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					} else {
 						rendersPerFrame = (int) (lastRenderCount * (1.0f - approxProgres) + approxRenderCount * approxProgres);
 					}
-				//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
+					//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
 					//System.err.print(updateFrame + ": " + renderCounter + "/" + rendersPerFrame + ",\t");
 
 					float renderFraction = renderCounter / (float) rendersPerFrame;

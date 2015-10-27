@@ -4,7 +4,11 @@ import java.awt.Graphics2D;
 
 public interface GameInterface extends InputListener {
 
-	public void render(Graphics2D graphics, float renderFraction);
+	void render(Graphics2D graphics, float renderFraction);
 
-	public void update();
+	void update();
+	
+	void setZeldaFrame(ZeldaFrame zFrame);
+	
+	String getWindowCaption();
 }

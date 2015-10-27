@@ -93,7 +93,7 @@ public class Line {
 	 * @param mirror	osa souměrnosti
 	 * @return	obraz přes osu souměrnosti mirror
 	 */
-	public Line mirrorReflection(WorldLine mirror) {
+	public Line mirrorReflection(Line mirror) {
 		Point intersect = this.intersectPoint(mirror);
 		Line lineNormal = constructFromPointAndVector(intersect, mirror.a, mirror.b);
 		Line lineParalell = constructFromPointAndNormal(A, mirror.a, mirror.b);
