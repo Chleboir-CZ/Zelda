@@ -18,6 +18,8 @@ class OrthoCamera {
 
 	private final Stroke defaultStroke, selectionStroke, dashStroke;
 
+	private boolean boundsDebug = false;
+
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
 		defaultStroke = new BasicStroke(1);
@@ -52,25 +54,47 @@ class OrthoCamera {
 		return (y - (componentBounds.height / 2)) / zoomCoef() + this.y;
 	}
 
-	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
-		this.componentBounds = componentBounds;
+	private void renderBoundsDebug(Graphics2D graphics) {
+		if (world.bounds == null) {
+			graphics.setColor(Color.RED);
+			graphics.drawString("Bounds not set!", 50, 10);
+			graphics.setColor(Color.WHITE);
+			return;
+		}
 
-		/*graphics.setStroke(selectionStroke);
+		graphics.setStroke(selectionStroke);
 		graphics.setColor(Color.PINK);
 		int l = worldToViewX(world.bounds.x), t = worldToViewY(world.bounds.y), w = worldToViewX(world.bounds.x + world.bounds.width) - l, h = worldToViewY(world.bounds.y + world.bounds.height) - t;
 		graphics.drawRect(l, t, w, h);
+		if (cameraBounds != null) {
+			graphics.setStroke(defaultStroke);
+			graphics.setColor(Color.RED);
+			graphics.drawRect(worldToViewX(x) - Point.DISPLAY_SIZE / 2, worldToViewY(y) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			l = worldToViewX(cameraBounds.x);
+			t = worldToViewY(cameraBounds.y);
+			w = worldToViewX(cameraBounds.x + cameraBounds.width) - l;
+			h = worldToViewY(cameraBounds.y + cameraBounds.height) - t;
+			if (w > 0 && h > 0) {
+				graphics.drawRect(l, t, w, h);
+			} else if (w > 0) {
+				t = worldToViewY(cameraBounds.y + cameraBounds.height / 2);
+				graphics.drawLine(l, t, l + w, t);
+			} else if (h > 0) {
+				l = worldToViewX(cameraBounds.x + cameraBounds.width / 2);
+				graphics.drawLine(l, t, l, t + h);
+			}
+
+		}
 		graphics.setStroke(defaultStroke);
-		graphics.setColor(Color.RED);
-		 graphics.drawRect(worldToViewX(x) - Point.DISPLAY_SIZE / 2, worldToViewY(y) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
-		 if (cameraBounds != null) {
-		 l = worldToViewX(cameraBounds.x);
-		 t = worldToViewY(cameraBounds.y);
-		 w = worldToViewX(cameraBounds.x + cameraBounds.width) - l;
-		 h = worldToViewY(cameraBounds.y + cameraBounds.height) - t;
-		 graphics.drawRect(l, t, w, h);
-		 }
-		 */
 		graphics.setColor(Color.WHITE);
+	}
+
+	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
+		this.componentBounds = componentBounds;
+
+		if (boundsDebug) {
+			renderBoundsDebug(graphics);
+		}
 
 		for (SmartLine line : world.lines) {
 			graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
@@ -91,8 +115,8 @@ class OrthoCamera {
 			return;
 		}
 
-		double wx = 0;
-		double wy = 0;
+		double wx = x;
+		double wy = y;
 		if (fixedPoint != null) {
 			wx = viewToWorldX(fixedPoint.x);
 			wy = viewToWorldY(fixedPoint.y);
@@ -152,6 +176,14 @@ class OrthoCamera {
 		} else {
 			y = world.bounds.y + world.bounds.height / 2;
 		}
+	}
+
+	public boolean isBoundsDebug() {
+		return boundsDebug;
+	}
+
+	public void setBoundsDebug(boolean showBoundsDebug) {
+		this.boundsDebug = showBoundsDebug;
 	}
 
 }

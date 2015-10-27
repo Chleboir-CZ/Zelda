@@ -20,6 +20,8 @@ public class Guan implements GameInterface {
 
 	private XY viewDrag = null;
 
+	private boolean keyInputDebug = false;
+
 	public Guan() {
 		world = new World();
 		try {
@@ -40,7 +42,7 @@ public class Guan implements GameInterface {
 			graphics.drawString(str, 10, y);
 		}
 	}
-	
+
 	private void readAsynchronoutInput() {
 		if (zFrame.isPressed(KeyEvent.VK_ADD)) {
 			camera.zoom(1, null);
@@ -54,8 +56,8 @@ public class Guan implements GameInterface {
 	public void update() {
 		world.update();
 		camera.update();
-		
-		readAsynchronoutInput();		
+
+		readAsynchronoutInput();
 	}
 
 	@Override
@@ -70,22 +72,35 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		if (e.getKeyChar() == 'q') {
-			zFrame.terminate();
-		}
-		else {
-			echo("Typed: '" + e.getKeyChar() + "'");
+		switch (e.getKeyChar()) {
+			case 'q':
+				zFrame.terminate();
+				break;
+			case 'v':
+				camera.setBoundsDebug(!camera.isBoundsDebug());
+				break;
+			case 'k':
+				keyInputDebug = !keyInputDebug;
+				break;
+			default:
+				if (keyInputDebug) {
+					echo("Typed: '" + e.getKeyChar() + "'");
+				}
 		}
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		echo("Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+		if (keyInputDebug) {
+			echo("Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		echo("Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+		if (keyInputDebug) {
+			echo("Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+		}
 	}
 
 	@Override
