@@ -91,8 +91,14 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (keyInputDebug) {
-			echo("Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+		switch (e.getKeyChar()) {
+			case KeyEvent.VK_ESCAPE:
+				zFrame.terminate();
+				break;
+			default:
+				if (keyInputDebug) {
+					echo("Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+				}
 		}
 	}
 
