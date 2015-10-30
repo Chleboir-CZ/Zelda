@@ -110,8 +110,8 @@ public class Line {
 	public String toString() {
 		return "Line " + A.toStringSimple() + " <-> " + B.toStringSimple();
 	}
-	
+
 	public void disconnect() {
-		
+
 	}
 }

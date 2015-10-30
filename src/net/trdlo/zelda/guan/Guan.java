@@ -1,5 +1,6 @@
 package net.trdlo.zelda.guan;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
@@ -27,7 +28,7 @@ public class Guan implements GameInterface {
 		try {
 			world.loadFromFile("save.map");
 		} catch (Exception ex) {
-			System.err.println("Could not load map!");
+			System.err.println("Could not load map! Proceeding with an empty one.");
 		}
 		camera = new OrthoCamera(world, 0, 0, 0);
 	}
@@ -36,6 +37,8 @@ public class Guan implements GameInterface {
 	public void render(Graphics2D graphics, float renderFraction) {
 		camera.render(graphics, zFrame.getBounds(), renderFraction);
 
+		graphics.setStroke(camera.defaultStroke);
+		graphics.setColor(Color.WHITE);
 		int y = zFrame.getBounds().y + zFrame.getBounds().height;
 		for (String str : console) {
 			y -= 16;
@@ -116,6 +119,9 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
+		if (e.getButton() == MouseEvent.BUTTON1) {
+			camera.mouse1pressed(e);
+		}
 		if (e.getButton() == MouseEvent.BUTTON3) {
 			viewDrag = new XY(e);
 			zFrame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -124,6 +130,9 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
+		if (e.getButton() == MouseEvent.BUTTON1) {
+			camera.mouse1released(e);
+		}
 		if (e.getButton() == MouseEvent.BUTTON3) {
 			viewDrag = null;
 			zFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -147,6 +156,7 @@ public class Guan implements GameInterface {
 			camera.move(viewDrag.diff(current));
 			viewDrag = current;
 		}
+		camera.mouse1dragged(e);
 	}
 
 	@Override
@@ -167,11 +177,7 @@ public class Guan implements GameInterface {
 		console.clear();
 	}
 
-	public static void main(String args[]) {
-		try {
-			ZeldaFrame.buildZeldaFrame(new Guan()).run();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+	public static void main(String args[]) throws Exception {
+		ZeldaFrame.buildZeldaFrame(new Guan()).run();
 	}
 }

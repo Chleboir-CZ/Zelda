@@ -1,6 +1,6 @@
 package net.trdlo.zelda.guan;
 
-public class SmartLine extends Line {
+public class SmartLine extends Line implements Selectable {
 
 	public static SmartLine constructFromTwoPoints(Point A, Point B) {
 		SmartLine l = new SmartLine();
@@ -35,7 +35,7 @@ public class SmartLine extends Line {
 		l.B.addConnectedLine(l);
 		return l;
 	}
-	
+
 	public static SmartLine constructFromLine(Line original) {
 		SmartLine sl = new SmartLine();
 		sl.A = original.A;
@@ -78,5 +78,5 @@ public class SmartLine extends Line {
 	public void disconnect() {
 		A.removeConnectedLine(this);
 		B.removeConnectedLine(this);
-	}	
+	}
 }

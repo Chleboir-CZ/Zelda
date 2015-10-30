@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class Point {
+public class Point implements Selectable {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
 	public static final int DISPLAY_SIZE = 8;
@@ -18,14 +18,20 @@ public class Point {
 
 	public Set<Line> connectedLines = null;
 
+	public Point() {
+
+	}
+
+	public Point(double x, double y) {
+		this.x = x;
+		this.y = y;
+		this.description = "";
+	}
+
 	public Point(double x, double y, String description) {
 		this.x = x;
 		this.y = y;
 		this.description = (description != null ? description : "");
-	}
-
-	public Point(double x, double y) {
-		this(x, y, "");
 	}
 
 	public java.awt.Point getJavaPoint() {
@@ -92,5 +98,9 @@ public class Point {
 	@Override
 	public String toString() {
 		return "Point [" + x + ";" + y + "] " + description;
+	}
+
+	public boolean inRect(double x1, double y1, double x2, double y2) {
+		return x >= Math.min(x1, x2) && x < Math.max(x1, x2) && y >= Math.min(y1, y2) && y < Math.max(y1, y2);
 	}
 }

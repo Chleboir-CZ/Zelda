@@ -16,9 +16,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.util.concurrent.SynchronousQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
@@ -43,11 +42,11 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 	private final GameInterface gameInterface;
 
-	private final SynchronousQueue<KeyEvent> keyEventQueue;
-	private final SynchronousQueue<MouseEvent> mouseEventQueue;
+	private final Queue<KeyEvent> keyEventQueue;
+	private final Queue<MouseEvent> mouseEventQueue;
 
-	private boolean keyMap[];
-	
+	private final boolean keyMap[];
+
 	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
 		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
 		zFrame.setListeners();
@@ -60,11 +59,11 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 		this.gameInterface = gameInterface;
 
-		keyEventQueue = new SynchronousQueue<>();
-		mouseEventQueue = new SynchronousQueue<>();
+		keyEventQueue = new ConcurrentLinkedQueue<>();
+		mouseEventQueue = new ConcurrentLinkedQueue<>();
 
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
-		
+
 		keyMap = new boolean[256];
 	}
 
@@ -100,7 +99,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 		setRenderLength(getTime() - renderStart);
 	}
-	
+
 	public boolean isPressed(int keyCode) {
 		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
 	}
@@ -314,11 +313,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	private void keyEvent(KeyEvent e) {
-		try {
-			keyEventQueue.put(e);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		keyEventQueue.add(e);
 	}
 
 	@Override
@@ -337,11 +332,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	private void mouseEvent(MouseEvent me) {
-		try {
-			mouseEventQueue.put(me);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		mouseEventQueue.add(me);
 	}
 
 	@Override

@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
+import java.awt.event.MouseEvent;
+import java.util.HashSet;
+import java.util.Set;
 
 class OrthoCamera {
 
@@ -16,15 +19,23 @@ class OrthoCamera {
 	private double zoomCoefLimit;
 	private Rectangle componentBounds, cameraBounds;
 
-	private final Stroke defaultStroke, selectionStroke, dashStroke;
+	final Stroke defaultStroke, selectionStroke, dashStroke;
 
 	private boolean boundsDebug = false;
+
+	private Point dragStart, dragEnd;
+	private Set<Point> selection, tempSelection;
+	private boolean additiveSelection;
+	//private Set<SmartLine> selectedLines; 
 
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
 		defaultStroke = new BasicStroke(1);
 		selectionStroke = new BasicStroke(2);
 		dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
+
+		selection = new HashSet<>();
+		tempSelection = new HashSet<>();
 	}
 
 	public final void setWorld(World world, double x, double y, int zoom) {
@@ -85,8 +96,6 @@ class OrthoCamera {
 			}
 
 		}
-		graphics.setStroke(defaultStroke);
-		graphics.setColor(Color.WHITE);
 	}
 
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
@@ -96,12 +105,31 @@ class OrthoCamera {
 			renderBoundsDebug(graphics);
 		}
 
+		graphics.setStroke(defaultStroke);
+		graphics.setColor(Color.WHITE);
 		for (SmartLine line : world.lines) {
 			graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
 		}
 
 		for (Point point : world.points) {
+			if (selection.contains(point) || tempSelection.contains(point)) {
+				graphics.setStroke(selectionStroke);
+				graphics.setColor(Color.PINK);
+			} else {
+				graphics.setStroke(defaultStroke);
+				graphics.setColor(Color.WHITE);
+			}
 			graphics.drawRect(worldToViewX(point.x) - Point.DISPLAY_SIZE / 2, worldToViewY(point.y) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+		}
+
+		if (dragStart != null && dragEnd != null) {
+			graphics.setStroke(dashStroke);
+			graphics.setColor(Color.LIGHT_GRAY);
+			graphics.drawRect(
+					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) / zoomCoef()),
+					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) / zoomCoef()));
 		}
 	}
 
@@ -184,6 +212,59 @@ class OrthoCamera {
 
 	public void setBoundsDebug(boolean showBoundsDebug) {
 		this.boundsDebug = showBoundsDebug;
+	}
+
+	public Point getPointAt(int x, int y) {
+		return world.getPointAt(viewToWorldX(x), viewToWorldY(y), Point.DISPLAY_SIZE / zoomCoef());
+	}
+
+	public Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
+		return world.getPointsIn(viewToWorldX(x1), viewToWorldY(y1), viewToWorldX(x2), viewToWorldY(y2));
+	}
+
+	public void mouse1pressed(MouseEvent e) {
+		additiveSelection = e.isShiftDown();
+		Point pointAt = getPointAt(e.getX(), e.getY());
+		if (pointAt != null) {
+			if (!additiveSelection) {
+				selection.clear();
+			}
+			selection.add(pointAt);
+		}
+		dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
+		assert dragEnd == null;
+		Guan.echo("MouseDown");
+	}
+
+	public void mouse1dragged(MouseEvent e) {
+		if (dragStart == null) {
+			return;
+		}
+
+		if (dragEnd == null) {
+			dragEnd = new Point();
+		}
+		dragEnd.setX(viewToWorldX(e.getX()));
+		dragEnd.setY(viewToWorldY(e.getY()));
+
+		tempSelection = world.getPointsIn(dragStart.getX(), dragStart.getY(), dragEnd.getX(), dragEnd.getY());
+		if (!additiveSelection) {
+			selection.clear();
+		}
+		Guan.echo("MouseDrag");
+	}
+
+	public void mouse1released(MouseEvent e) {
+		if (dragStart != null && dragEnd != null) {
+			if (!additiveSelection) {
+				selection.clear();
+			}
+			selection.addAll(tempSelection);
+			tempSelection.clear();
+		}
+
+		dragStart = dragEnd = null;
+		Guan.echo("MouseUp");
 	}
 
 }

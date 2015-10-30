@@ -57,8 +57,39 @@ class World {
 		}
 	}
 
-	void update() {
+	public void update() {
 
+	}
+
+	private static double sqr(double d) {
+		return d * d;
+	}
+
+	public Point getPointAt(double x, double y, double rectSize) {
+		Point nearest = null;
+		double minDistSq = Double.MAX_VALUE;
+		for (Point p : points) {
+			double distSq = sqr(p.getX() - x) + sqr(p.getY() - y);
+			if (distSq < minDistSq) {
+				minDistSq = distSq;
+				nearest = p;
+			}
+		}
+		if (nearest != null && Math.max(nearest.getX() - x, nearest.getY() - y) < (rectSize / 2.0)) {
+			return nearest;
+		} else {
+			return null;
+		}
+	}
+
+	public Set<Point> getPointsIn(double x1, double y1, double x2, double y2) {
+		Set<Point> resultSet = new HashSet<>();
+		for (Point p : points) {
+			if (p.inRect(x1, y1, x2, y2)) {
+				resultSet.add(p);
+			}
+		}
+		return resultSet;
 	}
 
 }
