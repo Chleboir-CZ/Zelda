@@ -23,7 +23,7 @@ class OrthoCamera {
 
 	private boolean boundsDebug = false;
 
-	private Point dragStart, dragEnd;
+	private Point dragStart, dragEnd, moveStart, moveEnd;
 	private Set<Point> selection, tempSelection;
 	private boolean additiveSelection;
 	//private Set<SmartLine> selectedLines; 
@@ -107,22 +107,40 @@ class OrthoCamera {
 
 		//graphics.drawString("DS: " + (dragStart != null ? dragStart.toString() : "null"), 80, 20);
 		//graphics.drawString("DE: " + (dragEnd != null ? dragEnd.toString() : "null"), 80, 40);
+		double dx = 0, dy = 0;
+		if (moveStart != null && moveEnd != null) {
+			dx = moveEnd.getX() - moveStart.getX();
+			dy = moveEnd.getY() - moveStart.getY();
+		}
 
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
 		for (SmartLine line : world.lines) {
-			graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
+			double adx1 = 0, ady1 = 0;
+			double adx2 = 0, ady2 = 0;
+			if (selection.contains(line.A)) {
+				adx1 = dx;
+				ady1 = dy;
+			}
+			if (selection.contains(line.B)) {
+				adx2 = dx;
+				ady2 = dy;
+			}
+			graphics.drawLine(worldToViewX(line.A.x + adx1), worldToViewY(line.A.y + ady1), worldToViewX(line.B.x + adx2), worldToViewY(line.B.y + ady2));
 		}
 
 		for (Point point : world.points) {
+			double adx = 0, ady = 0;
 			if (selection.contains(point) || tempSelection.contains(point)) {
 				graphics.setStroke(selectionStroke);
 				graphics.setColor(Color.PINK);
+				adx = dx;
+				ady = dy;
 			} else {
 				graphics.setStroke(defaultStroke);
 				graphics.setColor(Color.WHITE);
 			}
-			graphics.drawRect(worldToViewX(point.x) - Point.DISPLAY_SIZE / 2, worldToViewY(point.y) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			graphics.drawRect(worldToViewX(point.x + adx) - Point.DISPLAY_SIZE / 2, worldToViewY(point.y + ady) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
 		}
 
 		if (dragStart != null && dragEnd != null) {
@@ -229,10 +247,11 @@ class OrthoCamera {
 		additiveSelection = e.isShiftDown();
 		Point pointAt = getPointAt(e.getX(), e.getY());
 		if (pointAt != null) {
-			if (!additiveSelection) {
+			if (!additiveSelection && !selection.contains(pointAt)) {
 				selection.clear();
 			}
 			selection.add(pointAt);
+			moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 		} else {
 			dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 			assert dragEnd == null;
@@ -241,19 +260,23 @@ class OrthoCamera {
 	}
 
 	public void mouse1dragged(MouseEvent e) {
-		if (dragStart == null) {
-			return;
-		}
+		if (dragStart != null) {
+			if (dragEnd == null) {
+				dragEnd = new Point();
+			}
+			dragEnd.setX(viewToWorldX(e.getX()));
+			dragEnd.setY(viewToWorldY(e.getY()));
 
-		if (dragEnd == null) {
-			dragEnd = new Point();
-		}
-		dragEnd.setX(viewToWorldX(e.getX()));
-		dragEnd.setY(viewToWorldY(e.getY()));
-
-		tempSelection = world.getPointsIn(dragStart.getX(), dragStart.getY(), dragEnd.getX(), dragEnd.getY());
-		if (!additiveSelection) {
-			selection.clear();
+			tempSelection = world.getPointsIn(dragStart.getX(), dragStart.getY(), dragEnd.getX(), dragEnd.getY());
+			if (!additiveSelection) {
+				selection.clear();
+			}
+		} else if (moveStart != null) {
+			if (moveEnd == null) {
+				moveEnd = new Point();
+			}
+			moveEnd.setX(viewToWorldX(e.getX()));
+			moveEnd.setY(viewToWorldY(e.getY()));
 		}
 		//Guan.echo("MouseDrag");
 	}
@@ -266,10 +289,14 @@ class OrthoCamera {
 			if (dragEnd != null) {
 				selection.addAll(tempSelection);
 				tempSelection.clear();
+				dragEnd = null;
 			}
+			dragStart = null;
+		} else if (moveStart != null && moveEnd != null) {
+			world.shiftPoints(selection, moveEnd.getX() - moveStart.getX(), moveEnd.getY() - moveStart.getY());
+			moveStart = moveEnd = null;
 		}
 
-		dragStart = dragEnd = null;
 		//Guan.echo("MouseUp");
 	}
 

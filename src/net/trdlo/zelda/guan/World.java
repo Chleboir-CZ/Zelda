@@ -92,4 +92,12 @@ class World {
 		return resultSet;
 	}
 
+	public void shiftPoints(Set<Point> shiftPoints, double dx, double dy) {
+		for (Point p : points) {
+			if (shiftPoints.contains(p)) {
+				p.setXY(p.getX() + dx, p.getY() + dy);
+			}
+		}
+	}
+
 }
