@@ -75,7 +75,7 @@ class World {
 				nearest = p;
 			}
 		}
-		if (nearest != null && Math.max(nearest.getX() - x, nearest.getY() - y) < (rectSize / 2.0)) {
+		if (nearest != null && Math.max(Math.abs(nearest.getX() - x), Math.abs(nearest.getY() - y)) < (rectSize / 2.0)) {
 			return nearest;
 		} else {
 			return null;

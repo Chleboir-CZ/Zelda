@@ -105,6 +105,9 @@ class OrthoCamera {
 			renderBoundsDebug(graphics);
 		}
 
+		//graphics.drawString("DS: " + (dragStart != null ? dragStart.toString() : "null"), 80, 20);
+		//graphics.drawString("DE: " + (dragEnd != null ? dragEnd.toString() : "null"), 80, 40);
+
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
 		for (SmartLine line : world.lines) {
@@ -230,10 +233,11 @@ class OrthoCamera {
 				selection.clear();
 			}
 			selection.add(pointAt);
+		} else {
+			dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
+			assert dragEnd == null;
 		}
-		dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
-		assert dragEnd == null;
-		Guan.echo("MouseDown");
+		//Guan.echo("MouseDown, pointAt: " + (pointAt != null ? pointAt.toString() : "null"));
 	}
 
 	public void mouse1dragged(MouseEvent e) {
@@ -251,20 +255,22 @@ class OrthoCamera {
 		if (!additiveSelection) {
 			selection.clear();
 		}
-		Guan.echo("MouseDrag");
+		//Guan.echo("MouseDrag");
 	}
 
 	public void mouse1released(MouseEvent e) {
-		if (dragStart != null && dragEnd != null) {
+		if (dragStart != null) {
 			if (!additiveSelection) {
 				selection.clear();
 			}
-			selection.addAll(tempSelection);
-			tempSelection.clear();
+			if (dragEnd != null) {
+				selection.addAll(tempSelection);
+				tempSelection.clear();
+			}
 		}
 
 		dragStart = dragEnd = null;
-		Guan.echo("MouseUp");
+		//Guan.echo("MouseUp");
 	}
 
 }

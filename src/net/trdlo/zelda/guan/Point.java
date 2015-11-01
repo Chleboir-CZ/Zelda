@@ -19,7 +19,7 @@ public class Point implements Selectable {
 	public Set<Line> connectedLines = null;
 
 	public Point() {
-
+		description = "";
 	}
 
 	public Point(double x, double y) {
