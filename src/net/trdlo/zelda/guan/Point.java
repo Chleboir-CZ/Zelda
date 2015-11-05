@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 public class Point implements Selectable {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
-	public static final int DISPLAY_SIZE = 8;
+	public static final int DISPLAY_SIZE = 12;
 
 	public static Point fromAWTPoint(java.awt.Point awtPoint) {
 		return new Point(awtPoint.x, awtPoint.y);
@@ -18,20 +18,18 @@ public class Point implements Selectable {
 
 	public Set<Line> connectedLines = null;
 
-	public Point() {
-		description = "";
-	}
-
-	public Point(double x, double y) {
-		this.x = x;
-		this.y = y;
-		this.description = "";
-	}
-
 	public Point(double x, double y, String description) {
 		this.x = x;
 		this.y = y;
 		this.description = (description != null ? description : "");
+	}
+
+	public Point(double x, double y) {
+		this(x, y, "");
+	}
+
+	public Point() {
+		this(0, 0, "");
 	}
 
 	public java.awt.Point getJavaPoint() {

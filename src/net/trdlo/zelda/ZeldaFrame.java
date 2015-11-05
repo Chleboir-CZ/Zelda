@@ -20,6 +20,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
+import net.trdlo.zelda.guan.Console;
 
 public final class ZeldaFrame extends JFrame implements WindowListener, KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 
@@ -46,6 +47,9 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	private final Queue<MouseEvent> mouseEventQueue;
 
 	private final boolean keyMap[];
+	private boolean keyInputDebug = false;
+
+	public static final Console console = new Console();
 
 	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
 		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
@@ -88,10 +92,11 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		g.setColor(Color.WHITE);
 
 		gameInterface.render(g, renderFraction);
+		console.render(g, renderFraction);
 
 		g.setColor(Color.GREEN);
 
-		g.fillArc(20, 20, 20, 20, 0, (int) (360 * renderFraction));
+		g.fillArc(bounds.width - 40, 20, 20, 20, 0, (int) (360 * renderFraction));
 
 		if (!bufferStrategy.contentsLost()) {
 			bufferStrategy.show();
@@ -109,15 +114,30 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((e = keyEventQueue.poll()) != null) {
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
-					gameInterface.keyTyped(e);
+					if (keyInputDebug) {
+						ZeldaFrame.console.echo(3000, "Typed: '" + e.getKeyChar() + "'");
+					}
+					switch (e.getKeyChar()) {
+						case 'k':
+							keyInputDebug = !keyInputDebug;
+							break;
+						default:
+							gameInterface.keyTyped(e);
+					}
 					break;
 				case KeyEvent.KEY_PRESSED:
+					if (keyInputDebug) {
+						ZeldaFrame.console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+					}
 					if (e.getKeyCode() < 256) {
 						keyMap[e.getKeyCode()] = true;
 					}
 					gameInterface.keyPressed(e);
 					break;
 				case KeyEvent.KEY_RELEASED:
+					if (keyInputDebug) {
+						ZeldaFrame.console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+					}
 					if (e.getKeyCode() < 256) {
 						keyMap[e.getKeyCode()] = false;
 					}
@@ -158,6 +178,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 	private void update() {
 		dispatchInput();
+		console.update();
 		gameInterface.update();
 		updateFrame++;
 	}

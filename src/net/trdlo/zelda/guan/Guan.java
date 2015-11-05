@@ -6,8 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.ArrayList;
-import java.util.List;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.ZeldaFrame;
 
@@ -15,13 +13,9 @@ public class Guan implements GameInterface {
 
 	final World world;
 	private ZeldaFrame zFrame;
-	private OrthoCamera camera;
-
-	private static final List<String> console = new ArrayList<>();
+	private final OrthoCamera camera;
 
 	private XY viewDrag = null;
-
-	private boolean keyInputDebug = false;
 
 	public Guan() {
 		world = new World();
@@ -31,19 +25,13 @@ public class Guan implements GameInterface {
 			System.err.println("Could not load map! Proceeding with an empty one.");
 		}
 		camera = new OrthoCamera(world, 0, 0, 0);
+
 	}
 
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
 		camera.render(graphics, zFrame.getBounds(), renderFraction);
 
-		graphics.setStroke(camera.defaultStroke);
-		graphics.setColor(Color.WHITE);
-		int y = zFrame.getBounds().y + zFrame.getBounds().height;
-		for (String str : console) {
-			y -= 16;
-			graphics.drawString(str, 10, y);
-		}
 	}
 
 	private void readAsynchronoutInput() {
@@ -82,13 +70,9 @@ public class Guan implements GameInterface {
 			case 'v':
 				camera.setBoundsDebug(!camera.isBoundsDebug());
 				break;
-			case 'k':
-				keyInputDebug = !keyInputDebug;
+			case ';':
+				ZeldaFrame.console.setVisible(!ZeldaFrame.console.isVisible());
 				break;
-			default:
-				if (keyInputDebug) {
-					echo("Typed: '" + e.getKeyChar() + "'");
-				}
 		}
 	}
 
@@ -98,18 +82,12 @@ public class Guan implements GameInterface {
 			case KeyEvent.VK_ESCAPE:
 				zFrame.terminate();
 				break;
-			default:
-				if (keyInputDebug) {
-					echo("Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
-				}
 		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (keyInputDebug) {
-			echo("Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
-		}
+
 	}
 
 	@Override
@@ -167,14 +145,6 @@ public class Guan implements GameInterface {
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		camera.zoom(-e.getWheelRotation(), new XY(e));
-	}
-
-	public static void echo(String str) {
-		console.add(str);
-	}
-
-	public static void cls() {
-		console.clear();
 	}
 
 	public static void main(String args[]) throws Exception {

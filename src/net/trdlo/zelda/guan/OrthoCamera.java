@@ -24,7 +24,8 @@ class OrthoCamera {
 	private boolean boundsDebug = false;
 
 	private Point dragStart, dragEnd, moveStart, moveEnd;
-	private Set<Point> selection, tempSelection;
+	private final Set<Point> selection;
+	private Set<Point> tempSelection;
 	private boolean additiveSelection;
 	//private Set<SmartLine> selectedLines; 
 
