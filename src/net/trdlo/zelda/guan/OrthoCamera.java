@@ -149,8 +149,8 @@ class OrthoCamera {
 			graphics.drawRect(
 					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
 					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) / zoomCoef()),
-					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) / zoomCoef()));
+					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 	}
 
