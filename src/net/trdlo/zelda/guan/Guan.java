@@ -146,7 +146,7 @@ public class Guan implements GameInterface {
 		camera.zoom(-e.getWheelRotation(), new XY(e));
 	}
 
-	public static void main(String args[]) throws Exception {
+	public static void main(String args[]) {
 		ZeldaFrame.buildZeldaFrame(new Guan()).run();
 	}
 }
