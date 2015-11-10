@@ -1,9 +1,11 @@
 package net.trdlo.zelda.guan;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -74,6 +76,8 @@ public class Console {
 	private long motionStart;
 	private boolean visible = false;
 
+	final Stroke defaultStroke = new BasicStroke(1);
+
 	public void render(Graphics2D graphics, float renderFraction) {
 		double showing = Math.min(1, (getTime() - motionStart) / (double) MOTION_LENGTH);
 		showing = (Math.sin(-Math.PI / 2 + showing * Math.PI) + 1) / 2;
@@ -90,6 +94,8 @@ public class Console {
 		int height = (int) (CONSOLE_HEIGHT * showing);
 
 		//graphics.setBackground(Color.MAGENTA);
+		graphics.setStroke(defaultStroke);
+		graphics.setColor(Color.WHITE);
 		graphics.clearRect(0, 0, width, height);
 		graphics.drawRect(3, 3, width - 7, height - 7);
 		graphics.setFont(UI_FONT);

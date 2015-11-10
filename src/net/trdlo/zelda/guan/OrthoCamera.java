@@ -255,9 +255,8 @@ class OrthoCamera {
 			moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 		} else {
 			dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
-			assert dragEnd == null;
+			//assert dragEnd == null;
 		}
-		//Guan.echo("MouseDown, pointAt: " + (pointAt != null ? pointAt.toString() : "null"));
 	}
 
 	public void mouse1dragged(MouseEvent e) {
@@ -279,7 +278,6 @@ class OrthoCamera {
 			moveEnd.setX(viewToWorldX(e.getX()));
 			moveEnd.setY(viewToWorldY(e.getY()));
 		}
-		//Guan.echo("MouseDrag");
 	}
 
 	public void mouse1released(MouseEvent e) {
@@ -297,8 +295,6 @@ class OrthoCamera {
 			world.shiftPoints(selection, moveEnd.getX() - moveStart.getX(), moveEnd.getY() - moveStart.getY());
 			moveStart = moveEnd = null;
 		}
-
-		//Guan.echo("MouseUp");
 	}
 
 }
