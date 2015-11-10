@@ -20,7 +20,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
-import net.trdlo.zelda.guan.Console;
 
 public final class ZeldaFrame extends JFrame implements WindowListener, KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 
@@ -117,12 +116,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					if (keyInputDebug) {
 						ZeldaFrame.console.echo(3000, "Typed: '" + e.getKeyChar() + "'");
 					}
-					switch (e.getKeyChar()) {
-						case 'k':
-							keyInputDebug = !keyInputDebug;
-							break;
-						default:
-							gameInterface.keyTyped(e);
+					if (!console.keyTyped(e)) {
+						gameInterface.keyTyped(e);
 					}
 					break;
 				case KeyEvent.KEY_PRESSED:
@@ -132,7 +127,9 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					if (e.getKeyCode() < 256) {
 						keyMap[e.getKeyCode()] = true;
 					}
-					gameInterface.keyPressed(e);
+					if (!console.keyPressed(e)) {
+						gameInterface.keyPressed(e);
+					}
 					break;
 				case KeyEvent.KEY_RELEASED:
 					if (keyInputDebug) {
@@ -141,7 +138,9 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					if (e.getKeyCode() < 256) {
 						keyMap[e.getKeyCode()] = false;
 					}
-					gameInterface.keyReleased(e);
+					if (!console.keyReleased(e)) {
+						gameInterface.keyReleased(e);
+					}
 					break;
 			}
 		}
@@ -149,13 +148,19 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((me = mouseEventQueue.poll()) != null) {
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
-					gameInterface.mouseClicked(me);
+					if (!console.mouseClicked(me)) {
+						gameInterface.mouseClicked(me);
+					}
 					break;
 				case MouseEvent.MOUSE_PRESSED:
-					gameInterface.mousePressed(me);
+					if (!console.mousePressed(me)) {
+						gameInterface.mousePressed(me);
+					}
 					break;
 				case MouseEvent.MOUSE_RELEASED:
-					gameInterface.mouseReleased(me);
+					if (!console.mouseReleased(me)) {
+						gameInterface.mouseReleased(me);
+					}
 					break;
 				case MouseEvent.MOUSE_MOVED:
 					gameInterface.mouseMoved(me);
