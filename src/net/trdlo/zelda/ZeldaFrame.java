@@ -189,7 +189,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	public void run() {
-		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		setIgnoreRepaint(true);
 		setUndecorated(true);
