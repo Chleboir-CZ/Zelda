@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
-import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.Console;
 
 class World {
 
@@ -43,7 +43,7 @@ class World {
 				Integer pointId = Integer.valueOf(m.group(1));
 				pointIdMap.put(pointId, newPoint);
 				points.add(newPoint);
-				ZeldaFrame.console.echo("%s", newPoint);
+				Console.getInstance().echo("%s", newPoint);
 			} else if ((m = Line.PAT_LINE.matcher(line)).matches()) {
 				Point A = pointIdMap.get(Integer.valueOf(m.group(1)));
 				if (A == null) {

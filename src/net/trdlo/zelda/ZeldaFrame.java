@@ -7,21 +7,19 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-public final class ZeldaFrame extends JFrame implements WindowListener, KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
+public final class ZeldaFrame extends JFrame implements WindowListener, InputListener, CommandExecuter {
 
 	private boolean terminate = false;
 	private long runStartTime = 0;
@@ -48,7 +46,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	private final boolean keyMap[];
 	private boolean keyInputDebug = false;
 
-	public static final Console console = new Console();
+	private final Console console;
 
 	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
 		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
@@ -68,6 +66,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
 
 		keyMap = new boolean[256];
+		console = Console.getInstance();
 	}
 
 	private void setListeners() {
@@ -76,6 +75,9 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
+
+		console.addCommandExecuter(this);
+		console.addCommandExecuter(gameInterface);
 	}
 
 	private void render(float renderFraction) {
@@ -108,13 +110,29 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
 	}
 
+	public void clearKeysPressed() {
+		Arrays.fill(keyMap, false);
+	}
+
+	private final Pattern PAT_EXIT = Pattern.compile("^exit$", Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		if (PAT_EXIT.matcher(command).matches()) {
+			terminate();
+		} else {
+			return false;
+		}
+		return true;
+	}
+
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
 					if (keyInputDebug) {
-						ZeldaFrame.console.echo(3000, "Typed: '" + e.getKeyChar() + "'");
+						console.echo(3000, "Typed: '" + e.getKeyChar() + "'");
 					}
 					if (!console.keyTyped(e)) {
 						gameInterface.keyTyped(e);
@@ -122,23 +140,23 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					break;
 				case KeyEvent.KEY_PRESSED:
 					if (keyInputDebug) {
-						ZeldaFrame.console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
-					}
-					if (e.getKeyCode() < 256) {
-						keyMap[e.getKeyCode()] = true;
+						console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (!console.keyPressed(e)) {
+						if (e.getKeyCode() < 256) {
+							keyMap[e.getKeyCode()] = true;
+						}
 						gameInterface.keyPressed(e);
 					}
 					break;
 				case KeyEvent.KEY_RELEASED:
 					if (keyInputDebug) {
-						ZeldaFrame.console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
-					}
-					if (e.getKeyCode() < 256) {
-						keyMap[e.getKeyCode()] = false;
+						console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (!console.keyReleased(e)) {
+						if (e.getKeyCode() < 256) {
+							keyMap[e.getKeyCode()] = false;
+						}
 						gameInterface.keyReleased(e);
 					}
 					break;

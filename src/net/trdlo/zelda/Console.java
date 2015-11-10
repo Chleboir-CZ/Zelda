@@ -9,6 +9,7 @@ import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -66,13 +67,27 @@ public class Console {
 	final Stroke defaultStroke = new BasicStroke(1);
 
 	private final List<Message> messages = new LinkedList<>();
-	private StringBuilder currentCommand = new StringBuilder("Test");
+	private StringBuilder currentCommand = new StringBuilder();
+	private List<CommandExecuter> executers = new ArrayList<>();
 
 	private long motionStart;
 	private boolean visible = false;
 
 	private int currentHeight;
 	private boolean mouseCapture = false;
+
+	private static Console instance;
+
+	public static Console getInstance() {
+		if (instance == null) {
+			instance = new Console();
+		}
+		return instance;
+	}
+
+	private Console() {
+
+	}
 
 	public void render(Graphics2D graphics, float renderFraction) {
 		long time = getTime();
@@ -171,19 +186,13 @@ public class Console {
 		if (visible != value) {
 			visible = value;
 			motionStart = getTime() - Math.max(0, motionStart + MOTION_LENGTH - getTime());
+			if (value) {
+				//TODO: zFrame.clearKeysPressed()
+			}
 		}
 	}
 
 	public boolean isVisible() {
-		return visible;
-	}
-
-	public boolean keyPressed(KeyEvent e) {
-		if (visible && e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			setVisible(false);
-			return true;
-		}
-
 		return visible;
 	}
 
@@ -193,6 +202,19 @@ public class Console {
 				&& !Character.isISOControl(c))
 				&& c != KeyEvent.CHAR_UNDEFINED
 				&& block != null && block != Character.UnicodeBlock.SPECIALS;
+	}
+
+	private void executeCommand(String command) {
+		for (CommandExecuter executer : executers) {
+			if (executer.executeCommand(command, this)) {
+				return;
+			}
+		}
+		echo(5000, "Unknown or malformed command \"" + command + "\"");
+	}
+
+	public void addCommandExecuter(CommandExecuter executer) {
+		executers.add(executer);
 	}
 
 	public boolean keyTyped(KeyEvent e) {
@@ -205,9 +227,10 @@ public class Console {
 
 		char typed = e.getKeyChar();
 		if (typed == '\n' && currentCommand.length() > 0) {
-			echo(3000, currentCommand.toString());
+			String command = currentCommand.toString();
+			echo(command);
+			executeCommand(command);
 			currentCommand.setLength(0);
-			//TODO execute command
 		}
 		if (typed == '\b' && currentCommand.length() > 0) {
 			currentCommand.deleteCharAt(currentCommand.length() - 1);
@@ -216,6 +239,15 @@ public class Console {
 		}
 
 		return true;
+	}
+
+	public boolean keyPressed(KeyEvent e) {
+		if (visible && e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+			setVisible(false);
+			return true;
+		}
+
+		return visible;
 	}
 
 	public boolean keyReleased(KeyEvent e) {

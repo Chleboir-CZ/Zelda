@@ -5,6 +5,9 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.ZeldaFrame;
 
@@ -60,17 +63,27 @@ public class Guan implements GameInterface {
 		return "Guam tile-less game demo.";
 	}
 
+	private final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
+	private final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		Matcher m;
+		if (PAT_GET_BOUNDS_DEBUG.matcher(command).matches()) {
+			console.echo("bounds-debug " + (camera.isBoundsDebug() ? "1" : "0"));
+		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
+			camera.setBoundsDebug("1".equals(m.group(1)));
+		} else {
+			return false;
+		}
+		return true;
+	}
+
 	@Override
 	public void keyTyped(KeyEvent e) {
 		switch (e.getKeyChar()) {
-			case 'q':
-				zFrame.terminate();
-				break;
 			case 'v':
 				camera.setBoundsDebug(!camera.isBoundsDebug());
-				break;
-			case ';':
-				ZeldaFrame.console.setVisible(!ZeldaFrame.console.isVisible());
 				break;
 		}
 	}

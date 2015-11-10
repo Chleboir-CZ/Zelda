@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
 import net.trdlo.zelda.ZeldaFrame;
@@ -711,6 +712,11 @@ public class NoTilesGame implements GameInterface, InputListener {
 				//tak nedelej nic...
 				break;
 		}
+	}
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		return false;
 	}
 
 	@Override

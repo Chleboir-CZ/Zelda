@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.ZeldaFrame;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
@@ -35,7 +36,7 @@ public class TiledGame implements GameInterface, InputListener {
 	public TiledGame(World world) {
 		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f);
 	}
-	
+
 	public TiledGame() throws Exception {
 		this(World.loadFromFile(new File("maps/small.txt"), false));
 	}
@@ -221,16 +222,21 @@ public class TiledGame implements GameInterface, InputListener {
 //		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		return false;
+	}
+
+	@Override
+	public String getWindowCaption() {
+		return "Tiled Zelda game demo";
+	}
+
 	public static void main(String[] args) {
 		try {
 			ZeldaFrame.buildZeldaFrame(new TiledGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-	}
-
-	@Override
-	public String getWindowCaption() {
-		return "Tiled Zelda game demo";
 	}
 }
