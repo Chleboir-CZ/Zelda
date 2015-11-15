@@ -15,6 +15,7 @@ import java.awt.image.BufferStrategy;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -114,11 +115,18 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		Arrays.fill(keyMap, false);
 	}
 
+	private final Pattern PAT_GET_KEY_DEBUG = Pattern.compile("^\\s*key-debug\\s*$", Pattern.CASE_INSENSITIVE);
+	private final Pattern PAT_SET_KEY_DEBUG = Pattern.compile("^\\s*key-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
 	private final Pattern PAT_EXIT = Pattern.compile("^exit$", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
-		if (PAT_EXIT.matcher(command).matches()) {
+		Matcher m;
+		if (PAT_GET_KEY_DEBUG.matcher(command).matches()) {
+			console.echo("key-debug " + (keyInputDebug ? "1" : "0"));
+		} else if ((m = PAT_SET_KEY_DEBUG.matcher(command)).matches()) {
+			keyInputDebug = "1".equals(m.group(1));
+		} else if (PAT_EXIT.matcher(command).matches()) {
 			terminate();
 		} else {
 			return false;
@@ -140,7 +148,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					break;
 				case KeyEvent.KEY_PRESSED:
-					key =  e.getKeyCode();
+					key = e.getKeyCode();
 					if (keyInputDebug) {
 						console.echo(3000, "Pressed: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
@@ -152,7 +160,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					break;
 				case KeyEvent.KEY_RELEASED:
-					key =  e.getKeyCode();
+					key = e.getKeyCode();
 					if (keyInputDebug) {
 						console.echo(3000, "Released: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
