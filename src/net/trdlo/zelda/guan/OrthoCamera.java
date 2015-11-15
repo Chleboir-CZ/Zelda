@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 class OrthoCamera {
@@ -99,6 +100,21 @@ class OrthoCamera {
 		}
 	}
 
+	private void renderReflectionsDebug(Graphics2D graphics) {
+		if (world.lines.size() < 2) {
+			return;
+		}
+		Iterator<SmartLine> it = world.lines.iterator();
+		Line t = it.next(), m = it.next();
+
+		SmartLine r = SmartLine.constructFromLine(m.reflect(t));
+		graphics.drawLine(worldToViewX(r.A.x), worldToViewY(r.A.y), worldToViewX(r.B.x), worldToViewY(r.B.y));
+		SmartLine b = SmartLine.constructFromLine(m.bounceOff(t));
+		graphics.drawLine(worldToViewX(b.A.x), worldToViewY(b.A.y), worldToViewX(b.B.x), worldToViewY(b.B.y));
+		SmartLine br = SmartLine.constructFromLine(m.bounceOffRay(t));
+		graphics.drawLine(worldToViewX(br.A.x), worldToViewY(br.A.y), worldToViewX(br.B.x), worldToViewY(br.B.y));
+	}
+
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
 		this.componentBounds = componentBounds;
 
@@ -117,32 +133,37 @@ class OrthoCamera {
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
 		for (SmartLine line : world.lines) {
-			double adx1 = 0, ady1 = 0;
-			double adx2 = 0, ady2 = 0;
+			double lAx = line.A.x, lAy = line.A.y;
+			double lBx = line.B.x, lBy = line.B.y;
 			if (selection.contains(line.A)) {
-				adx1 = dx;
-				ady1 = dy;
+				lAx += dx;
+				lAy += dy;
 			}
 			if (selection.contains(line.B)) {
-				adx2 = dx;
-				ady2 = dy;
+				lBx += dx;
+				lBy += dy;
 			}
-			graphics.drawLine(worldToViewX(line.A.x + adx1), worldToViewY(line.A.y + ady1), worldToViewX(line.B.x + adx2), worldToViewY(line.B.y + ady2));
+			graphics.drawLine(worldToViewX(lAx), worldToViewY(lAy), worldToViewX(lBx), worldToViewY(lBy));
 		}
 
 		for (Point point : world.points) {
-			double adx = 0, ady = 0;
+			double px = point.x, py = point.y;
 			if (selection.contains(point) || tempSelection.contains(point)) {
 				graphics.setStroke(selectionStroke);
 				graphics.setColor(Color.PINK);
-				adx = dx;
-				ady = dy;
+				px += dx;
+				py += dy;
 			} else {
 				graphics.setStroke(defaultStroke);
 				graphics.setColor(Color.WHITE);
 			}
-			graphics.drawRect(worldToViewX(point.x + adx) - Point.DISPLAY_SIZE / 2, worldToViewY(point.y + ady) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			int vx = worldToViewX(px);
+			int vy = worldToViewY(py);
+			graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			graphics.drawString(point.getDescription(), vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
 		}
+
+		renderReflectionsDebug(graphics);
 
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(dashStroke);

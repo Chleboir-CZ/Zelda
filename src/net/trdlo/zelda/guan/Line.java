@@ -68,17 +68,44 @@ public class Line {
 	}
 
 	/**
-	 * Nalezne průsečík této a jiné přímky
+	 * Nalezne průsečík této a jiné přímky nebo této a jiné úsečky
 	 *
 	 * @param line	druhá přímka
+	 * @param treatAsSegments	zda mají být přímky chápány jako úsečky
 	 * @return	bod, kde se protnou, nebo null, pokud se neprotnou
 	 */
-	public Point intersectPoint(Line line) {
+	public Point getIntersection(Line line, boolean treatAsSegments) {
 		double denominator = (a * line.b - line.a * b);
 		if (denominator == 0) {
 			return null;
 		}
 		return new Point((b * line.c - c * line.b) / denominator, -(a * line.c - line.a * c) / denominator);
+	}
+	
+	public boolean contains(Point p) {
+		return a * p.x + b * p.y + c == 0; //Math.abs(a * p.x + b * p.y + c) < World.MINIMAL_DETECTABLE_DISTANCE;
+	}
+
+	/**
+	 *
+	 * @param p
+	 * @param treatAsSegment
+	 * @return
+	 */
+	public double getDistance(Point p, boolean treatAsSegment) {
+		
+		return 0;
+	}
+
+	/**
+	 *
+	 * @param l
+	 * @param treatAsSegments
+	 * @return
+	 */
+	public double getDistance(Line l, boolean treatAsSegments) {
+
+		return 0;
 	}
 
 	/**
@@ -92,18 +119,42 @@ public class Line {
 	}
 
 	/**
-	 * Vytvoří obraz réro přímky souměrný přes osu danou přímkou
+	 * Vytvoří zrcadlový obraz dodané úsečky podle sebe
 	 *
-	 * @param mirror	osa souměrnosti
-	 * @return	obraz přes osu souměrnosti mirror
+	 * @param original	dodaná úsečka
+	 * @return			úsečka symetrická přes tuto přímku
 	 */
-	public Line createMirrorLine(Line mirror) {
-		Point intersect = this.intersectPoint(mirror);
-		Line lineNormal = constructFromPointAndVector(intersect, mirror.a, mirror.b);
-		Line lineParalell = constructFromPointAndNormal(A, mirror.a, mirror.b);
-		Point S = lineParalell.intersectPoint(lineNormal);
-		Point reflectedA = new Point(2 * S.x - A.x, 2 * S.y - A.y);
-		return Line.constructFromTwoPoints(intersect, reflectedA);
+	public Line reflect(Line original) {
+		Point SA = getIntersection(Line.constructFromPointAndVector(original.A, a, b), false);
+		Point AR = new Point(2 * SA.x - original.A.x, 2 * SA.y - original.A.y);
+		Point SB = getIntersection(Line.constructFromPointAndVector(original.B, a, b), false);
+		Point BR = new Point(2 * SB.x - original.B.x, 2 * SB.y - original.B.y);
+		return Line.constructFromTwoPoints(AR, BR);
+	}
+
+	/**
+	 * Vytvoří obraz dodané úsečky přes kolmici na průnik se sebou
+	 *
+	 * @param original	dodaná úsečka
+	 * @return			úsečka symetrická přes kolmici na tuto přímku bodem průniku s dodanou přímkou
+	 */
+	public Line bounceOff(Line original) {
+		Point iP = getIntersection(original, false);
+		Line mirror = Line.constructFromPointAndVector(iP, a, b);
+		return mirror.reflect(original);
+	}
+
+	/**
+	 * 
+	 * @param original
+	 * @return 
+	 */
+	public Line bounceOffRay(Line original) {
+		Point iP = getIntersection(original, false);
+		Point newB = new Point(iP.x + original.A.x - original.B.x, iP.y + original.A.y - original.B.y);
+		Point S = constructFromPointAndNormal(newB, a, b).getIntersection(constructFromPointAndVector(iP, a, b), false);
+		Point refB = new Point(2 * S.x - newB.x, 2 * S.y - newB.y);
+		return Line.constructFromTwoPoints(iP, refB);
 	}
 
 	@Override

@@ -22,7 +22,7 @@ public class Guan implements GameInterface {
 	public Guan() {
 		world = new World();
 		try {
-			world.loadFromFile("save.map");
+			world.loadFromFile("maps/test.map");
 		} catch (Exception ex) {
 			System.err.println("Could not load map! Proceeding with an empty one.");
 		}

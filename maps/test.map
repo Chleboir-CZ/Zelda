@@ -1,0 +1,6 @@
+Point 0 [200; -350]
+Point 1 [100; 400]
+Line 0 1
+Point 2 [0; -300]
+Point 3 [60; -200]
+Line 2 3
