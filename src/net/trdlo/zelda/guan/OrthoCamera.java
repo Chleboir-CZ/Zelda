@@ -12,16 +12,18 @@ import java.util.Set;
 class OrthoCamera {
 
 	public static final double ZOOM_BASE = 1.1;
+	private static final Stroke defaultStroke = new BasicStroke(1);
+	private static final Stroke selectionStroke = new BasicStroke(2);
+	private static final Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
+
+	private boolean boundsDebug = false;
 
 	private World world;
 	private double x, y;
 	private int zoom;
+
 	private double zoomCoefLimit;
 	private Rectangle componentBounds, cameraBounds;
-
-	final Stroke defaultStroke, selectionStroke, dashStroke;
-
-	private boolean boundsDebug = false;
 
 	private Point dragStart, dragEnd, moveStart, moveEnd;
 	private final Set<Point> selection;
@@ -31,9 +33,6 @@ class OrthoCamera {
 
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
-		defaultStroke = new BasicStroke(1);
-		selectionStroke = new BasicStroke(2);
-		dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 
 		selection = new HashSet<>();
 		tempSelection = new HashSet<>();
@@ -51,18 +50,22 @@ class OrthoCamera {
 	}
 
 	private int worldToViewX(double x) {
+		assert componentBounds != null;
 		return (int) ((componentBounds.width / 2) + (x - this.x) * zoomCoef());
 	}
 
 	public int worldToViewY(double y) {
+		assert componentBounds != null;
 		return (int) ((componentBounds.height / 2) + (y - this.y) * zoomCoef());
 	}
 
 	public double viewToWorldX(int x) {
+		assert componentBounds != null;
 		return (x - (componentBounds.width / 2)) / zoomCoef() + this.x;
 	}
 
 	public double viewToWorldY(int y) {
+		assert componentBounds != null;
 		return (y - (componentBounds.height / 2)) / zoomCoef() + this.y;
 	}
 
@@ -148,10 +151,10 @@ class OrthoCamera {
 			graphics.setStroke(dashStroke);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 	}
 

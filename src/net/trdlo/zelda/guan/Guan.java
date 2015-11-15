@@ -13,8 +13,9 @@ import net.trdlo.zelda.ZeldaFrame;
 
 public class Guan implements GameInterface {
 
-	final World world;
 	private ZeldaFrame zFrame;
+
+	private World world;
 	private final OrthoCamera camera;
 
 	private XY viewDrag = null;
@@ -60,11 +61,13 @@ public class Guan implements GameInterface {
 
 	@Override
 	public String getWindowCaption() {
-		return "Guam tile-less game demo.";
+		return "Guan tile-less game demo.";
 	}
 
 	private final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
 	private final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
+	private final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
+	private final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
@@ -73,9 +76,16 @@ public class Guan implements GameInterface {
 			console.echo("bounds-debug " + (camera.isBoundsDebug() ? "1" : "0"));
 		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
 			camera.setBoundsDebug("1".equals(m.group(1)));
+		} else if (PAT_SAVE.matcher(command).matches()) {
+			//String fileName = Word.fileName;
+			//TODO Save to fileName
+		} else if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
+			String fileName = m.group("file");
+			//TODO Save to fileName
 		} else {
 			return false;
 		}
+
 		return true;
 	}
 
