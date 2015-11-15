@@ -129,6 +129,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {
+			int key;
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
 					if (keyInputDebug) {
@@ -139,24 +140,26 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					break;
 				case KeyEvent.KEY_PRESSED:
+					key =  e.getKeyCode();
 					if (keyInputDebug) {
-						console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+						console.echo(3000, "Pressed: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (!console.keyPressed(e)) {
-						if (e.getKeyCode() < 256) {
-							keyMap[e.getKeyCode()] = true;
+						if (key < 256) {
+							keyMap[key] = true;
 						}
 						gameInterface.keyPressed(e);
 					}
 					break;
 				case KeyEvent.KEY_RELEASED:
+					key =  e.getKeyCode();
 					if (keyInputDebug) {
-						console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+						console.echo(3000, "Released: " + key + ", char: '" + e.getKeyChar() + "'");
+					}
+					if (key < 256) {
+						keyMap[key] = false;
 					}
 					if (!console.keyReleased(e)) {
-						if (e.getKeyCode() < 256) {
-							keyMap[e.getKeyCode()] = false;
-						}
 						gameInterface.keyReleased(e);
 					}
 					break;
