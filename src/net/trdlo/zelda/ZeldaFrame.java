@@ -7,22 +7,19 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.util.concurrent.SynchronousQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-public final class ZeldaFrame extends JFrame implements WindowListener, KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
+public final class ZeldaFrame extends JFrame implements WindowListener, InputListener, CommandExecuter {
 
 	private boolean terminate = false;
 	private long runStartTime = 0;
@@ -43,28 +40,44 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 	private final GameInterface gameInterface;
 
-	private final SynchronousQueue<KeyEvent> keyEventQueue;
-	private final SynchronousQueue<MouseEvent> mouseEventQueue;
+	private final Queue<KeyEvent> keyEventQueue;
+	private final Queue<MouseEvent> mouseEventQueue;
 
-	public ZeldaFrame(String frameCaption, GameInterface gameInterface) {
+	private final boolean keyMap[];
+	private boolean keyInputDebug = false;
+
+	private final Console console;
+
+	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
+		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
+		zFrame.setListeners();
+		game.setZeldaFrame(zFrame);
+		return zFrame;
+	}
+
+	private ZeldaFrame(String frameCaption, GameInterface gameInterface) {
 		super(frameCaption);
 
 		this.gameInterface = gameInterface;
 
-		keyEventQueue = new SynchronousQueue<>();
-		mouseEventQueue = new SynchronousQueue<>();
+		keyEventQueue = new ConcurrentLinkedQueue<>();
+		mouseEventQueue = new ConcurrentLinkedQueue<>();
 
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
 
-		setListeners();
+		keyMap = new boolean[256];
+		console = Console.getInstance();
 	}
 
-	public void setListeners() {
+	private void setListeners() {
 		addWindowListener(this);
 		addKeyListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
+
+		console.addCommandExecuter(this);
+		console.addCommandExecuter(gameInterface);
 	}
 
 	private void render(float renderFraction) {
@@ -80,10 +93,11 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		g.setColor(Color.WHITE);
 
 		gameInterface.render(g, renderFraction);
+		console.render(g, renderFraction);
 
 		g.setColor(Color.GREEN);
 
-		g.fillArc(20, 20, 20, 20, 0, (int) (360 * renderFraction));
+		g.fillArc(bounds.width - 40, 20, 20, 20, 0, (int) (360 * renderFraction));
 
 		if (!bufferStrategy.contentsLost()) {
 			bufferStrategy.show();
@@ -92,18 +106,59 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		setRenderLength(getTime() - renderStart);
 	}
 
+	public boolean isPressed(int keyCode) {
+		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
+	}
+
+	public void clearKeysPressed() {
+		Arrays.fill(keyMap, false);
+	}
+
+	private final Pattern PAT_EXIT = Pattern.compile("^exit$", Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		if (PAT_EXIT.matcher(command).matches()) {
+			terminate();
+		} else {
+			return false;
+		}
+		return true;
+	}
+
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
-					gameInterface.keyTyped(e);
+					if (keyInputDebug) {
+						console.echo(3000, "Typed: '" + e.getKeyChar() + "'");
+					}
+					if (!console.keyTyped(e)) {
+						gameInterface.keyTyped(e);
+					}
 					break;
 				case KeyEvent.KEY_PRESSED:
-					gameInterface.keyPressed(e);
+					if (keyInputDebug) {
+						console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+					}
+					if (!console.keyPressed(e)) {
+						if (e.getKeyCode() < 256) {
+							keyMap[e.getKeyCode()] = true;
+						}
+						gameInterface.keyPressed(e);
+					}
 					break;
 				case KeyEvent.KEY_RELEASED:
-					gameInterface.keyReleased(e);
+					if (keyInputDebug) {
+						console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+					}
+					if (!console.keyReleased(e)) {
+						if (e.getKeyCode() < 256) {
+							keyMap[e.getKeyCode()] = false;
+						}
+						gameInterface.keyReleased(e);
+					}
 					break;
 			}
 		}
@@ -111,13 +166,19 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		while ((me = mouseEventQueue.poll()) != null) {
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
-					gameInterface.mouseClicked(me);
+					if (!console.mouseClicked(me)) {
+						gameInterface.mouseClicked(me);
+					}
 					break;
 				case MouseEvent.MOUSE_PRESSED:
-					gameInterface.mousePressed(me);
+					if (!console.mousePressed(me)) {
+						gameInterface.mousePressed(me);
+					}
 					break;
 				case MouseEvent.MOUSE_RELEASED:
-					gameInterface.mouseReleased(me);
+					if (!console.mouseReleased(me)) {
+						gameInterface.mouseReleased(me);
+					}
 					break;
 				case MouseEvent.MOUSE_MOVED:
 					gameInterface.mouseMoved(me);
@@ -140,12 +201,13 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 
 	private void update() {
 		dispatchInput();
+		console.update();
 		gameInterface.update();
 		updateFrame++;
 	}
 
 	public void run() {
-		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		setIgnoreRepaint(true);
 		setUndecorated(true);
@@ -157,7 +219,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 		try {
 			gDevice.setFullScreenWindow(this);
 
-		//if (gDevice.isDisplayChangeSupported()) {
+			//if (gDevice.isDisplayChangeSupported()) {
 			//	gDevice.setDisplayMode(new DisplayMode(1680, 1050, 32, DisplayMode.REFRESH_RATE_UNKNOWN));
 			//}
 			createBufferStrategy(2);
@@ -195,7 +257,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 					} else {
 						rendersPerFrame = (int) (lastRenderCount * (1.0f - approxProgres) + approxRenderCount * approxProgres);
 					}
-				//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
+					//logger.log(Level.SEVERE, updateFrame + ": " + renderCounter + "/" + rendersPerFrame);
 					//System.err.print(updateFrame + ": " + renderCounter + "/" + rendersPerFrame + ",\t");
 
 					float renderFraction = renderCounter / (float) rendersPerFrame;
@@ -295,11 +357,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	private void keyEvent(KeyEvent e) {
-		try {
-			keyEventQueue.put(e);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		keyEventQueue.add(e);
 	}
 
 	@Override
@@ -318,11 +376,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, KeyListe
 	}
 
 	private void mouseEvent(MouseEvent me) {
-		try {
-			mouseEventQueue.put(me);
-		} catch (InterruptedException ex) {
-			Logger.getLogger(GameInterface.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		mouseEventQueue.add(me);
 	}
 
 	@Override

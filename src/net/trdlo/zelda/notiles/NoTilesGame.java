@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
 import net.trdlo.zelda.ZeldaFrame;
@@ -117,6 +118,11 @@ public class NoTilesGame implements GameInterface, InputListener {
 		});
 	}
 
+	public NoTilesGame() {
+		this(World.createTestWorld());
+	}
+
+	@Override
 	public void setZeldaFrame(ZeldaFrame frame) {
 		this.zFrame = frame;
 	}
@@ -748,12 +754,19 @@ public class NoTilesGame implements GameInterface, InputListener {
 		}
 	}
 
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		return false;
+	}
+
+	@Override
+	public String getWindowCaption() {
+		return "Some freakin' title here!";
+	}
+
 	public static void main(String[] args) {
 		try {
-			NoTilesGame game = new NoTilesGame(World.createTestWorld());
-			ZeldaFrame frame = new ZeldaFrame("Tiled Zelda game demo", game);
-			game.setZeldaFrame(frame);
-			frame.run();
+			ZeldaFrame.buildZeldaFrame(new NoTilesGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
