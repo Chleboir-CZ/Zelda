@@ -12,14 +12,16 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 public final class ZeldaFrame extends JFrame implements WindowListener, InputListener, CommandExecuter {
+
+	private static ZeldaFrame instance = null;
 
 	private boolean terminate = false;
 	private long runStartTime = 0;
@@ -45,14 +47,23 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 	private final boolean keyMap[];
 	private boolean keyInputDebug = false;
+	private XY mouseXY = new XY(0, 0);
 
 	private final Console console;
 
-	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
-		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
-		zFrame.setListeners();
-		game.setZeldaFrame(zFrame);
-		return zFrame;
+	public static ZeldaFrame buildInstance(GameInterface game) {
+		assert instance == null;
+
+		instance = new ZeldaFrame(game.getWindowCaption(), game);
+		instance.setListeners();
+		game.setZeldaFrame(instance);
+		return instance;
+	}
+
+	public static ZeldaFrame getInstance() {
+		assert instance != null;
+
+		return instance;
 	}
 
 	private ZeldaFrame(String frameCaption, GameInterface gameInterface) {
@@ -110,15 +121,22 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
 	}
 
-	public void clearKeysPressed() {
-		Arrays.fill(keyMap, false);
+	public XY getMouseXY() {
+		return mouseXY;
 	}
 
+	private final Pattern PAT_GET_KEY_DEBUG = Pattern.compile("^\\s*key-debug\\s*$", Pattern.CASE_INSENSITIVE);
+	private final Pattern PAT_SET_KEY_DEBUG = Pattern.compile("^\\s*key-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
 	private final Pattern PAT_EXIT = Pattern.compile("^exit$", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
-		if (PAT_EXIT.matcher(command).matches()) {
+		Matcher m;
+		if (PAT_GET_KEY_DEBUG.matcher(command).matches()) {
+			console.echo("key-debug " + (keyInputDebug ? "1" : "0"));
+		} else if ((m = PAT_SET_KEY_DEBUG.matcher(command)).matches()) {
+			keyInputDebug = "1".equals(m.group(1));
+		} else if (PAT_EXIT.matcher(command).matches()) {
 			terminate();
 		} else {
 			return false;
@@ -129,6 +147,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {
+			int key;
 			switch (e.getID()) {
 				case KeyEvent.KEY_TYPED:
 					if (keyInputDebug) {
@@ -139,24 +158,26 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					break;
 				case KeyEvent.KEY_PRESSED:
+					key = e.getKeyCode();
 					if (keyInputDebug) {
-						console.echo(3000, "Pressed: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+						console.echo(3000, "Pressed: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (!console.keyPressed(e)) {
-						if (e.getKeyCode() < 256) {
-							keyMap[e.getKeyCode()] = true;
+						if (key < 256) {
+							keyMap[key] = true;
 						}
 						gameInterface.keyPressed(e);
 					}
 					break;
 				case KeyEvent.KEY_RELEASED:
+					key = e.getKeyCode();
 					if (keyInputDebug) {
-						console.echo(3000, "Released: " + e.getKeyCode() + ", char: '" + e.getKeyChar() + "'");
+						console.echo(3000, "Released: " + key + ", char: '" + e.getKeyChar() + "'");
+					}
+					if (key < 256) {
+						keyMap[key] = false;
 					}
 					if (!console.keyReleased(e)) {
-						if (e.getKeyCode() < 256) {
-							keyMap[e.getKeyCode()] = false;
-						}
 						gameInterface.keyReleased(e);
 					}
 					break;
@@ -164,6 +185,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		}
 		MouseEvent me;
 		while ((me = mouseEventQueue.poll()) != null) {
+			mouseXY = new XY(me);
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
 					if (!console.mouseClicked(me)) {

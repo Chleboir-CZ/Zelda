@@ -1,5 +1,6 @@
 package net.trdlo.zelda.guan;
 
+import net.trdlo.zelda.XY;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -7,7 +8,9 @@ import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+import net.trdlo.zelda.ZeldaFrame;
 
 class OrthoCamera {
 
@@ -29,7 +32,7 @@ class OrthoCamera {
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
 	private boolean additiveSelection;
-	//private Set<SmartLine> selectedLines; 
+	//private Set<Line> selectedLines; 
 
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
@@ -59,6 +62,10 @@ class OrthoCamera {
 		return (int) ((componentBounds.height / 2) + (y - this.y) * zoomCoef());
 	}
 
+	public XY worldToView(Point p) {
+		return new XY(worldToViewX(p.x), worldToViewY(p.y));
+	}
+
 	public double viewToWorldX(int x) {
 		assert componentBounds != null;
 		return (x - (componentBounds.width / 2)) / zoomCoef() + this.x;
@@ -67,6 +74,10 @@ class OrthoCamera {
 	public double viewToWorldY(int y) {
 		assert componentBounds != null;
 		return (y - (componentBounds.height / 2)) / zoomCoef() + this.y;
+	}
+
+	public Point viewToWorld(XY xy) {
+		return new Point(viewToWorldX(xy.x), viewToWorldY(xy.y));
 	}
 
 	private void renderBoundsDebug(Graphics2D graphics) {
@@ -102,6 +113,58 @@ class OrthoCamera {
 		}
 	}
 
+	private void renderReflectionsDebug(Graphics2D graphics) {
+		if (world.lines.size() < 2) {
+			return;
+		}
+		Iterator<Line> it = world.lines.iterator();
+		Line t = it.next(), m = it.next();
+
+		Line r = m.reflect(t);
+		graphics.drawLine(worldToViewX(r.A.x), worldToViewY(r.A.y), worldToViewX(r.B.x), worldToViewY(r.B.y));
+		Line b = m.bounceOff(t);
+		if (b != null) {
+			graphics.drawLine(worldToViewX(b.A.x), worldToViewY(b.A.y), worldToViewX(b.B.x), worldToViewY(b.B.y));
+		}
+		Line br = m.bounceOffRay(t);
+		if (br != null) {
+			graphics.drawLine(worldToViewX(br.A.x), worldToViewY(br.A.y), worldToViewX(br.B.x), worldToViewY(br.B.y));
+		}
+	}
+
+	private void renderDistanceDebug(Graphics2D graphics) {
+		if (world.lines.size() < 1) {
+			return;
+		}
+
+		Iterator<Line> it = world.lines.iterator();
+		Line l = it.next();
+
+		XY mxy = ZeldaFrame.getInstance().getMouseXY();
+		Point p = viewToWorld(mxy);
+		double d = l.getSegmentDistance(p);
+		graphics.drawString(String.format("d=%.2f", d), mxy.x, mxy.y);
+	}
+
+	private void renderProximityAndCrossingDebug(Graphics2D graphics, Line line) {
+		XY mxy = ZeldaFrame.getInstance().getMouseXY();
+		Point p = viewToWorld(mxy);
+
+		if (line.getDistance(p) < 10 / zoomCoef()) {
+			graphics.setColor(Color.PINK);
+		} else {
+			graphics.setColor(Color.WHITE);
+		}
+
+		graphics.setStroke(defaultStroke);
+		for (Line cross : world.lines) {
+			if (cross != line && cross.segmentIntersectsSegment(line)) {
+				graphics.setStroke(dashStroke);
+				break;
+			}
+		}
+	}
+
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
 		this.componentBounds = componentBounds;
 
@@ -109,8 +172,6 @@ class OrthoCamera {
 			renderBoundsDebug(graphics);
 		}
 
-		//graphics.drawString("DS: " + (dragStart != null ? dragStart.toString() : "null"), 80, 20);
-		//graphics.drawString("DE: " + (dragEnd != null ? dragEnd.toString() : "null"), 80, 40);
 		double dx = 0, dy = 0;
 		if (moveStart != null && moveEnd != null) {
 			dx = moveEnd.getX() - moveStart.getX();
@@ -119,42 +180,51 @@ class OrthoCamera {
 
 		graphics.setStroke(defaultStroke);
 		graphics.setColor(Color.WHITE);
-		for (SmartLine line : world.lines) {
-			double adx1 = 0, ady1 = 0;
-			double adx2 = 0, ady2 = 0;
-			if (selection.contains(line.A)) {
-				adx1 = dx;
-				ady1 = dy;
+		for (Line line : world.lines) {
+			double lAx = line.getA().x, lAy = line.getA().y;
+			double lBx = line.getB().x, lBy = line.getB().y;
+			if (selection.contains(line.getA())) {
+				lAx += dx;
+				lAy += dy;
 			}
-			if (selection.contains(line.B)) {
-				adx2 = dx;
-				ady2 = dy;
+			if (selection.contains(line.getB())) {
+				lBx += dx;
+				lBy += dy;
 			}
-			graphics.drawLine(worldToViewX(line.A.x + adx1), worldToViewY(line.A.y + ady1), worldToViewX(line.B.x + adx2), worldToViewY(line.B.y + ady2));
+
+			renderProximityAndCrossingDebug(graphics, line);
+
+			graphics.drawLine(worldToViewX(lAx), worldToViewY(lAy), worldToViewX(lBx), worldToViewY(lBy));
 		}
 
 		for (Point point : world.points) {
-			double adx = 0, ady = 0;
+			double px = point.x, py = point.y;
 			if (selection.contains(point) || tempSelection.contains(point)) {
 				graphics.setStroke(selectionStroke);
 				graphics.setColor(Color.PINK);
-				adx = dx;
-				ady = dy;
+				px += dx;
+				py += dy;
 			} else {
 				graphics.setStroke(defaultStroke);
 				graphics.setColor(Color.WHITE);
 			}
-			graphics.drawRect(worldToViewX(point.x + adx) - Point.DISPLAY_SIZE / 2, worldToViewY(point.y + ady) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			int vx = worldToViewX(px);
+			int vy = worldToViewY(py);
+			graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+			graphics.drawString(point.getDescription(), vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
 		}
+
+		renderReflectionsDebug(graphics);
+		renderDistanceDebug(graphics);
 
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(dashStroke);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 	}
 

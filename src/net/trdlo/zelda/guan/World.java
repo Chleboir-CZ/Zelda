@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -12,18 +12,26 @@ import net.trdlo.zelda.Console;
 
 class World {
 
+	public static final double MINIMAL_DETECTABLE_DISTANCE = 0.01;
+
 	final Set<Point> points;
-	final Set<SmartLine> lines;
+	final Set<Line> lines;
 
 	Rectangle bounds;
 
 	World() {
-		points = new HashSet<>();
-		this.lines = new HashSet<SmartLine>() {
+		points = new LinkedHashSet<>();
+		this.lines = new LinkedHashSet<Line>() {
+			@Override
+			public boolean add(Line l) {
+				l.connect();
+				return super.add(l);
+			}
+
 			@Override
 			public boolean remove(Object o) {
-				if (o instanceof SmartLine) {
-					((SmartLine) o).disconnect();
+				if (o instanceof Line) {
+					((Line) o).disconnect();
 				}
 				return super.remove(o);
 			}
@@ -53,7 +61,7 @@ class World {
 				if (B == null) {
 					throw new Exception("Point index " + m.group(2) + "not found. Can't load world!");
 				}
-				lines.add(SmartLine.constructFromTwoPoints(A, B));
+				lines.add(Line.constructFromTwoPoints(A, B));
 			}
 
 		}
@@ -85,7 +93,7 @@ class World {
 	}
 
 	public Set<Point> getPointsIn(double x1, double y1, double x2, double y2) {
-		Set<Point> resultSet = new HashSet<>();
+		Set<Point> resultSet = new LinkedHashSet<>();
 		for (Point p : points) {
 			if (p.inRect(x1, y1, x2, y2)) {
 				resultSet.add(p);

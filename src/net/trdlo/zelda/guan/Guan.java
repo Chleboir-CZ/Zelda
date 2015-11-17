@@ -1,5 +1,6 @@
 package net.trdlo.zelda.guan;
 
+import net.trdlo.zelda.XY;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
@@ -23,7 +24,7 @@ public class Guan implements GameInterface {
 	public Guan() {
 		world = new World();
 		try {
-			world.loadFromFile("save.map");
+			world.loadFromFile("maps/test.map");
 		} catch (Exception ex) {
 			System.err.println("Could not load map! Proceeding with an empty one.");
 		}
@@ -34,7 +35,6 @@ public class Guan implements GameInterface {
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
 		camera.render(graphics, zFrame.getBounds(), renderFraction);
-
 	}
 
 	private void readAsynchronoutInput() {
@@ -170,6 +170,6 @@ public class Guan implements GameInterface {
 	}
 
 	public static void main(String args[]) {
-		ZeldaFrame.buildZeldaFrame(new Guan()).run();
+		ZeldaFrame.buildInstance(new Guan()).run();
 	}
 }
