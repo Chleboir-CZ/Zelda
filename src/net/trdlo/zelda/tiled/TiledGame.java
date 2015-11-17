@@ -234,7 +234,7 @@ public class TiledGame implements GameInterface, InputListener {
 
 	public static void main(String[] args) {
 		try {
-			ZeldaFrame.buildZeldaFrame(new TiledGame()).run();
+			ZeldaFrame.buildInstance(new TiledGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

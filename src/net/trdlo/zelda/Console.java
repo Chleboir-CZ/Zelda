@@ -217,9 +217,9 @@ public class Console implements CommandExecuter {
 	private boolean isPrintableChar(char c) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 		return (FEED_FONT.canDisplay(c)
-			&& !Character.isISOControl(c))
-			&& c != KeyEvent.CHAR_UNDEFINED
-			&& block != null && block != Character.UnicodeBlock.SPECIALS;
+				&& !Character.isISOControl(c))
+				&& c != KeyEvent.CHAR_UNDEFINED
+				&& block != null && block != Character.UnicodeBlock.SPECIALS;
 	}
 
 	private void executeCommand(String command) {

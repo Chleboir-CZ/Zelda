@@ -1,13 +1,13 @@
-package net.trdlo.zelda.guan;
+package net.trdlo.zelda;
 
 import java.awt.event.MouseEvent;
 
 /**
  * The simplest of all classes, a int-int tuple
  */
-class XY {
+public class XY {
 
-	public int x, y;
+	public final int x, y;
 
 	public XY(int x, int y) {
 		this.x = x;

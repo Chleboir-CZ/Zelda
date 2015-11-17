@@ -726,7 +726,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	public static void main(String[] args) {
 		try {
-			ZeldaFrame.buildZeldaFrame(new NoTilesGame()).run();
+			ZeldaFrame.buildInstance(new NoTilesGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
