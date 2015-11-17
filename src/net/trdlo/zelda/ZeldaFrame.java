@@ -248,7 +248,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 				int renderCounter = 1;
 
 				while (remainingToUpdate > getAvgRenderLenth()) {
-					int approxRenderCount = renderCounter + (int) (remainingToUpdate / getAvgRenderLenth());
+					long avgLen = getAvgRenderLenth();
+					int approxRenderCount = avgLen > 0 ? (renderCounter + (int) (remainingToUpdate / avgLen)) : 0;
 					float approxProgres = renderCounter / (float) approxRenderCount;
 
 					int rendersPerFrame;

@@ -12,7 +12,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Console implements CommandExecuter {
@@ -82,6 +81,8 @@ public class Console implements CommandExecuter {
 	private final List<String> commandHistory = new LinkedList<>();
 	private int historyLookupIndex = -1;
 	private String unfinishedCommand;
+	
+	private int cursorPosition = 0;
 
 	public static Console getInstance() {
 		if (instance == null) {
@@ -133,8 +134,11 @@ public class Console implements CommandExecuter {
 		int fontLineHeight = graphics.getFontMetrics().getHeight();
 		int y = currentHeight - PADDING;
 
-		String currentCommandStr = ">" + currentCommand.toString() + ((time / 500 & 1) == 1 ? "_" : " ");
+		String currentCommandStr = ">" + currentCommand.toString();		
+		char[] stringBeforeCursor = new char[cursorPosition + 2]; // +2 protože 1 pole na znak na začátku řádku, to drůhé kvůli indexování od nuly
+		currentCommandStr.getChars(0, cursorPosition + 1, stringBeforeCursor, 0);
 		graphics.drawString(currentCommandStr, PADDING, y);
+		graphics.drawString("_",PADDING + fm.charsWidth(stringBeforeCursor, 0, cursorPosition + 1), y);
 
 		y -= fontLineHeight;
 		int visibleMsgCount = (currentHeight - (2 * PADDING)) / fontLineHeight;
@@ -253,10 +257,13 @@ public class Console implements CommandExecuter {
 			executeCommand(command);
 			currentCommand.setLength(0);
 			historyLookupIndex = -1;
-		} else if (typed == '\b' && currentCommand.length() > 0) {
-			currentCommand.deleteCharAt(currentCommand.length() - 1);
+			cursorPosition = 0; //currentCommand + znak na začátku řádku
+		} else if (typed == '\b' && currentCommand.length() > 0 && cursorPosition > 0) {
+			currentCommand.deleteCharAt(cursorPosition - 1);
+			cursorPosition--;
 		} else if (isPrintableChar(typed)) {
-			currentCommand.append(typed);
+			currentCommand.insert(cursorPosition, typed);
+			cursorPosition++;
 		}
 
 		return true;
@@ -276,6 +283,7 @@ public class Console implements CommandExecuter {
 					historyLookupIndex++;
 					currentCommand.setLength(0);
 					currentCommand.append(commandHistory.get(historyLookupIndex));
+					cursorPosition = currentCommand.length();
 				}
 			} else if (code == KeyEvent.VK_DOWN) {
 				if (historyLookupIndex > -1) {
@@ -286,7 +294,12 @@ public class Console implements CommandExecuter {
 					} else {
 						currentCommand.append(commandHistory.get(historyLookupIndex));
 					}
+					cursorPosition = currentCommand.length();
 				}
+			} else if (code == KeyEvent.VK_LEFT && cursorPosition > 0) {
+				cursorPosition--;
+			} else if (code == KeyEvent.VK_RIGHT && cursorPosition < currentCommand.length()) {
+				cursorPosition++;
 			}
 		}
 		return visible;
