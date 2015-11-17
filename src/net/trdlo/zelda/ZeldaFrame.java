@@ -12,7 +12,6 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
@@ -21,6 +20,8 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 public final class ZeldaFrame extends JFrame implements WindowListener, InputListener, CommandExecuter {
+
+	private static ZeldaFrame instance = null;
 
 	private boolean terminate = false;
 	private long runStartTime = 0;
@@ -46,14 +47,23 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 	private final boolean keyMap[];
 	private boolean keyInputDebug = false;
+	private XY mouseXY = new XY(0, 0);
 
 	private final Console console;
 
-	public static ZeldaFrame buildZeldaFrame(GameInterface game) {
-		ZeldaFrame zFrame = new ZeldaFrame(game.getWindowCaption(), game);
-		zFrame.setListeners();
-		game.setZeldaFrame(zFrame);
-		return zFrame;
+	public static ZeldaFrame buildInstance(GameInterface game) {
+		assert instance == null;
+
+		instance = new ZeldaFrame(game.getWindowCaption(), game);
+		instance.setListeners();
+		game.setZeldaFrame(instance);
+		return instance;
+	}
+
+	public static ZeldaFrame getInstance() {
+		assert instance != null;
+
+		return instance;
 	}
 
 	private ZeldaFrame(String frameCaption, GameInterface gameInterface) {
@@ -111,8 +121,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
 	}
 
-	public void clearKeysPressed() {
-		Arrays.fill(keyMap, false);
+	public XY getMouseXY() {
+		return mouseXY;
 	}
 
 	private final Pattern PAT_GET_KEY_DEBUG = Pattern.compile("^\\s*key-debug\\s*$", Pattern.CASE_INSENSITIVE);
@@ -175,6 +185,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		}
 		MouseEvent me;
 		while ((me = mouseEventQueue.poll()) != null) {
+			mouseXY = new XY(me);
 			switch (me.getID()) {
 				case MouseEvent.MOUSE_CLICKED:
 					if (!console.mouseClicked(me)) {
