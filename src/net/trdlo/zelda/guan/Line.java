@@ -129,7 +129,8 @@ public final class Line implements Selectable {
 	}
 
 	/**
-	 * Vrací pozici bodu [x; y] na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu <0; 1>, pak leží i na úsečce AB.
+	 * Vrací pozici bodu [x; y] na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu
+	 * <0; 1>, pak leží i na úsečce AB.
 	 *
 	 * @param x
 	 * @param y
@@ -148,7 +149,8 @@ public final class Line implements Selectable {
 	}
 
 	/**
-	 * Vrací pozici bodu p na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu <0; 1>, pak leží i na úsečce AB.
+	 * Vrací pozici bodu p na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu <0; 1>,
+	 * pak leží i na úsečce AB.
 	 *
 	 * @param p
 	 * @return	pozice daného bodu v násobku vektoru A->B
@@ -320,6 +322,7 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public double getDistanceSquare(Point p) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point iP = getIntersection(Line.constructFromPointAndVector(p, a, b));
 		return NU.sqr(iP.x - p.x) + NU.sqr(iP.y - p.y);
 	}
@@ -341,6 +344,7 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public double getSegmentDistanceSquare(Point p) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point iP = getIntersection(Line.constructFromPointAndVector(p, a, b));
 
 		double vx = B.x - A.x, vy = B.y - A.y, dl;
@@ -351,12 +355,12 @@ public final class Line implements Selectable {
 		}
 
 		if (dl < 0) {
-			return NU.sqr(iP.x - A.x) + NU.sqr(iP.y - A.y);
+			return NU.sqr(p.x - A.x) + NU.sqr(p.y - A.y);
 		} else if (dl > 1) {
-			return NU.sqr(iP.x - B.x) + NU.sqr(iP.y - B.y);
+			return NU.sqr(p.x - B.x) + NU.sqr(p.y - B.y);
+		} else {
+			return NU.sqr(iP.x - p.x) + NU.sqr(iP.y - p.y);
 		}
-
-		return NU.sqr(iP.x - p.x) + NU.sqr(iP.y - p.y);
 	}
 
 	/**
@@ -376,6 +380,7 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public double getDistanceSquare(Line line) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		if (isParallel(line)) {
 			Line perpendicularLine = Line.constructFromPointAndVector(A, a, b);
 			Point p = getIntersection(perpendicularLine);
@@ -477,6 +482,7 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes tuto přímku
 	 */
 	public Line reflect(Line original) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point SA = getIntersection(Line.constructFromPointAndVector(original.A, a, b));
 		Point AR = new Point(2 * SA.x - original.A.x, 2 * SA.y - original.A.y);
 		Point SB = getIntersection(Line.constructFromPointAndVector(original.B, a, b));
@@ -491,6 +497,7 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes kolmici na tuto přímku bodem průniku s dodanou přímkou nebo null
 	 */
 	public Line bounceOff(Line original) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point iP = getIntersection(original);
 		if (iP != null) {
 			Line mirror = Line.constructFromPointAndVector(iP, a, b);
@@ -507,6 +514,7 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes kolmici na tuto přímku bodem průniku s dodanou přímkou nebo null
 	 */
 	public Line bounceOffRay(Line original) {
+		//TODO zvážit, zda jde provést bez výroby objektů na haldě		
 		//najít průnik originálu s touto přímkou
 		Point iP = getIntersection(original);
 		if (iP != null) {

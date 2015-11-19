@@ -150,7 +150,7 @@ class OrthoCamera {
 		XY mxy = ZeldaFrame.getInstance().getMouseXY();
 		Point p = viewToWorld(mxy);
 
-		if (line.getDistance(p) < 10 / zoomCoef()) {
+		if (line.getSegmentDistance(p) < 10 / zoomCoef()) {
 			graphics.setColor(Color.PINK);
 		} else {
 			graphics.setColor(Color.WHITE);

@@ -1,6 +1,5 @@
 package net.trdlo.zelda.notiles;
 
-import com.sun.j3d.utils.universe.Viewer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -13,12 +12,9 @@ import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -304,7 +300,6 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 		Point leftPoint = new Point(sight * Math.cos(orientation - fOV / 2), sight * Math.sin(orientation - fOV / 2));
 		Point rightPoint = new Point(sight * Math.cos(orientation + fOV / 2), sight * Math.sin(orientation + fOV / 2));*/
-
 		return null;
 	}
 
