@@ -132,7 +132,7 @@ public class Console implements CommandExecuter {
 		int fontLineHeight = graphics.getFontMetrics().getHeight();
 		int y = currentHeight - PADDING;
 
-		String currentCommandStr = ">" + currentCommand.toString();		
+		String currentCommandStr = ">" + currentCommand.toString();
 		char[] stringBeforeCursor = new char[cursorPosition + 2]; // +2 protože 1 pole na znak na začátku řádku, to drůhé kvůli indexování od nuly
 		currentCommandStr.getChars(0, cursorPosition + 1, stringBeforeCursor, 0);
 		graphics.drawString(currentCommandStr, PADDING, y);
@@ -259,6 +259,8 @@ public class Console implements CommandExecuter {
 		} else if (typed == '\b' && currentCommand.length() > 0 && cursorPosition > 0) {
 			currentCommand.deleteCharAt(cursorPosition - 1);
 			cursorPosition--;
+		} else if (typed == 127 /* DEL */ && currentCommand.length() > 0 && cursorPosition < currentCommand.length()) {
+			currentCommand.deleteCharAt(cursorPosition);
 		} else if (isPrintableChar(typed)) {
 			currentCommand.insert(cursorPosition, typed);
 			cursorPosition++;
@@ -298,6 +300,10 @@ public class Console implements CommandExecuter {
 				cursorPosition--;
 			} else if (code == KeyEvent.VK_RIGHT && cursorPosition < currentCommand.length()) {
 				cursorPosition++;
+			} else if (code == KeyEvent.VK_HOME) {
+				cursorPosition = 0;
+			} else if (code == KeyEvent.VK_END) {
+				cursorPosition = currentCommand.length();
 			}
 		}
 		return visible;
