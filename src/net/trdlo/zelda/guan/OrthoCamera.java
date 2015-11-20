@@ -10,14 +10,16 @@ import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import net.trdlo.zelda.Console;
+import net.trdlo.zelda.NU;
 import net.trdlo.zelda.ZeldaFrame;
 
 class OrthoCamera {
 
 	public static final double ZOOM_BASE = 1.1;
-	private static final Stroke defaultStroke = new BasicStroke(1);
-	private static final Stroke selectionStroke = new BasicStroke(2);
-	private static final Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
+	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
+	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
+	private static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 
 	private boolean boundsDebug = false;
 
@@ -32,7 +34,7 @@ class OrthoCamera {
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
 	private boolean additiveSelection;
-	//private Set<Line> selectedLines; 
+	private Line selectedLine;
 
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
@@ -88,12 +90,12 @@ class OrthoCamera {
 			return;
 		}
 
-		graphics.setStroke(selectionStroke);
+		graphics.setStroke(SELECTION_STROKE);
 		graphics.setColor(Color.PINK);
 		int l = worldToViewX(world.bounds.x), t = worldToViewY(world.bounds.y), w = worldToViewX(world.bounds.x + world.bounds.width) - l, h = worldToViewY(world.bounds.y + world.bounds.height) - t;
 		graphics.drawRect(l, t, w, h);
 		if (cameraBounds != null) {
-			graphics.setStroke(defaultStroke);
+			graphics.setStroke(DEFAULT_STROKE);
 			graphics.setColor(Color.RED);
 			graphics.drawRect(worldToViewX(x) - Point.DISPLAY_SIZE / 2, worldToViewY(y) - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
 			l = worldToViewX(cameraBounds.x);
@@ -142,7 +144,7 @@ class OrthoCamera {
 
 		XY mxy = ZeldaFrame.getInstance().getMouseXY();
 		Point p = viewToWorld(mxy);
-		double d = l.getSegmentDistance(p);
+		double d = l.getSegmentDistance(p.x, p.y);
 		graphics.drawString(String.format("d=%.2f", d), mxy.x, mxy.y);
 	}
 
@@ -150,19 +152,24 @@ class OrthoCamera {
 		XY mxy = ZeldaFrame.getInstance().getMouseXY();
 		Point p = viewToWorld(mxy);
 
-		if (line.getSegmentDistance(p) < 10 / zoomCoef()) {
+		if (line.getSegmentDistance(p.x, p.y) < 3 / zoomCoef()) {
 			graphics.setColor(Color.PINK);
 		} else {
 			graphics.setColor(Color.WHITE);
 		}
 
-		graphics.setStroke(defaultStroke);
+		graphics.setStroke(DEFAULT_STROKE);
 		for (Line cross : world.lines) {
 			if (cross != line && cross.segmentIntersectsSegment(line)) {
-				graphics.setStroke(dashStroke);
+				graphics.setStroke(DASHED_STROKE);
 				break;
 			}
 		}
+	}
+
+	private void renderSelectionDebug(Graphics2D graphics) {
+		XY mxy = ZeldaFrame.getInstance().getMouseXY();
+		graphics.drawString(String.format("mn: %s; me: %s, ds: %s, de: %s", moveStart, moveEnd, dragStart, dragEnd), mxy.x, mxy.y - 30);
 	}
 
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
@@ -178,7 +185,7 @@ class OrthoCamera {
 			dy = moveEnd.getY() - moveStart.getY();
 		}
 
-		graphics.setStroke(defaultStroke);
+		graphics.setStroke(DEFAULT_STROKE);
 		graphics.setColor(Color.WHITE);
 		for (Line line : world.lines) {
 			double lAx = line.getA().x, lAy = line.getA().y;
@@ -192,20 +199,26 @@ class OrthoCamera {
 				lBy += dy;
 			}
 
-			renderProximityAndCrossingDebug(graphics, line);
-
+			if (line == selectedLine) {
+				graphics.setStroke(SELECTION_STROKE);
+				graphics.setColor(Color.PINK);
+			} else {
+				//graphics.setStroke(DEFAULT_STROKE);
+				//graphics.setColor(Color.WHITE);
+				renderProximityAndCrossingDebug(graphics, line);
+			}
 			graphics.drawLine(worldToViewX(lAx), worldToViewY(lAy), worldToViewX(lBx), worldToViewY(lBy));
 		}
 
 		for (Point point : world.points) {
 			double px = point.x, py = point.y;
 			if (selection.contains(point) || tempSelection.contains(point)) {
-				graphics.setStroke(selectionStroke);
+				graphics.setStroke(SELECTION_STROKE);
 				graphics.setColor(Color.PINK);
 				px += dx;
 				py += dy;
 			} else {
-				graphics.setStroke(defaultStroke);
+				graphics.setStroke(DEFAULT_STROKE);
 				graphics.setColor(Color.WHITE);
 			}
 			int vx = worldToViewX(px);
@@ -215,10 +228,11 @@ class OrthoCamera {
 		}
 
 		renderReflectionsDebug(graphics);
-		renderDistanceDebug(graphics);
+		//renderDistanceDebug(graphics);
+		//renderSelectionDebug(graphics);
 
 		if (dragStart != null && dragEnd != null) {
-			graphics.setStroke(dashStroke);
+			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
 					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
@@ -313,22 +327,35 @@ class OrthoCamera {
 		return world.getPointAt(viewToWorldX(x), viewToWorldY(y), Point.DISPLAY_SIZE / zoomCoef());
 	}
 
+	public Line getLineAt(int x, int y) {
+		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), NU.sqr(Line.SELECTION_MAX_DISTANCE / zoomCoef()));
+	}
+
 	public Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
 		return world.getPointsIn(viewToWorldX(x1), viewToWorldY(y1), viewToWorldX(x2), viewToWorldY(y2));
 	}
 
 	public void mouse1pressed(MouseEvent e) {
 		additiveSelection = e.isShiftDown();
-		Point pointAt = getPointAt(e.getX(), e.getY());
-		if (pointAt != null) {
-			if (!additiveSelection && !selection.contains(pointAt)) {
-				selection.clear();
+		Point pointAt;
+		Line lineAt;
+		if ((pointAt = getPointAt(e.getX(), e.getY())) != null) {
+			if (additiveSelection && selection.contains(pointAt)) {
+				selection.remove(pointAt);
+			} else {
+				if (!additiveSelection && !selection.contains(pointAt)) {
+					selection.clear();
+				}
+				selection.add(pointAt);
+				moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 			}
-			selection.add(pointAt);
-			moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
+			selectedLine = null;
+		} else if (!additiveSelection && (lineAt = getLineAt(e.getX(), e.getY())) != null) {
+			selection.clear();
+			selectedLine = lineAt;
 		} else {
 			dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
-			//assert dragEnd == null;
+			selectedLine = null;
 		}
 	}
 
@@ -364,9 +391,20 @@ class OrthoCamera {
 				dragEnd = null;
 			}
 			dragStart = null;
-		} else if (moveStart != null && moveEnd != null) {
-			world.shiftPoints(selection, moveEnd.getX() - moveStart.getX(), moveEnd.getY() - moveStart.getY());
-			moveStart = moveEnd = null;
+		} else if (moveStart != null) {
+			if (moveEnd != null) {
+				world.shiftPoints(selection, moveEnd.getX() - moveStart.getX(), moveEnd.getY() - moveStart.getY());
+				moveEnd = null;
+			}
+			moveStart = null;
+		}
+	}
+
+	public void deleteSelection() {
+		if (selectedLine != null) {
+			world.deleteLine(selectedLine);
+		} else {
+			world.deletePoints(selection);
 		}
 	}
 

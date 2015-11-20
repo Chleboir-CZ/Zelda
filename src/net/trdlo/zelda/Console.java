@@ -47,8 +47,6 @@ public class Console implements CommandExecuter {
 			return removeTime != 0 ? ensureRange(((int) (removeTime - getTime())) * 255 / FADE_LENGTH, 0, 255) : 255;
 		}
 
-		private static final Pattern PAT_TOKEN = Pattern.compile("\\$(\\d+)");
-
 		@Override
 		public String toString() {
 			if (params == null) {
@@ -64,7 +62,7 @@ public class Console implements CommandExecuter {
 
 	private static final Font FEED_FONT = new Font("Monospaced", Font.BOLD, 12);
 	private static final Font UI_FONT = new Font("Monospaced", Font.BOLD, 12);
-	private static final Stroke defaultStroke = new BasicStroke(1);
+	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 
 	private final List<Message> messages = new LinkedList<>();
 	private StringBuilder currentCommand = new StringBuilder();
@@ -81,7 +79,7 @@ public class Console implements CommandExecuter {
 	private final List<String> commandHistory = new LinkedList<>();
 	private int historyLookupIndex = -1;
 	private String unfinishedCommand;
-	
+
 	private int cursorPosition = 0;
 
 	public static Console getInstance() {
@@ -113,7 +111,7 @@ public class Console implements CommandExecuter {
 		currentHeight = (int) (CONSOLE_HEIGHT * showing);
 
 		//graphics.setBackground(Color.MAGENTA);
-		graphics.setStroke(defaultStroke);
+		graphics.setStroke(DEFAULT_STROKE);
 		graphics.setColor(Color.WHITE);
 		graphics.clearRect(0, 0, width, currentHeight);
 		graphics.drawRect(3, 3, width - 7, currentHeight - 7);

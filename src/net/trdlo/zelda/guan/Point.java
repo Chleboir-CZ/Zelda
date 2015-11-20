@@ -3,8 +3,9 @@ package net.trdlo.zelda.guan;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+import net.trdlo.zelda.NU;
 
-public class Point implements Selectable {
+public final class Point implements Selectable {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
 	public static final int DISPLAY_SIZE = 12;
@@ -87,6 +88,22 @@ public class Point implements Selectable {
 				line.refreshCoefs();
 			}
 		}
+	}
+
+	public double getDistanceSquare(double px, double py) {
+		return NU.sqr(px - x) + NU.sqr(py - y);
+	}
+
+	public double getDistance(double px, double py) {
+		return Math.sqrt(getDistanceSquare(px, py));
+	}
+
+	public double getDistanceSquare(Point p) {
+		return NU.sqr(p.x - x) + NU.sqr(p.y - y);
+	}
+
+	public double getDistance(Point p) {
+		return Math.sqrt(getDistanceSquare(p));
 	}
 
 	public String toStringSimple() {

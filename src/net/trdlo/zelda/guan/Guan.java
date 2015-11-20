@@ -101,6 +101,9 @@ public class Guan implements GameInterface {
 	@Override
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyChar()) {
+			case KeyEvent.VK_DELETE:
+				camera.deleteSelection();
+				break;
 			case KeyEvent.VK_ESCAPE:
 				zFrame.terminate();
 				break;

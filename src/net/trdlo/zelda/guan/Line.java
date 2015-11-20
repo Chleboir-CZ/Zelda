@@ -5,7 +5,8 @@ import net.trdlo.zelda.NU;
 
 public final class Line implements Selectable {
 
-	public final static Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
+	public static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
+	public static final double SELECTION_MAX_DISTANCE = 3;
 
 	public static Line constructFromTwoPoints(Point A, Point B) {
 		assert A != null && B != null;
@@ -205,6 +206,16 @@ public final class Line implements Selectable {
 	}
 
 	/**
+	 * Vytvoří rovnoběžku skrz dodaný bod P
+	 *
+	 * @param p
+	 * @return
+	 */
+	public Line getParallel(Point p) {
+		return constructFromPointAndNormal(p, a, b);
+	}
+
+	/**
 	 * Test kolmosti na přímku l
 	 *
 	 * @param l
@@ -212,6 +223,16 @@ public final class Line implements Selectable {
 	 */
 	public boolean isPerpendicular(Line l) {
 		return a * l.a + b * l.b == 0; //tolerance?
+	}
+
+	/**
+	 * Vytvoří kolmici skrz dodaný bod P
+	 *
+	 * @param p
+	 * @return
+	 */
+	public Line getPerpendicular(Point p) {
+		return constructFromPointAndVector(p, a, b);
 	}
 
 	/**
@@ -335,6 +356,46 @@ public final class Line implements Selectable {
 	 */
 	public double getDistance(Point p) {
 		return Math.sqrt(getDistanceSquare(p));
+	}
+
+	/**
+	 * Druhá mocnina vzdálenosti bodu [x; y] a úsečky
+	 *
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public double getSegmentDistanceSquare(double x, double y) {
+		double denominator = (a * a + b * b);
+		double cn = (b * x - a * y);
+		double iPx = (b * cn - c * a) / denominator;
+		double iPy = (-b * c - a * cn) / denominator;
+
+		double vx = B.x - A.x, vy = B.y - A.y, dl;
+		if (Math.abs(vx) > Math.abs(vy)) {
+			dl = (iPx - A.x) / vx;
+		} else {
+			dl = (iPy - A.y) / vy;
+		}
+
+		if (dl < 0) {
+			return NU.sqr(x - A.x) + NU.sqr(y - A.y);
+		} else if (dl > 1) {
+			return NU.sqr(x - B.x) + NU.sqr(y - B.y);
+		} else {
+			return NU.sqr(iPx - x) + NU.sqr(iPy - y);
+		}
+	}
+
+	/**
+	 * Vzdálenost bodu [x; y]a úsečky
+	 *
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public double getSegmentDistance(double x, double y) {
+		return Math.sqrt(getSegmentDistanceSquare(x, y));
 	}
 
 	/**

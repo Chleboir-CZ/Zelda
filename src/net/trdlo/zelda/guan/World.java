@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
-import net.trdlo.zelda.Console;
 
 class World {
 
@@ -51,7 +50,7 @@ class World {
 				Integer pointId = Integer.valueOf(m.group(1));
 				pointIdMap.put(pointId, newPoint);
 				points.add(newPoint);
-				Console.getInstance().echo("%s", newPoint);
+				//Console.getInstance().echo("%s", newPoint);
 			} else if ((m = Line.PAT_LINE.matcher(line)).matches()) {
 				Point A = pointIdMap.get(Integer.valueOf(m.group(1)));
 				if (A == null) {
@@ -79,13 +78,30 @@ class World {
 		Point nearest = null;
 		double minDistSq = Double.MAX_VALUE;
 		for (Point p : points) {
-			double distSq = sqr(p.getX() - x) + sqr(p.getY() - y);
+			double distSq = p.getDistanceSquare(x, y);
 			if (distSq < minDistSq) {
 				minDistSq = distSq;
 				nearest = p;
 			}
 		}
 		if (nearest != null && Math.max(Math.abs(nearest.getX() - x), Math.abs(nearest.getY() - y)) < (rectSize / 2.0)) {
+			return nearest;
+		} else {
+			return null;
+		}
+	}
+
+	public Line getLineAt(double x, double y, double maxDistSqr) {
+		Line nearest = null;
+		double minDistSq = Double.MAX_VALUE;
+		for (Line l : lines) {
+			double distSq = l.getSegmentDistanceSquare(x, y);
+			if (distSq < minDistSq) {
+				minDistSq = distSq;
+				nearest = l;
+			}
+		}
+		if (nearest != null && minDistSq < maxDistSqr) {
 			return nearest;
 		} else {
 			return null;
@@ -110,4 +126,22 @@ class World {
 		}
 	}
 
+	public void deletePoints(Set<Point> delPoints) {
+		for (Point p : delPoints) {
+			points.remove(p);
+			deleteLines(p.connectedLines);
+		}
+	}
+
 }
+
+	public void deleteLine(Line delLine) {
+		lines.remove(delLine);
+	}
+
+	public void deleteLines(Set<Line> delLines) {
+		for (Line l : delLines) {
+			lines.remove(l);
+		}
+	}
+
