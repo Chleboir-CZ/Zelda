@@ -10,15 +10,11 @@ import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
-import net.trdlo.zelda.ZeldaFrame;
 
 class OrthoCamera {
 
-	public static final double ZOOM_BASE = 1.1;
-	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
-	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
+	public static final double ZOOM_BASE = 1.090507733; //2^(1/8)
 	private static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 
 	private boolean boundsDebug = false;
@@ -30,11 +26,18 @@ class OrthoCamera {
 	private double zoomCoefLimit;
 	private Rectangle componentBounds, cameraBounds;
 
-	private Point dragStart, dragEnd, moveStart, moveEnd;
+	private Point dragStart, dragEnd;
+	private boolean snapToGrid = true;
+	private Point moveStart, moveEnd, snappedPoint, moveDiff;
+	private Point nearestPoint;
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
 	private boolean additiveSelection;
-	private Line selectedLine;
+
+	private Line selectedLine, nearestLine;
+
+	private int gridDensity = 6;
+	private int gridStep = 64;
 
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
@@ -82,6 +85,29 @@ class OrthoCamera {
 		return new Point(viewToWorldX(xy.x), viewToWorldY(xy.y));
 	}
 
+	private void renderGrid(Graphics2D graphics) {
+		if (gridDensity >= 0) {
+			graphics.setColor(Color.DARK_GRAY);
+
+			int left = (int) NU.ceilToMultipleOf(viewToWorldX(0), gridStep);
+			int right = (int) NU.floorToMultipleOf(viewToWorldX(componentBounds.width), gridStep);
+			for (int i = left; i <= right; i += gridStep) {
+				int vx = worldToViewX(i);
+				graphics.drawLine(vx, 0, vx, componentBounds.height);
+			}
+
+			int top = (int) NU.ceilToMultipleOf(viewToWorldY(0), gridStep);
+			int bottom = (int) NU.floorToMultipleOf(viewToWorldY(componentBounds.height), gridStep);
+			for (int i = top; i <= bottom; i += (int) Math.pow(2, gridDensity)) {
+				int vy = worldToViewY(i);
+				graphics.drawLine(0, vy, componentBounds.width, vy);
+			}
+		}
+	}
+
+	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
+	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
+
 	private void renderBoundsDebug(Graphics2D graphics) {
 		if (world.bounds == null) {
 			graphics.setColor(Color.RED);
@@ -89,6 +115,7 @@ class OrthoCamera {
 			graphics.setColor(Color.WHITE);
 			return;
 		}
+		graphics.drawString(String.format("Zoom = %f", zoomCoef()), 50, 20);
 
 		graphics.setStroke(SELECTION_STROKE);
 		graphics.setColor(Color.PINK);
@@ -122,6 +149,9 @@ class OrthoCamera {
 		Iterator<Line> it = world.lines.iterator();
 		Line t = it.next(), m = it.next();
 
+		graphics.setStroke(DASHED_STROKE);
+		graphics.setColor(Color.DARK_GRAY);
+
 		Line r = m.reflect(t);
 		graphics.drawLine(worldToViewX(r.A.x), worldToViewY(r.A.y), worldToViewX(r.B.x), worldToViewY(r.B.y));
 		Line b = m.bounceOff(t);
@@ -134,42 +164,19 @@ class OrthoCamera {
 		}
 	}
 
-	private void renderDistanceDebug(Graphics2D graphics) {
-		if (world.lines.size() < 1) {
+	private void renderCrossingDebug(Graphics2D graphics, Line line) {
+		if ((System.nanoTime() / 500000000L & 1) == 0) {
 			return;
 		}
 
-		Iterator<Line> it = world.lines.iterator();
-		Line l = it.next();
-
-		XY mxy = ZeldaFrame.getInstance().getMouseXY();
-		Point p = viewToWorld(mxy);
-		double d = l.getSegmentDistance(p.x, p.y);
-		graphics.drawString(String.format("d=%.2f", d), mxy.x, mxy.y);
-	}
-
-	private void renderProximityAndCrossingDebug(Graphics2D graphics, Line line) {
-		XY mxy = ZeldaFrame.getInstance().getMouseXY();
-		Point p = viewToWorld(mxy);
-
-		if (line.getSegmentDistance(p.x, p.y) < 3 / zoomCoef()) {
-			graphics.setColor(Color.PINK);
-		} else {
-			graphics.setColor(Color.WHITE);
-		}
-
-		graphics.setStroke(DEFAULT_STROKE);
+		Point iP;
 		for (Line cross : world.lines) {
-			if (cross != line && cross.segmentIntersectsSegment(line)) {
-				graphics.setStroke(DASHED_STROKE);
-				break;
+			if (cross != line && (iP = cross.getSegmentSegmentIntersection(line)) != null) {
+				XY iP1 = worldToView(iP);
+				graphics.setColor(Color.RED);
+				graphics.drawArc(iP1.x - 8, iP1.y - 8, 16, 16, 0, 360);
 			}
 		}
-	}
-
-	private void renderSelectionDebug(Graphics2D graphics) {
-		XY mxy = ZeldaFrame.getInstance().getMouseXY();
-		graphics.drawString(String.format("mn: %s; me: %s, ds: %s, de: %s", moveStart, moveEnd, dragStart, dragEnd), mxy.x, mxy.y - 30);
 	}
 
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
@@ -179,14 +186,16 @@ class OrthoCamera {
 			renderBoundsDebug(graphics);
 		}
 
+		renderGrid(graphics);
+
 		double dx = 0, dy = 0;
 		if (moveStart != null && moveEnd != null) {
 			dx = moveEnd.getX() - moveStart.getX();
 			dy = moveEnd.getY() - moveStart.getY();
 		}
 
-		graphics.setStroke(DEFAULT_STROKE);
-		graphics.setColor(Color.WHITE);
+		graphics.setStroke(Line.DEFAULT_STROKE);
+		graphics.setColor(Line.DEFAULT_COLOR);
 		for (Line line : world.lines) {
 			double lAx = line.getA().x, lAy = line.getA().y;
 			double lBx = line.getB().x, lBy = line.getB().y;
@@ -200,26 +209,34 @@ class OrthoCamera {
 			}
 
 			if (line == selectedLine) {
-				graphics.setStroke(SELECTION_STROKE);
-				graphics.setColor(Color.PINK);
+				graphics.setColor(Line.SELECTION_COLOR);
+				graphics.setStroke(Line.SELECTION_STROKE);
 			} else {
-				//graphics.setStroke(DEFAULT_STROKE);
-				//graphics.setColor(Color.WHITE);
-				renderProximityAndCrossingDebug(graphics, line);
+				graphics.setColor(Line.DEFAULT_COLOR);
+				graphics.setStroke(Line.DEFAULT_STROKE);
 			}
+
+			if (line == nearestLine) {
+				graphics.setColor(Color.YELLOW);
+			}
+
 			graphics.drawLine(worldToViewX(lAx), worldToViewY(lAy), worldToViewX(lBx), worldToViewY(lBy));
+			renderCrossingDebug(graphics, line);
 		}
 
 		for (Point point : world.points) {
 			double px = point.x, py = point.y;
 			if (selection.contains(point) || tempSelection.contains(point)) {
-				graphics.setStroke(SELECTION_STROKE);
-				graphics.setColor(Color.PINK);
+				graphics.setStroke(Point.SELECTION_STROKE);
+				graphics.setColor(Point.SELECTION_COLOR);
 				px += dx;
 				py += dy;
+			} else if (point == nearestPoint) {
+				graphics.setStroke(Point.DEFAULT_STROKE);
+				graphics.setColor(Point.SELECTION_COLOR);
 			} else {
-				graphics.setStroke(DEFAULT_STROKE);
-				graphics.setColor(Color.WHITE);
+				graphics.setStroke(Point.DEFAULT_STROKE);
+				graphics.setColor(Point.DEFAULT_COLOR);
 			}
 			int vx = worldToViewX(px);
 			int vy = worldToViewY(py);
@@ -228,8 +245,6 @@ class OrthoCamera {
 		}
 
 		renderReflectionsDebug(graphics);
-		//renderDistanceDebug(graphics);
-		//renderSelectionDebug(graphics);
 
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(DASHED_STROKE);
@@ -243,8 +258,7 @@ class OrthoCamera {
 	}
 
 	private double zoomCoef() {
-		double zoomCoef = Math.pow(ZOOM_BASE, zoom);
-		return (zoomCoefLimit > zoomCoef) ? zoomCoefLimit : zoomCoef;
+		return Math.max(zoomCoefLimit, Math.pow(ZOOM_BASE, zoom));
 	}
 
 	public void zoom(int change, XY fixedPoint) {
@@ -328,7 +342,7 @@ class OrthoCamera {
 	}
 
 	public Line getLineAt(int x, int y) {
-		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), NU.sqr(Line.SELECTION_MAX_DISTANCE / zoomCoef()));
+		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), Line.SELECTION_MAX_DISTANCE / zoomCoef());
 	}
 
 	public Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
@@ -348,6 +362,8 @@ class OrthoCamera {
 				}
 				selection.add(pointAt);
 				moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
+				snappedPoint = pointAt;
+				moveDiff = moveStart.diff(snappedPoint);
 			}
 			selectedLine = null;
 		} else if (!additiveSelection && (lineAt = getLineAt(e.getX(), e.getY())) != null) {
@@ -357,6 +373,20 @@ class OrthoCamera {
 			dragStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 			selectedLine = null;
 		}
+	}
+
+	private void snapp() {
+		if (!snapToGrid || gridDensity == -1) {
+			return;
+		}
+
+		moveEnd.roundToGrid(gridStep);
+		moveEnd.moveBy(moveDiff);
+	}
+
+	public void mouseMoved(MouseEvent e) {
+		nearestPoint = world.getPointAt(viewToWorldX(e.getX()), viewToWorldY(e.getY()), 64 / zoomCoef());
+		nearestLine = world.getLineAt(viewToWorldX(e.getX()), viewToWorldY(e.getY()), 64 / zoomCoef());
 	}
 
 	public void mouse1dragged(MouseEvent e) {
@@ -377,6 +407,7 @@ class OrthoCamera {
 			}
 			moveEnd.setX(viewToWorldX(e.getX()));
 			moveEnd.setY(viewToWorldY(e.getY()));
+			snapp();
 		}
 	}
 
@@ -406,6 +437,21 @@ class OrthoCamera {
 		} else {
 			world.deletePoints(selection);
 		}
+	}
+
+	public void nextGridDensity() {
+		gridDensity--;
+		if (gridDensity == -1) {
+			//Console.getInstance().echo(2000, "Grid off");
+		} else if (gridDensity == -2) {
+			gridDensity = 8;
+		} //Console.getInstance().echo(2000, "Grid size %d world units", (int) Math.pow(2, gridDensity));
+
+		gridStep = (int) Math.pow(2, gridDensity);
+	}
+
+	public void toggleSnapToGrid() {
+		snapToGrid = !snapToGrid;
 	}
 
 }

@@ -1,5 +1,8 @@
 package net.trdlo.zelda.guan;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Stroke;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
 
@@ -7,6 +10,11 @@ public final class Line implements Selectable {
 
 	public static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
 	public static final double SELECTION_MAX_DISTANCE = 3;
+
+	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);
+	public static final Color DEFAULT_COLOR = Color.LIGHT_GRAY;
+	public static final Stroke SELECTION_STROKE = new BasicStroke(2);
+	public static final Color SELECTION_COLOR = Color.YELLOW;
 
 	public static Line constructFromTwoPoints(Point A, Point B) {
 		assert A != null && B != null;

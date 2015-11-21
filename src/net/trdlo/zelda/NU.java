@@ -27,4 +27,15 @@ public final class NU {
 		return ensureRange(Math.min(border1, border2), val, Math.max(border1, border2));
 	}
 
+	public static double floorToMultipleOf(double number, double divisor) {
+		return divisor * Math.floor(number / divisor);
+	}
+
+	public static double ceilToMultipleOf(double number, double divisor) {
+		return divisor * Math.ceil(number / divisor);
+	}
+
+	public static double roundToMultipleOf(double number, double divisor) {
+		return divisor * Math.round(number / divisor);
+	}
 }

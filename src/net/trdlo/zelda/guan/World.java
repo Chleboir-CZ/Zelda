@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
+import net.trdlo.zelda.NU;
 
 class World {
 
@@ -91,8 +92,9 @@ class World {
 		}
 	}
 
-	public Line getLineAt(double x, double y, double maxDistSqr) {
+	public Line getLineAt(double x, double y, double maxDist) {
 		Line nearest = null;
+		double maxDistSqr = NU.sqr(maxDist);
 		double minDistSq = Double.MAX_VALUE;
 		for (Line l : lines) {
 			double distSq = l.getSegmentDistanceSquare(x, y);

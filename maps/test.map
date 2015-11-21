@@ -1,13 +1,17 @@
-Point 2 [-70; -170]
-Point 3 [0; -70]
-Line 2 3
-
-Point 0 [200; -350]
-Point 1 [100; 400]
+Point 0 [-70; -170]
+Point 1 [0; -70]
 Line 0 1
+
+Point 2 [200; -350]
+Point 3 [100; 400]
+Line 2 3
 
 Point 4 [40; -260]
 Point 5 [330; -140]
 Line 4 5
 
-
+Point 6 [50; -70]
+Point 7 [250; -20]
+Point 8 [60; 0]
+Line 6 7
+Line 7 8

@@ -1,5 +1,8 @@
 package net.trdlo.zelda.guan;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Stroke;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -8,7 +11,12 @@ import net.trdlo.zelda.NU;
 public final class Point implements Selectable {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
-	public static final int DISPLAY_SIZE = 12;
+	public static final int DISPLAY_SIZE = 8;
+
+	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);
+	public static final Color DEFAULT_COLOR = new Color(0, 192, 0);
+	public static final Stroke SELECTION_STROKE = new BasicStroke(2);
+	public static final Color SELECTION_COLOR = Color.YELLOW;
 
 	public static Point fromAWTPoint(java.awt.Point awtPoint) {
 		return new Point(awtPoint.x, awtPoint.y);
@@ -59,6 +67,16 @@ public final class Point implements Selectable {
 		this.x = x;
 		this.y = y;
 		notifyChange();
+	}
+
+	public void moveBy(Point d) {
+		x += d.x;
+		y += d.y;
+		notifyChange();
+	}
+
+	public Point diff(Point d) {
+		return new Point(x - d.x, y - d.y);
 	}
 
 	public String getDescription() {
@@ -118,4 +136,10 @@ public final class Point implements Selectable {
 	public boolean inRect(double x1, double y1, double x2, double y2) {
 		return x >= Math.min(x1, x2) && x < Math.max(x1, x2) && y >= Math.min(y1, y2) && y < Math.max(y1, y2);
 	}
+
+	public void roundToGrid(int gridStep) {
+		x = NU.roundToMultipleOf(x, gridStep);
+		y = NU.roundToMultipleOf(y, gridStep);
+	}
+
 }

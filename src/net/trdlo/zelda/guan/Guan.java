@@ -92,6 +92,12 @@ public class Guan implements GameInterface {
 	@Override
 	public void keyTyped(KeyEvent e) {
 		switch (e.getKeyChar()) {
+			case 'g':
+				camera.nextGridDensity();
+				break;
+			case 's':
+				camera.toggleSnapToGrid();
+				break;
 			case 'v':
 				camera.setBoundsDebug(!camera.isBoundsDebug());
 				break;
@@ -164,7 +170,7 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-
+		camera.mouseMoved(e);
 	}
 
 	@Override
