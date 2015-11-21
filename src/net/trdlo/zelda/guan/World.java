@@ -133,8 +133,6 @@ class World {
 		}
 	}
 
-}
-
 	public void deleteLine(Line delLine) {
 		lines.remove(delLine);
 	}
@@ -144,4 +142,4 @@ class World {
 			lines.remove(l);
 		}
 	}
-
+}
