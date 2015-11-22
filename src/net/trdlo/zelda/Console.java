@@ -135,7 +135,7 @@ public class Console implements CommandExecuter {
 		String currentCommandStr = ">" + currentCommand.toString();
 		String stringBeforeCursor = currentCommandStr.substring(0, cursorPosition + 1); // +2 protože 1 pole na znak na začátku řádku, to drůhé kvůli indexování od nuly
 		graphics.drawString(currentCommandStr, PADDING, y);
-		graphics.drawString("_",PADDING + fm.stringWidth(stringBeforeCursor), y);
+		graphics.drawString("_", PADDING + fm.stringWidth(stringBeforeCursor), y);
 
 		y -= fontLineHeight;
 		int visibleMsgCount = (currentHeight - (2 * PADDING)) / fontLineHeight;
