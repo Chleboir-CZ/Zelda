@@ -37,6 +37,12 @@ public final class Point implements Selectable {
 		this(x, y, "");
 	}
 
+	public Point(Point p) {
+		this.x = p.x;
+		this.y = p.y;
+		this.description = p.description;
+	}
+
 	public Point() {
 		this(0, 0, "");
 	}

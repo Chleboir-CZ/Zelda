@@ -101,6 +101,15 @@ public class Guan implements GameInterface {
 			case 'v':
 				camera.setBoundsDebug(!camera.isBoundsDebug());
 				break;
+			case 'i':
+				camera.insertPointAtLine();
+				break;
+			case ' ':
+				camera.insertion();
+				break;
+			case '\b':
+				camera.unInsert();
+				break;
 		}
 	}
 
@@ -111,7 +120,9 @@ public class Guan implements GameInterface {
 				camera.deleteSelection();
 				break;
 			case KeyEvent.VK_ESCAPE:
-				zFrame.terminate();
+				if (!camera.cancelOperation()) {
+					zFrame.terminate();
+				}
 				break;
 		}
 	}

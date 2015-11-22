@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import net.trdlo.zelda.NU;
+import net.trdlo.zelda.ZeldaFrame;
 
 class OrthoCamera {
 
@@ -33,6 +34,9 @@ class OrthoCamera {
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
 	private boolean additiveSelection;
+
+	private Line insertedLine;
+	private Point preservedInsertionStartPoint;
 
 	private Line selectedLine, nearestLine;
 
@@ -255,6 +259,12 @@ class OrthoCamera {
 					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
 					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
+
+		if (insertedLine != null) {
+			graphics.setStroke(DASHED_STROKE);
+			graphics.setColor(Line.SELECTION_COLOR);
+			graphics.drawLine(worldToViewX(insertedLine.A.x), worldToViewY(insertedLine.A.y), worldToViewX(insertedLine.B.x), worldToViewY(insertedLine.B.y));
+		}
 	}
 
 	private double zoomCoef() {
@@ -375,18 +385,24 @@ class OrthoCamera {
 		}
 	}
 
-	private void snapp() {
-		if (!snapToGrid || gridDensity == -1) {
-			return;
-		}
-
-		moveEnd.roundToGrid(gridStep);
-		moveEnd.moveBy(moveDiff);
-	}
-
 	public void mouseMoved(MouseEvent e) {
-		nearestPoint = world.getPointAt(viewToWorldX(e.getX()), viewToWorldY(e.getY()), 64 / zoomCoef());
-		nearestLine = world.getLineAt(viewToWorldX(e.getX()), viewToWorldY(e.getY()), 64 / zoomCoef());
+		double wx = viewToWorldX(e.getX()), wy = viewToWorldY(e.getY());
+		nearestPoint = world.getPointAt(wx, wy, 64 / zoomCoef());
+		nearestLine = world.getLineAt(wx, wy, 64 / zoomCoef());
+
+		if (insertedLine != null) {
+			Point ilPB = insertedLine.getB();
+			Point pointAt = world.getPointAt(wx, wy, Point.DISPLAY_SIZE / zoomCoef());
+
+			if (pointAt != null) {
+				ilPB.setXY(pointAt.x, pointAt.y);
+			} else {
+				ilPB.setXY(wx, wy);
+				if (snapToGrid && gridDensity != -1) {
+					ilPB.roundToGrid(gridStep);
+				}
+			}
+		}
 	}
 
 	public void mouse1dragged(MouseEvent e) {
@@ -407,7 +423,11 @@ class OrthoCamera {
 			}
 			moveEnd.setX(viewToWorldX(e.getX()));
 			moveEnd.setY(viewToWorldY(e.getY()));
-			snapp();
+
+			if (snapToGrid && gridDensity != -1) {
+				moveEnd.roundToGrid(gridStep);
+				moveEnd.moveBy(moveDiff);
+			}
 		}
 	}
 
@@ -441,17 +461,94 @@ class OrthoCamera {
 
 	public void nextGridDensity() {
 		gridDensity--;
-		if (gridDensity == -1) {
-			//Console.getInstance().echo(2000, "Grid off");
-		} else if (gridDensity == -2) {
+		if (gridDensity == -2) {
 			gridDensity = 8;
-		} //Console.getInstance().echo(2000, "Grid size %d world units", (int) Math.pow(2, gridDensity));
-
+		}
 		gridStep = (int) Math.pow(2, gridDensity);
 	}
 
 	public void toggleSnapToGrid() {
 		snapToGrid = !snapToGrid;
+	}
+
+	public boolean cancelOperation() {
+		if (insertedLine != null) {
+			insertedLine = null;
+		} else if ((moveStart != null) || (dragStart != null)) {
+			moveStart = null;
+			dragStart = null;
+		} else if ((!selection.isEmpty()) || selectedLine != null) {
+			selection.clear();
+			selectedLine = null;
+		} else {
+			return false;
+		}
+		return true;
+	}
+
+	public void insertPointAtLine() {
+		if (nearestLine != null) {
+			Point p = nearestLine.getNearestPointInSegment(viewToWorld(ZeldaFrame.getInstance().getMouseXY()));
+			if (p != null) {
+				if (snapToGrid && gridDensity != -1) {
+					p.roundToGrid(gridStep);
+				}
+				world.points.add(p);
+				Point b = nearestLine.getB();
+				nearestLine.setB(p);
+				world.lines.add(Line.constructFromTwoPoints(p, b));
+			}
+		}
+	}
+
+	public void insertion() {
+		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
+		Point wP = world.getPointAt(mP.x, mP.y, Point.DISPLAY_SIZE / zoomCoef());
+
+		if (wP == null & snapToGrid && gridDensity != -1) {
+			mP.roundToGrid(gridStep);
+			wP = world.getPointAt(mP.x, mP.y, World.MINIMAL_DETECTABLE_DISTANCE);
+		}
+
+		if (insertedLine == null) {
+			preservedInsertionStartPoint = wP;
+			if (wP == null) {
+				wP = new Point(mP);
+				world.points.add(wP);
+			}
+			insertedLine = Line.constructFromTwoPoints(wP, mP);
+		} else if (wP == null) {
+			Point oldB = insertedLine.getB();
+			world.points.add(oldB);
+			world.lines.add(insertedLine);
+			insertedLine = Line.constructFromTwoPoints(oldB, mP);
+		} else {
+			insertedLine.setB(wP);
+			world.lines.add(insertedLine);
+			insertedLine = null;
+		}
+	}
+
+	public void unInsert() {
+		if (insertedLine == null) {
+			return;
+		}
+
+		Point oldA = insertedLine.getA();
+
+		if (oldA == preservedInsertionStartPoint) {
+			insertedLine = null;
+		} else if (oldA.connectedLines.isEmpty()) {
+			world.points.remove(oldA);
+			insertedLine = null;
+		} else {
+			assert oldA.connectedLines.size() <= 1;
+
+			Line previous = oldA.connectedLines.iterator().next();
+			world.points.remove(oldA);
+			world.lines.remove(previous);
+			insertedLine = previous;
+		}
 	}
 
 }

@@ -8,6 +8,8 @@ import net.trdlo.zelda.NU;
 
 public final class Line implements Selectable {
 
+	public static final double MINIMAL_DENOMINOATOR = 1e-5;
+
 	public static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
 	public static final double SELECTION_MAX_DISTANCE = 3;
 
@@ -269,7 +271,7 @@ public final class Line implements Selectable {
 	 */
 	public boolean lineIntersectsSegment(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator != 0) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			return NU.inRange(0, segment.getPosition(ix, iy), 1);
@@ -285,7 +287,7 @@ public final class Line implements Selectable {
 	 */
 	public boolean segmentIntersectsSegment(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator != 0) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			return NU.inRange(0, segment.getPosition(ix, iy), 1) && NU.inRange(0, getPosition(ix, iy), 1);
@@ -302,7 +304,7 @@ public final class Line implements Selectable {
 	 */
 	public Point getIntersection(Line line) {
 		double denominator = (a * line.b - line.a * b);
-		if (denominator == 0) {
+		if (Math.abs(denominator) < MINIMAL_DENOMINOATOR) {
 			return null;
 		}
 		return new Point((b * line.c - c * line.b) / denominator, (line.a * c - a * line.c) / denominator);
@@ -316,7 +318,7 @@ public final class Line implements Selectable {
 	 */
 	public Point getLineSegmentIntersection(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator != 0) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			if (NU.inRange(0, segment.getPosition(ix, iy), 1)) {
@@ -334,7 +336,7 @@ public final class Line implements Selectable {
 	 */
 	public Point getSegmentSegmentIntersection(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator != 0) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			if (NU.inRange(0, segment.getPosition(ix, iy), 1) && NU.inRange(0, getPosition(ix, iy), 1)) {
@@ -479,7 +481,7 @@ public final class Line implements Selectable {
 	 */
 	public double getLineToSegmentDistanceSquare(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator == 0) {
+		if (Math.abs(denominator) < MINIMAL_DENOMINOATOR) {
 			//rovnobezne => vzdalenost jednoho z bodu
 			return getDistanceSquare(segment.A);
 		}
@@ -515,7 +517,7 @@ public final class Line implements Selectable {
 	 */
 	public double getSegmentToSegmentDistanceSquare(Line segment) {
 		double denominator = (a * segment.b - segment.a * b);
-		if (denominator != 0) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			double pos1 = getPosition(ix, iy);
@@ -595,6 +597,32 @@ public final class Line implements Selectable {
 			return Line.constructFromTwoPoints(iP, refB);
 		} else {
 			return null;
+		}
+	}
+
+	/**
+	 * Vrací nejbližší bod na úsečce nebo null pokud by šlo o koncový bod
+	 *
+	 * @param p
+	 * @return
+	 */
+	public Point getNearestPointInSegment(Point p) {
+		double denominator = (a * a + b * b);
+		double cn = (b * p.x - a * p.y);
+		double iPx = (b * cn - c * a) / denominator;
+		double iPy = (-b * c - a * cn) / denominator;
+
+		double vx = B.x - A.x, vy = B.y - A.y, dl;
+		if (Math.abs(vx) > Math.abs(vy)) {
+			dl = (iPx - A.x) / vx;
+		} else {
+			dl = (iPy - A.y) / vy;
+		}
+
+		if (dl <= 0 || dl >= 1) {
+			return null;
+		} else {
+			return new Point(iPx, iPy);
 		}
 	}
 
