@@ -110,7 +110,6 @@ public class Console implements CommandExecuter {
 		int width = CONSOLE_WIDTH;
 		currentHeight = (int) (CONSOLE_HEIGHT * showing);
 
-		//graphics.setBackground(Color.MAGENTA);
 		graphics.setStroke(DEFAULT_STROKE);
 		graphics.setColor(Color.WHITE);
 		graphics.clearRect(0, 0, width, currentHeight);
@@ -133,7 +132,7 @@ public class Console implements CommandExecuter {
 		int y = currentHeight - PADDING;
 
 		String currentCommandStr = ">" + currentCommand.toString();
-		String stringBeforeCursor = currentCommandStr.substring(0, cursorPosition + 1); // +2 protože 1 pole na znak na začátku řádku, to drůhé kvůli indexování od nuly
+		String stringBeforeCursor = currentCommandStr.substring(0, cursorPosition + 1);
 		graphics.drawString(currentCommandStr, PADDING, y);
 		graphics.drawString("_", PADDING + fm.stringWidth(stringBeforeCursor), y);
 
