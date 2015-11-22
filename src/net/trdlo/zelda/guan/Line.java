@@ -107,6 +107,7 @@ public final class Line implements Selectable {
 			autoUpdate = true;
 			A.addConnectedLine(this);
 			B.addConnectedLine(this);
+			refreshCoefs();
 		}
 	}
 
