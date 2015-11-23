@@ -3,6 +3,7 @@ package net.trdlo.zelda.guan;
 import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -71,10 +72,6 @@ class World {
 
 	}
 
-	private static double sqr(double d) {
-		return d * d;
-	}
-
 	public Point getPointAt(double x, double y, double rectSize) {
 		Point nearest = null;
 		double minDistSq = Double.MAX_VALUE;
@@ -131,17 +128,15 @@ class World {
 	public void deletePoints(Set<Point> delPoints) {
 		for (Point p : delPoints) {
 			points.remove(p);
-			deleteLines(p.connectedLines);
+			if (p.connectedLines != null) {
+				for (Line l : new ArrayList<>(p.connectedLines)) {
+					lines.remove(l);
+				}
+			}
 		}
 	}
 
 	public void deleteLine(Line delLine) {
 		lines.remove(delLine);
-	}
-
-	public void deleteLines(Set<Line> delLines) {
-		for (Line l : delLines) {
-			lines.remove(l);
-		}
 	}
 }

@@ -222,7 +222,9 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	}
 
 	private void update() {
-		dispatchInput();
+		if (lastRenderCount > 0) {
+			dispatchInput();
+		}
 		console.update();
 		gameInterface.update();
 		updateFrame++;
