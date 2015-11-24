@@ -522,7 +522,7 @@ class OrthoCamera {
 			world.points.add(oldB);
 			world.lines.add(insertedLine);
 			insertedLine = Line.constructFromTwoPoints(oldB, mP);
-		} else {
+		} else if (insertedLine.getA() != wP) {
 			insertedLine.setB(wP);
 			world.lines.add(insertedLine);
 			insertedLine = null;
