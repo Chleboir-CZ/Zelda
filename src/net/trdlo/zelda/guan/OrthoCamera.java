@@ -33,6 +33,7 @@ class OrthoCamera {
 	private Point dragStart, dragEnd;
 	private boolean snapToGrid = true;
 	private Point moveStart, moveEnd, snappedPoint, moveDiff;
+	private final Set<Point> avoidedPoints = new HashSet<>();
 	private Point nearestPoint;
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
@@ -45,7 +46,7 @@ class OrthoCamera {
 
 	private Line circleLine;
 	private int circlePointCount = 5;
-	private List<Point> tempCirclePoints = new ArrayList<>();
+	private final List<Point> tempCirclePoints = new ArrayList<>();
 
 	private int gridDensity = 6;
 	private int gridStep = 64;
@@ -377,6 +378,17 @@ class OrthoCamera {
 		return world.getPointsIn(viewToWorldX(x1), viewToWorldY(y1), viewToWorldX(x2), viewToWorldY(y2));
 	}
 
+	private void avoidedPointsBySnapped() {
+		assert snappedPoint != null;
+
+		avoidedPoints.clear();
+		if (snappedPoint.connectedLines != null) {
+			for (Line l : snappedPoint.connectedLines) {
+				avoidedPoints.add(l.getA() == snappedPoint ? l.getB() : l.getA());
+			}
+		}
+	}
+
 	public void mouse1pressed(MouseEvent e) {
 		additiveSelection = e.isShiftDown();
 		Point pointAt;
@@ -391,6 +403,7 @@ class OrthoCamera {
 				selection.add(pointAt);
 				moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 				snappedPoint = pointAt;
+				avoidedPointsBySnapped();
 				moveDiff = moveStart.diff(snappedPoint);
 			}
 			selectedLine = null;
@@ -412,7 +425,7 @@ class OrthoCamera {
 			Point ilPB = insertedLine.getB();
 			Point pointAt = getPointAt(e.getX(), e.getY());
 
-			if (pointAt != null) {
+			if (pointAt != null && pointAt != insertedLine.getA()) {
 				ilPB.setXY(pointAt.x, pointAt.y);
 			} else {
 				ilPB.setXY(viewToWorldX(vx), viewToWorldY(vy));
@@ -442,7 +455,7 @@ class OrthoCamera {
 
 			Point pointAt = world.getPointAt(wx, wy, Point.DISPLAY_SIZE / zoomCoef());
 
-			if (pointAt != null) {
+			if (pointAt != null && !avoidedPoints.contains(pointAt)) {
 				moveEnd.setXY(pointAt.x, pointAt.y);
 				moveEnd.moveBy(moveDiff);
 			} else {
@@ -472,6 +485,8 @@ class OrthoCamera {
 				moveEnd = null;
 			}
 			moveStart = null;
+			snappedPoint = null;
+			avoidedPoints.clear();
 		}
 	}
 
@@ -597,7 +612,7 @@ class OrthoCamera {
 
 		if (oldA == preservedInsertionStartPoint) {
 			insertedLine = null;
-		} else if (oldA.connectedLines.isEmpty()) {
+		} else if (oldA.connectedLines == null || oldA.connectedLines.isEmpty()) {
 			world.points.remove(oldA);
 			insertedLine = null;
 		} else {
@@ -643,10 +658,12 @@ class OrthoCamera {
 				top = Math.min(top, p.getY());
 				bottom = Math.max(bottom, p.getY());
 
-				for (Line l : p.connectedLines) {
-					linesConflict = !linesAffected.add(l);
-					if (linesConflict) {
-						break POINT_LOOP;
+				if (p.connectedLines != null) {
+					for (Line l : p.connectedLines) {
+						linesConflict = !linesAffected.add(l);
+						if (linesConflict) {
+							break POINT_LOOP;
+						}
 					}
 				}
 			}
@@ -658,8 +675,10 @@ class OrthoCamera {
 				Point preservedFirst = it.next();
 				while (it.hasNext()) {
 					Point merged = it.next();
-					for (Line l : new ArrayList<>(merged.connectedLines)) {
-						l.changePoint(merged, preservedFirst);
+					if (merged.connectedLines != null) {
+						for (Line l : new ArrayList<>(merged.connectedLines)) {
+							l.changePoint(merged, preservedFirst);
+						}
 					}
 					world.points.remove(merged);
 				}

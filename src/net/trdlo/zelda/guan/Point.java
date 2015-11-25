@@ -105,7 +105,7 @@ public final class Point implements Selectable {
 	}
 
 	public void removeConnectedLine(Line line) {
-		if (connectedLines != null && !connectedLines.remove(line)) {
+		if (connectedLines == null || !connectedLines.remove(line)) {
 			throw new RuntimeException("Line was not a listener of this point!");
 		}
 	}
