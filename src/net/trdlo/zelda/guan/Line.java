@@ -12,6 +12,7 @@ public final class Line implements Selectable {
 
 	public static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
 	public static final double SELECTION_MAX_DISTANCE = 3;
+	public static final double HIGHLIGHT_MAX_DISTANCE = 64;
 
 	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 	public static final Color DEFAULT_COLOR = Color.LIGHT_GRAY;
@@ -19,7 +20,9 @@ public final class Line implements Selectable {
 	public static final Color SELECTION_COLOR = Color.YELLOW;
 
 	public static Line constructFromTwoPoints(Point A, Point B) {
-		assert A != null && B != null;
+		assert A != null;
+		assert B != null;
+		assert A != B;
 
 		Line l = new Line();
 		l.A = A;
@@ -30,6 +33,7 @@ public final class Line implements Selectable {
 
 	public static Line constructFromPointAndNormal(Point A, double a, double b) {
 		assert A != null;
+		assert a != 0 || b != 0;
 
 		Line l = new Line();
 		l.a = a;
@@ -42,6 +46,7 @@ public final class Line implements Selectable {
 
 	public static Line constructFromPointAndVector(Point A, double a, double b) {
 		assert A != null;
+		assert a != 0 || b != 0;
 
 		Line l = new Line();
 		l.a = -b;
@@ -78,6 +83,7 @@ public final class Line implements Selectable {
 
 	public void setA(Point A) {
 		assert A != null;
+		assert A != this.B;
 
 		if (autoUpdate) {
 			this.A.removeConnectedLine(this);
@@ -91,6 +97,7 @@ public final class Line implements Selectable {
 
 	public void setB(Point B) {
 		assert B != null;
+		assert B != this.A;
 
 		if (autoUpdate) {
 			this.B.removeConnectedLine(this);
@@ -100,6 +107,16 @@ public final class Line implements Selectable {
 			B.addConnectedLine(this);
 		}
 		refreshCoefs();
+	}
+
+	public void changePoint(Point old, Point nu) {
+		if (old == A) {
+			setA(nu);
+		} else if (old == B) {
+			setB(nu);
+		} else {
+			assert false;
+		}
 	}
 
 	public void connect() {

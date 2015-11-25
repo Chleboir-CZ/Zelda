@@ -7,9 +7,12 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
 import net.trdlo.zelda.ZeldaFrame;
 
@@ -39,6 +42,10 @@ class OrthoCamera {
 	private Point preservedInsertionStartPoint;
 
 	private Line selectedLine, nearestLine;
+
+	private Line circleLine;
+	private int circlePointCount = 5;
+	private List<Point> tempCirclePoints = new ArrayList<>();
 
 	private int gridDensity = 6;
 	private int gridStep = 64;
@@ -245,6 +252,9 @@ class OrthoCamera {
 			int vx = worldToViewX(px);
 			int vy = worldToViewY(py);
 			graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+
+			graphics.setColor(Point.DESCRIPTION_COLOR);
+			graphics.setFont(Point.DESCRIPTION_FONT);
 			graphics.drawString(point.getDescription(), vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
 		}
 
@@ -347,12 +357,20 @@ class OrthoCamera {
 		this.boundsDebug = showBoundsDebug;
 	}
 
+	public Point getPointAt(int x, int y, double limitDistance) {
+		return world.getPointAt(viewToWorldX(x), viewToWorldY(y), limitDistance / zoomCoef());
+	}
+
 	public Point getPointAt(int x, int y) {
-		return world.getPointAt(viewToWorldX(x), viewToWorldY(y), Point.DISPLAY_SIZE / zoomCoef());
+		return getPointAt(x, y, Point.DISPLAY_SIZE);
+	}
+
+	public Line getLineAt(int x, int y, double limitDistance) {
+		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), limitDistance / zoomCoef());
 	}
 
 	public Line getLineAt(int x, int y) {
-		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), Line.SELECTION_MAX_DISTANCE / zoomCoef());
+		return getLineAt(x, y, Line.SELECTION_MAX_DISTANCE);
 	}
 
 	public Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
@@ -386,18 +404,18 @@ class OrthoCamera {
 	}
 
 	public void mouseMoved(MouseEvent e) {
-		double wx = viewToWorldX(e.getX()), wy = viewToWorldY(e.getY());
-		nearestPoint = world.getPointAt(wx, wy, 64 / zoomCoef());
-		nearestLine = world.getLineAt(wx, wy, 64 / zoomCoef());
+		int vx = e.getX(), vy = e.getY();
+		nearestPoint = getPointAt(vx, vy, Point.HIGHLIGHT_MAX_DISTANCE);
+		nearestLine = getLineAt(vx, vy, Line.HIGHLIGHT_MAX_DISTANCE);
 
 		if (insertedLine != null) {
 			Point ilPB = insertedLine.getB();
-			Point pointAt = world.getPointAt(wx, wy, Point.DISPLAY_SIZE / zoomCoef());
+			Point pointAt = getPointAt(e.getX(), e.getY());
 
 			if (pointAt != null) {
 				ilPB.setXY(pointAt.x, pointAt.y);
 			} else {
-				ilPB.setXY(wx, wy);
+				ilPB.setXY(viewToWorldX(vx), viewToWorldY(vy));
 				if (snapToGrid && gridDensity != -1) {
 					ilPB.roundToGrid(gridStep);
 				}
@@ -406,12 +424,12 @@ class OrthoCamera {
 	}
 
 	public void mouse1dragged(MouseEvent e) {
+		double wx = viewToWorldX(e.getX()), wy = viewToWorldY(e.getY());
 		if (dragStart != null) {
 			if (dragEnd == null) {
 				dragEnd = new Point();
 			}
-			dragEnd.setX(viewToWorldX(e.getX()));
-			dragEnd.setY(viewToWorldY(e.getY()));
+			dragEnd.setXY(wx, wy);
 
 			tempSelection = world.getPointsIn(dragStart.getX(), dragStart.getY(), dragEnd.getX(), dragEnd.getY());
 			if (!additiveSelection) {
@@ -421,12 +439,18 @@ class OrthoCamera {
 			if (moveEnd == null) {
 				moveEnd = new Point();
 			}
-			moveEnd.setX(viewToWorldX(e.getX()));
-			moveEnd.setY(viewToWorldY(e.getY()));
 
-			if (snapToGrid && gridDensity != -1) {
-				moveEnd.roundToGrid(gridStep);
+			Point pointAt = world.getPointAt(wx, wy, Point.DISPLAY_SIZE / zoomCoef());
+
+			if (pointAt != null) {
+				moveEnd.setXY(pointAt.x, pointAt.y);
 				moveEnd.moveBy(moveDiff);
+			} else {
+				moveEnd.setXY(wx, wy);
+				if (snapToGrid && gridDensity != -1) {
+					moveEnd.roundToGrid(gridStep);
+					moveEnd.moveBy(moveDiff);
+				}
 			}
 		}
 	}
@@ -501,9 +525,44 @@ class OrthoCamera {
 		}
 	}
 
-	public void insertion() {
+	private void updateCirclePoints() {
+		if (circleLine == null) {
+			return;
+		}
+
+		while (tempCirclePoints.size() < circlePointCount) {
+			tempCirclePoints.add(new Point());
+		}
+		while (tempCirclePoints.size() > circlePointCount) {
+			tempCirclePoints.remove(tempCirclePoints.size() - 1);
+		}
+
+		Point s = new Point((circleLine.A.x + circleLine.B.x) / 2, (circleLine.A.y + circleLine.B.y) / 2);
+		Line circleLineAxis = circleLine.getPerpendicular(s);
 		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
-		Point wP = world.getPointAt(mP.x, mP.y, Point.DISPLAY_SIZE / zoomCoef());
+		s = new Point((circleLine.A.x + mP.x) / 2, (circleLine.A.y + mP.y) / 2);
+		Line secondAxis = Line.constructFromPointAndNormal(s, circleLine.A.x - mP.x, circleLine.A.y - mP.y);
+
+		Point iP = circleLineAxis.getIntersection(secondAxis);
+
+		//world.lines.add(circleLineAxis);
+		//world.lines.add(secondAxis);
+		iP.setDescription("center");
+		world.points.add(iP);
+
+		//TODO výpočet tempCirclePoints (zatím schází rozhodnout, která část oblouku (přerušená koncovými body circleLine) je pod myší
+	}
+
+	public void insertion() {
+		XY mouseXY = ZeldaFrame.getInstance().getMouseXY();
+		Point mP = viewToWorld(mouseXY);
+
+		if (circleLine != null) {
+			//TODO - zapečení tempCirclePoints do world.points
+			return;
+		}
+
+		Point wP = getPointAt(mouseXY.x, mouseXY.y);
 
 		if (wP == null & snapToGrid && gridDensity != -1) {
 			mP.roundToGrid(gridStep);
@@ -548,6 +607,69 @@ class OrthoCamera {
 			world.points.remove(oldA);
 			world.lines.remove(previous);
 			insertedLine = previous;
+		}
+	}
+
+	public void startCircle() {
+		if (circleLine == null) {
+			circleLine = nearestLine;
+			updateCirclePoints();
+		} else {
+			circleLine = null;
+		}
+	}
+
+	public void incCircleSegments() {
+		if (circleLine != null) {
+			circlePointCount++;
+		}
+	}
+
+	public void decCircleSegments() {
+		if (circleLine != null && circlePointCount > 1) {
+			circlePointCount--;
+		}
+	}
+
+	public void mergePoints() {
+		if (selection.size() >= 2) {
+			double left = Double.MAX_VALUE, right = -Double.MAX_VALUE, top = Double.MAX_VALUE, bottom = -Double.MAX_VALUE;
+			Set<Line> linesAffected = new HashSet<>();
+			boolean linesConflict = false;
+			POINT_LOOP:
+			for (Point p : selection) {
+				left = Math.min(left, p.getX());
+				right = Math.max(right, p.getX());
+				top = Math.min(top, p.getY());
+				bottom = Math.max(bottom, p.getY());
+
+				for (Line l : p.connectedLines) {
+					linesConflict = !linesAffected.add(l);
+					if (linesConflict) {
+						break POINT_LOOP;
+					}
+				}
+			}
+
+			if (linesConflict) {
+				Console.getInstance().echo(5000, "Can't merge both ends of a single line!", selection.size());
+			} else if (right - left < World.MINIMAL_DETECTABLE_DISTANCE && bottom - top < World.MINIMAL_DETECTABLE_DISTANCE) {
+				Iterator<Point> it = selection.iterator();
+				Point preservedFirst = it.next();
+				while (it.hasNext()) {
+					Point merged = it.next();
+					for (Line l : new ArrayList<>(merged.connectedLines)) {
+						l.changePoint(merged, preservedFirst);
+					}
+					world.points.remove(merged);
+				}
+				Console.getInstance().echo(5000, "%d points merged.", selection.size());
+
+				selection.clear();
+				selection.add(preservedFirst);
+			} else {
+				Console.getInstance().echo(5000, "Only overlapping points can be merged!");
+			}
 		}
 	}
 

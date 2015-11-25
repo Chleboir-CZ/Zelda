@@ -38,6 +38,8 @@ public class Guan implements GameInterface {
 	}
 
 	private void readAsynchronoutInput() {
+		//TODO: možná přesunout do kamery
+		//TODO: v případě režimu circle nedělat zoom (proto přesun do circle)
 		if (zFrame.isPressed(KeyEvent.VK_ADD)) {
 			camera.zoom(1, null);
 		}
@@ -109,6 +111,18 @@ public class Guan implements GameInterface {
 				break;
 			case '\b':
 				camera.unInsert();
+				break;
+			case 'm':
+				camera.mergePoints();
+				break;
+			case 'c':
+				camera.startCircle();
+				break;
+			case '+':
+				camera.incCircleSegments();
+				break;
+			case '-':
+				camera.decCircleSegments();
 				break;
 		}
 	}

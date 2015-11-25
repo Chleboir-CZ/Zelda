@@ -2,6 +2,7 @@ package net.trdlo.zelda.guan;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Stroke;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,11 +13,14 @@ public final class Point implements Selectable {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
 	public static final int DISPLAY_SIZE = 8;
+	public static final int HIGHLIGHT_MAX_DISTANCE = 8;
 
 	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 	public static final Color DEFAULT_COLOR = new Color(0, 192, 0);
 	public static final Stroke SELECTION_STROKE = new BasicStroke(2);
 	public static final Color SELECTION_COLOR = Color.YELLOW;
+	public static final Font DESCRIPTION_FONT = new Font("Monospaced", Font.BOLD, 12);
+	public static final Color DESCRIPTION_COLOR = Color.LIGHT_GRAY;
 
 	public static Point fromAWTPoint(java.awt.Point awtPoint) {
 		return new Point(awtPoint.x, awtPoint.y);
