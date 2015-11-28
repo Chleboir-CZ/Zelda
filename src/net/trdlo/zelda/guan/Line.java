@@ -3,6 +3,7 @@ package net.trdlo.zelda.guan;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Stroke;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
 
@@ -57,7 +58,18 @@ public final class Line implements Selectable {
 		return l;
 	}
 
+	static LoadedLine loadFromString(String line) {
+		Matcher m = PAT_LINE.matcher(line);
+		if (m.matches()) {
+			m.group(1);
+			return new LoadedLine(Integer.valueOf(m.group(1)), Integer.valueOf(m.group(2)));
+		} else {
+			return null;
+		}
+	}
+
 	protected Point A, B;
+
 	private double a, b, c;
 	private boolean autoUpdate = false;
 
@@ -647,5 +659,19 @@ public final class Line implements Selectable {
 	@Override
 	public String toString() {
 		return "Line " + A.toStringSimple() + " <-> " + B.toStringSimple();
+	}
+
+	String saveToString(int idA, int idB) {
+		return "Line " + idA + " " + idB;
+	}
+}
+
+class LoadedLine {
+
+	public final int idA, idB;
+
+	public LoadedLine(int idA, int idB) {
+		this.idA = idA;
+		this.idB = idB;
 	}
 }

@@ -259,7 +259,7 @@ class OrthoCamera {
 			graphics.drawString(point.getDescription(), vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
 		}
 
-		renderReflectionsDebug(graphics);
+		//renderReflectionsDebug(graphics);
 
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(DASHED_STROKE);

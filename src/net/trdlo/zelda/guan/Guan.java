@@ -26,7 +26,7 @@ public class Guan implements GameInterface {
 		try {
 			world.loadFromFile("maps/test.map");
 		} catch (Exception ex) {
-			System.err.println("Could not load map! Proceeding with an empty one.");
+			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
 		}
 		camera = new OrthoCamera(world, 0, 0, 0);
 
@@ -79,11 +79,18 @@ public class Guan implements GameInterface {
 		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
 			camera.setBoundsDebug("1".equals(m.group(1)));
 		} else if (PAT_SAVE.matcher(command).matches()) {
-			//String fileName = Word.fileName;
-			//TODO Save to fileName
+			try {
+				world.save();
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
+			}
 		} else if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
 			String fileName = m.group("file");
-			//TODO Save to fileName
+			try {
+				world.saveToFile(fileName);
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
+			}
 		} else {
 			return false;
 		}
