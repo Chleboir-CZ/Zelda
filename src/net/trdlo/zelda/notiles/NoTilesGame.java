@@ -12,8 +12,10 @@ import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,13 +62,14 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	private String tmpDescription;
 	private Point movingPoint;
+	private final Map<Point, Point> movingPointMap;
 
 	private Stroke defaultStroke;
 	private final Stroke dashedStroke;
 	private final Stroke selectionStroke;
 	private Font defaultFont;
 
-	private double x;
+	private double x; //zamířeno na střed
 	private double y;
 
 	public int viewSizeX;
@@ -76,7 +79,8 @@ public class NoTilesGame implements GameInterface, InputListener {
 	double orientation;
 	double fOV;
 
-	private java.awt.Point lastMPosition;
+	List<Line> viewPolygon;
+
 	private double zoom;
 
 	private double offsetX;
@@ -88,6 +92,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 		this.world = world;
 
 		selectedPoints = new HashSet<>();
+		movingPointMap = new HashMap<>();
 
 		dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 		selectionStroke = new BasicStroke(2);
@@ -97,8 +102,8 @@ public class NoTilesGame implements GameInterface, InputListener {
 		y = 0;
 		zoom = 1.5;
 		sight = 500;
-		fOV = Math.PI;
-		orientation = 0;
+		fOV = Math.PI / 2;
+		orientation = Math.PI * 1.5;
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
@@ -125,7 +130,9 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void update() {
-		getBoundsofView(world.points, world.hero, orientation, sight, fOV);
+//		getBoundsofView(world.points, world.hero, orientation, sight, fOV);
+//		ViewUtils.evaluatePointsByAngle(world.points, world.hero, orientation, fOV);
+//		viewPolygon = ViewUtils.getViewPolygon(fOV, orientation, sight, world.hero, world.lines, world.points);
 	}
 
 	@Override
@@ -147,6 +154,10 @@ public class NoTilesGame implements GameInterface, InputListener {
 			graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
 
+//		graphics.setStroke(dashedStroke);
+//		for (Line l : viewPolygon) {
+//			graphics.drawLine(worldToViewXr(l.A.x), worldToViewYr(l.A.y), worldToViewXr(l.B.x), worldToViewYr(l.B.y));
+//		}
 		for (Point p : world.points) {
 			String textToDraw;
 			if (selectedPoints.contains(p)) {
@@ -238,13 +249,12 @@ public class NoTilesGame implements GameInterface, InputListener {
 		return null;
 	}
 
-	public Collection<Point> getPointsInPoly(List<Point> polyList) {
+	public Collection<Point> getPointsInPoly(List<Line> polyList) {
 		Collection<Point> pointsInPoly = new ArrayList<>();
 		for (Point p : world.points) {
 			int intersectCount = 0;
 			Line l = Line.constructFromTwoPoints(p, new Point(p.x - 100, p.y));
-			for (int i = 0; i < polyList.size(); i++) {
-				Line n = Line.constructFromTwoPoints(polyList.get(i), polyList.get((i + 1) % polyList.size()));
+			for (Line n : polyList) {
 				Point iP = l.intersectPoint(n);
 				if (iP != null) {
 					if (iP.x <= p.x) {
@@ -272,78 +282,34 @@ public class NoTilesGame implements GameInterface, InputListener {
 		return pointsInPoly;
 	}
 
-//	static class NestedShit implements Comparator<Point> {
-//		@Override
-//		public int compare(Point t, Point t1) {
-//			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//		}
-//	}
-	public List<Point> getBoundsofView(Collection<Point> pointColl, Point heroPos, double orientation, double sight, double fOV) {
-//		class LocalShit implements Comparator<Point> {
-//			@Override
-//			public int compare(Point t, Point t1) {
-//				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//			}
-//		}
-		for (Point p : pointColl) {
-			p.tempAngle = Math.atan2(p.y - heroPos.y, p.x - heroPos.x) - orientation;
-			p.setDescription(String.format("%.0f", 180 / Math.PI * p.tempAngle));
-		}
-
-		/*SortedSet<Point> sortedPointMap = new TreeSet<>(new Comparator<Point>() {
-			@Override
-			public int compare(Point p, Point q) {
-				double delta = p.tempAngle - q.tempAngle;
-				return delta < 0 ? -1 : (delta > 0 ? 1 : 0);
-			}
-		});
-
-		Point leftPoint = new Point(sight * Math.cos(orientation - fOV / 2), sight * Math.sin(orientation - fOV / 2));
-		Point rightPoint = new Point(sight * Math.cos(orientation + fOV / 2), sight * Math.sin(orientation + fOV / 2));*/
-		return null;
-	}
-
 	public Point createPointAt(double x, double y, String description) {
 		return new Point(viewToWorldX(x), viewToWorldY(y), description);
 	}
 
-//	public Collection<Point> getViewPoly(double viewRange, int viewAngle) {
-//		
-//	}
 	public double worldToViewX(double x) {
-		double dx = x - (this.x + zFrame.getBounds().width / 2);
-		return ((x - dx) + dx * zoom) - this.x;
+		double tempX = x - this.x;
+		return tempX * zoom;
 	}
 
 	public double worldToViewY(double y) {
-		double dy = y - (this.y + zFrame.getBounds().height / 2);
-		return ((y - dy) + dy * zoom) - this.y;
+		double tempY = y - this.y;
+		return tempY * zoom;
 	}
 
 	public double viewToWorldX(double x) {
-		double dx = x - (zFrame.getBounds().width / 2);
-		return ((x - dx) + (dx / zoom) + this.x);
+		return ((x - zFrame.getBounds().width / 2) / zoom) + this.x;
 	}
 
 	public double viewToWorldY(double y) {
-		double dy = y - (zFrame.getBounds().height / 2);
-		return ((y - dy) + (dy / zoom) + this.y);
+		return ((y - zFrame.getBounds().height / 2) / zoom) + this.y;
 	}
 
 	public int worldToViewXr(double x) {
-		return (int) worldToViewX(x);
+		return (int) (worldToViewX(x) + zFrame.getBounds().width / 2);
 	}
 
 	public int worldToViewYr(double y) {
-		return (int) worldToViewY(y);
-	}
-
-	public int viewToWorldXr(double x) {
-		return (int) viewToWorldX(x);
-	}
-
-	public int viewToWorldYr(double y) {
-		return (int) viewToWorldY(y);
+		return (int) (worldToViewY(y) + zFrame.getBounds().height / 2);
 	}
 
 	public void delSelectedPoints() {
@@ -439,7 +405,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 					polygon.add(new Point(200, 200));
 					polygon.add(new Point(800, 200));
 
-					selectedPoints.addAll(getPointsInPoly(polygon));
+//					selectedPoints.addAll(getPointsInPoly(polygon));
 				}
 				break;
 			default:
@@ -485,7 +451,6 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseClicked(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		Point clickedPoint = this.getPointAt(me.getX(), me.getY());
 
 //		console.add("Event! Count = " + me.getClickCount() + "; Thread-ID: " + Thread.currentThread().getId() + "\n");
@@ -547,7 +512,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 					if (me.getButton() == MouseEvent.BUTTON2) {
 						world.removePoint(clickedPoint);
 					}
-					if (me.getButton() == MouseEvent.BUTTON3) {
+					if (me.getButton() == MouseEvent.BUTTON3 && clickedPoint != null) {
 						selectedPoints.add(clickedPoint);
 					} else {
 						selectedPoints.clear();
@@ -557,12 +522,10 @@ public class NoTilesGame implements GameInterface, InputListener {
 					break;
 			}
 		}
-
 	}
 
 	@Override
 	public void mousePressed(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		Point clickedPoint = this.getPointAt(me.getX(), me.getY());
 
 		switch (state) {
@@ -592,6 +555,14 @@ public class NoTilesGame implements GameInterface, InputListener {
 					movingPoint = clickedPoint;
 					offsetX = (clickedPoint.getX() - viewToWorldX(me.getX()));
 					offsetY = (clickedPoint.getY() - viewToWorldY(me.getY()));
+					for (Point p : selectedPoints) {
+						if (p != movingPoint) {
+							assert p != null;
+							assert me != null;
+
+							movingPointMap.put(p, new Point(p.getX() - viewToWorldX(me.getX()), p.getY() - viewToWorldY(me.getY())));
+						}
+					}
 				}
 				break;
 			case MOVING_POINTS:
@@ -605,7 +576,6 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseReleased(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		Point clickedPoint = this.getPointAt(me.getX(), me.getY());
 
 		switch (state) {
@@ -634,6 +604,10 @@ public class NoTilesGame implements GameInterface, InputListener {
 				if (movingPoint != null) {
 					movingPoint = null;
 				}
+				if (!movingPointMap.isEmpty()) {
+					movingPointMap.clear();
+				}
+
 				break;
 			default:
 				//tak nedelej nic...
@@ -643,19 +617,14 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseEntered(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
-
 	}
 
 	@Override
 	public void mouseExited(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
-
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
 		Point clickedPoint = this.getPointAt(me.getX(), me.getY());
 
 		switch (state) {
@@ -682,9 +651,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 						if (p == movingPoint) {
 							continue;
 						}
-						double xDiff = (p.getX() - viewToWorldX(lastMPosition.x));
-						double yDiff = (p.getY() - viewToWorldY(lastMPosition.y));
-						p.setXY(viewToWorldX(me.getX()) + xDiff, viewToWorldY(me.getY()) + yDiff);
+						p.setXY(viewToWorldX(me.getX()) + movingPointMap.get(p).x, viewToWorldY(me.getY()) + movingPointMap.get(p).y);
 					}
 				}
 				break;
@@ -698,7 +665,6 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseMoved(MouseEvent me) {
-		lastMPosition = new java.awt.Point(me.getX(), me.getY());
 
 		switch (state) {
 			case DRAG_LINE:
@@ -724,7 +690,6 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent mwe) {
-		lastMPosition = new java.awt.Point(mwe.getX(), mwe.getY());
 
 		switch (state) {
 			case DRAG_LINE:
