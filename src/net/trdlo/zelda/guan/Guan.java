@@ -26,7 +26,7 @@ public class Guan implements GameInterface {
 		try {
 			world.loadFromFile("maps/test.map");
 		} catch (Exception ex) {
-			System.err.println("Could not load map! Proceeding with an empty one.");
+			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
 		}
 		camera = new OrthoCamera(world, 0, 0, 0);
 
@@ -38,6 +38,8 @@ public class Guan implements GameInterface {
 	}
 
 	private void readAsynchronoutInput() {
+		//TODO: možná přesunout do kamery
+		//TODO: v případě režimu circle nedělat zoom (proto přesun do circle)
 		if (zFrame.isPressed(KeyEvent.VK_ADD)) {
 			camera.zoom(1, null);
 		}
@@ -77,11 +79,18 @@ public class Guan implements GameInterface {
 		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
 			camera.setBoundsDebug("1".equals(m.group(1)));
 		} else if (PAT_SAVE.matcher(command).matches()) {
-			//String fileName = Word.fileName;
-			//TODO Save to fileName
+			try {
+				world.save();
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
+			}
 		} else if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
 			String fileName = m.group("file");
-			//TODO Save to fileName
+			try {
+				world.saveToFile(fileName);
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
+			}
 		} else {
 			return false;
 		}
@@ -109,6 +118,18 @@ public class Guan implements GameInterface {
 				break;
 			case '\b':
 				camera.unInsert();
+				break;
+			case 'm':
+				camera.mergePoints();
+				break;
+			case 'c':
+				camera.startCircle();
+				break;
+			case '+':
+				camera.incCircleSegments();
+				break;
+			case '-':
+				camera.decCircleSegments();
 				break;
 		}
 	}

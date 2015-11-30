@@ -2,24 +2,39 @@ package net.trdlo.zelda.guan;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Stroke;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
 
 public final class Point implements Selectable {
 
-	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\](.*)\\z", Pattern.CASE_INSENSITIVE);
+	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)\\z", Pattern.CASE_INSENSITIVE);
 	public static final int DISPLAY_SIZE = 8;
+	public static final int HIGHLIGHT_MAX_DISTANCE = 8;
 
 	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 	public static final Color DEFAULT_COLOR = new Color(0, 192, 0);
 	public static final Stroke SELECTION_STROKE = new BasicStroke(2);
 	public static final Color SELECTION_COLOR = Color.YELLOW;
+	public static final Font DESCRIPTION_FONT = new Font("Monospaced", Font.BOLD, 12);
+	public static final Color DESCRIPTION_COLOR = Color.LIGHT_GRAY;
 
 	public static Point fromAWTPoint(java.awt.Point awtPoint) {
 		return new Point(awtPoint.x, awtPoint.y);
+	}
+
+	static LoadedPoint loadFromString(String line) {
+		Matcher m = PAT_POINT.matcher(line);
+		if (m.matches()) {
+			m.group(1);
+			return new LoadedPoint(new Point(Double.valueOf(m.group(2)), Double.valueOf(m.group(3)), m.group(4)), Integer.valueOf(m.group(1)));
+		} else {
+			return null;
+		}
 	}
 
 	protected double x, y;
@@ -101,7 +116,7 @@ public final class Point implements Selectable {
 	}
 
 	public void removeConnectedLine(Line line) {
-		if (connectedLines != null && !connectedLines.remove(line)) {
+		if (connectedLines == null || !connectedLines.remove(line)) {
 			throw new RuntimeException("Line was not a listener of this point!");
 		}
 	}
@@ -139,6 +154,10 @@ public final class Point implements Selectable {
 		return "Point [" + x + ";" + y + "] " + description;
 	}
 
+	String saveToString(int saveID) {
+		return "Point " + saveID + " [" + x + ";" + y + "] " + description;
+	}
+
 	public boolean inRect(double x1, double y1, double x2, double y2) {
 		return x >= Math.min(x1, x2) && x < Math.max(x1, x2) && y >= Math.min(y1, y2) && y < Math.max(y1, y2);
 	}
@@ -148,4 +167,15 @@ public final class Point implements Selectable {
 		y = NU.roundToMultipleOf(y, gridStep);
 	}
 
+}
+
+class LoadedPoint {
+
+	public final Point point;
+	public final int id;
+
+	public LoadedPoint(Point point, int id) {
+		this.point = point;
+		this.id = id;
+	}
 }

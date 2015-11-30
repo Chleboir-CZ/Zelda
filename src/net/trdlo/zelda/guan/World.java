@@ -2,17 +2,22 @@ package net.trdlo.zelda.guan;
 
 import java.awt.Rectangle;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import net.trdlo.zelda.NU;
 
 class World {
 
 	public static final double MINIMAL_DETECTABLE_DISTANCE = 0.01;
+
+	private String loadedFrom;
 
 	final Set<Point> points;
 	final Set<Line> lines;
@@ -41,38 +46,56 @@ class World {
 	}
 
 	public final void loadFromFile(String fileName) throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader(fileName));
-		String line;
-		Map<Integer, Point> pointIdMap = new HashMap<>();
-		while ((line = br.readLine()) != null) {
-			Matcher m;
-			if ((m = Point.PAT_POINT.matcher(line)).matches()) {
-				Point newPoint = new Point(Double.valueOf(m.group(2)), Double.valueOf(m.group(3)), m.group(4));
-				Integer pointId = Integer.valueOf(m.group(1));
-				pointIdMap.put(pointId, newPoint);
-				points.add(newPoint);
-				//Console.getInstance().echo("%s", newPoint);
-			} else if ((m = Line.PAT_LINE.matcher(line)).matches()) {
-				Point A = pointIdMap.get(Integer.valueOf(m.group(1)));
-				if (A == null) {
-					throw new Exception("Point index " + m.group(1) + "not found. Can't load world!");
+		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+			String line;
+			Map<Integer, Point> idPointMap = new HashMap<>();
+			while ((line = br.readLine()) != null) {
+				if (Point.PAT_POINT.matcher(line).matches()) {
+					LoadedPoint lp = Point.loadFromString(line);
+					idPointMap.put(lp.id, lp.point);
+					points.add(lp.point);
+				} else if (Line.PAT_LINE.matcher(line).matches()) {
+					LoadedLine ll = Line.loadFromString(line);
+					Point A = idPointMap.get(ll.idA);
+					if (A == null) {
+						throw new Exception("Point index " + ll.idA + " not found. Can't load world!");
+					}
+					Point B = idPointMap.get(ll.idB);
+					if (B == null) {
+						throw new Exception("Point index " + ll.idB + " not found. Can't load world!");
+					}
+					lines.add(Line.constructFromTwoPoints(A, B));
 				}
-				Point B = pointIdMap.get(Integer.valueOf(m.group(2)));
-				if (B == null) {
-					throw new Exception("Point index " + m.group(2) + "not found. Can't load world!");
-				}
-				lines.add(Line.constructFromTwoPoints(A, B));
 			}
+			loadedFrom = fileName;
+		}
+	}
 
+	public void saveToFile(String fileName) throws Exception {
+		try (Writer w = new BufferedWriter(new FileWriter(fileName))) {
+			int id = 0;
+			Map<Point, Integer> pointIdMap = new HashMap<>();
+			for (Point p : points) {
+				w.write(p.saveToString(id));
+				w.write("\n");
+				pointIdMap.put(p, id);
+				id++;
+			}
+			for (Line l : lines) {
+				w.write(l.saveToString(pointIdMap.get(l.A), pointIdMap.get(l.B)));
+				w.write("\n");
+			}
+		}
+	}
+
+	public void save() throws Exception {
+		if (loadedFrom != null) {
+			saveToFile(loadedFrom);
 		}
 	}
 
 	public void update() {
 
-	}
-
-	private static double sqr(double d) {
-		return d * d;
 	}
 
 	public Point getPointAt(double x, double y, double rectSize) {
@@ -131,17 +154,15 @@ class World {
 	public void deletePoints(Set<Point> delPoints) {
 		for (Point p : delPoints) {
 			points.remove(p);
-			deleteLines(p.connectedLines);
+			if (p.connectedLines != null) {
+				for (Line l : new ArrayList<>(p.connectedLines)) {
+					lines.remove(l);
+				}
+			}
 		}
 	}
 
 	public void deleteLine(Line delLine) {
 		lines.remove(delLine);
-	}
-
-	public void deleteLines(Set<Line> delLines) {
-		for (Line l : delLines) {
-			lines.remove(l);
-		}
 	}
 }
