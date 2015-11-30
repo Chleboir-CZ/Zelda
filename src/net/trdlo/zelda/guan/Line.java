@@ -262,7 +262,7 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public boolean intersects(Line l) {
-		return !isPerpendicular(l);
+		return !isParallel(l);
 	}
 
 	/**
