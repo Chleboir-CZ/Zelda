@@ -114,7 +114,7 @@ public class Guan implements GameInterface {
 				camera.insertPointAtLine();
 				break;
 			case ' ':
-				camera.insertion();
+				camera.insert();
 				break;
 			case '\b':
 				camera.unInsert();
