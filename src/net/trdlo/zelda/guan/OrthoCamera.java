@@ -685,7 +685,7 @@ class OrthoCamera {
 
 			Point wP = getPointAt(mouseXY.x, mouseXY.y);
 
-			if (wP == null & snapToGrid && gridDensity != -1) {
+			if (wP == null && snapToGrid && gridDensity != -1) {
 				mP.roundToGrid(gridStep);
 				wP = world.getPointAt(mP.x, mP.y, World.MINIMAL_DETECTABLE_DISTANCE);
 			}
