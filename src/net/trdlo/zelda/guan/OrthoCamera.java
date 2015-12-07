@@ -47,6 +47,8 @@ class OrthoCamera {
 	private Line circleLine;
 	private int circlePointCount = 5;
 	private final List<Point> tempCirclePoints = new ArrayList<>();
+	private Point circleStartPoint;
+	private Point circleEndPoint;
 
 	private int gridDensity = 6;
 	private int gridStep = 64;
@@ -191,14 +193,30 @@ class OrthoCamera {
 		}
 	}
 
+	private void renderPoint(Graphics2D graphics, double px, double py, String desc) {
+		int vx = worldToViewX(px);
+		int vy = worldToViewY(py);
+		graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
+
+		if (!desc.isEmpty()) {
+			graphics.setColor(Point.DESCRIPTION_COLOR);
+			graphics.setFont(Point.DESCRIPTION_FONT);
+			graphics.drawString(desc, vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
+		}
+	}
+
+	private void renderPoint(Graphics2D graphics, Point p) {
+		renderPoint(graphics, p.x, p.y, p.description);
+	}
+
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
 		this.componentBounds = componentBounds;
+
+		renderGrid(graphics);
 
 		if (boundsDebug) {
 			renderBoundsDebug(graphics);
 		}
-
-		renderGrid(graphics);
 
 		double dx = 0, dy = 0;
 		if (moveStart != null && moveEnd != null) {
@@ -209,6 +227,10 @@ class OrthoCamera {
 		graphics.setStroke(Line.DEFAULT_STROKE);
 		graphics.setColor(Line.DEFAULT_COLOR);
 		for (Line line : world.lines) {
+			if (line == circleLine) {
+				continue;
+			}
+
 			double lAx = line.getA().x, lAy = line.getA().y;
 			double lBx = line.getB().x, lBy = line.getB().y;
 			if (selection.contains(line.getA())) {
@@ -250,31 +272,35 @@ class OrthoCamera {
 				graphics.setStroke(Point.DEFAULT_STROKE);
 				graphics.setColor(Point.DEFAULT_COLOR);
 			}
-			int vx = worldToViewX(px);
-			int vy = worldToViewY(py);
-			graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
-
-			graphics.setColor(Point.DESCRIPTION_COLOR);
-			graphics.setFont(Point.DESCRIPTION_FONT);
-			graphics.drawString(point.getDescription(), vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
+			renderPoint(graphics, px, py, point.description);
 		}
 
 		//renderReflectionsDebug(graphics);
-
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 
 		if (insertedLine != null) {
 			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Line.SELECTION_COLOR);
 			graphics.drawLine(worldToViewX(insertedLine.A.x), worldToViewY(insertedLine.A.y), worldToViewX(insertedLine.B.x), worldToViewY(insertedLine.B.y));
+		}
+
+		if (circleLine != null && !tempCirclePoints.isEmpty()) {
+			graphics.setColor(Color.YELLOW);
+			Point lastPoint = circleStartPoint;
+			for (Point p : tempCirclePoints) {
+				graphics.drawLine(worldToViewX(lastPoint.x), worldToViewY(lastPoint.y), worldToViewX(p.x), worldToViewY(p.y));
+				renderPoint(graphics, p);
+				lastPoint = p;
+			}
+			graphics.drawLine(worldToViewX(lastPoint.x), worldToViewY(lastPoint.y), worldToViewX(circleEndPoint.x), worldToViewY(circleEndPoint.y));
 		}
 	}
 
@@ -433,6 +459,8 @@ class OrthoCamera {
 					ilPB.roundToGrid(gridStep);
 				}
 			}
+		} else if (circleLine != null) {
+			updateCirclePoints();
 		}
 	}
 
@@ -515,7 +543,9 @@ class OrthoCamera {
 			insertedLine = null;
 		} else if ((moveStart != null) || (dragStart != null)) {
 			moveStart = null;
+			moveEnd = null;
 			dragStart = null;
+			dragEnd = null;
 		} else if ((!selection.isEmpty()) || selectedLine != null) {
 			selection.clear();
 			selectedLine = null;
@@ -540,66 +570,143 @@ class OrthoCamera {
 		}
 	}
 
-	private void updateCirclePoints() {
-		if (circleLine == null) {
-			return;
-		}
-
+	private void updateCirclePointsCount() {
 		while (tempCirclePoints.size() < circlePointCount) {
 			tempCirclePoints.add(new Point());
 		}
 		while (tempCirclePoints.size() > circlePointCount) {
 			tempCirclePoints.remove(tempCirclePoints.size() - 1);
 		}
+	}
+
+	private void updateCirclePoints() {
+		if (circleLine == null) {
+			return;
+		}
 
 		Point s = new Point((circleLine.A.x + circleLine.B.x) / 2, (circleLine.A.y + circleLine.B.y) / 2);
 		Line circleLineAxis = circleLine.getPerpendicular(s);
 		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
 		s = new Point((circleLine.A.x + mP.x) / 2, (circleLine.A.y + mP.y) / 2);
-		Line secondAxis = Line.constructFromPointAndNormal(s, circleLine.A.x - mP.x, circleLine.A.y - mP.y);
+		double nx = circleLine.A.x - mP.x;
+		double ny = circleLine.A.y - mP.y;
+		Line secondAxis = Line.constructFromPointAndNormal(s, nx, ny);
+		s = circleLineAxis.getIntersection(secondAxis);
 
-		Point iP = circleLineAxis.getIntersection(secondAxis);
+		if (s == null /*TODO: tolerance 5 deg*/) {
+			if (NU.inRange(0, circleLine.getPosition(mP), 1)) {
+				updateCirclePointsCount();
+				double vx = circleLine.B.x - circleLine.A.x;
+				double vy = circleLine.B.y - circleLine.A.y;
+				int i = 0;
+				int divisor = tempCirclePoints.size() + 1;
+				for (Point p : tempCirclePoints) {
+					double phase = (i + 1.0) / divisor;
+					p.setXY(circleLine.A.x + vx * phase, circleLine.A.y + vy * phase);
+					i++;
+				}
+				circleStartPoint = circleLine.A;
+				circleEndPoint = circleLine.B;
 
-		//world.lines.add(circleLineAxis);
-		//world.lines.add(secondAxis);
-		iP.setDescription("center");
-		world.points.add(iP);
+			} else {
+				tempCirclePoints.clear();
+			}
+		} else {
+			updateCirclePointsCount();
 
-		//TODO výpočet tempCirclePoints (zatím schází rozhodnout, která část oblouku (přerušená koncovými body circleLine) je pod myší
+			double alpha = Math.atan2(circleLine.A.y - s.y, circleLine.A.x - s.x);
+			double beta = Math.atan2(circleLine.B.y - s.y, circleLine.B.x - s.x);
+			double gamma = Math.atan2(mP.y - s.y, mP.x - s.x);
+			double startAngle, endAngle;
+
+			if ((alpha < beta && beta < gamma) || (beta < gamma && gamma < alpha) || (gamma < alpha && alpha < beta)) { //B to A
+				startAngle = beta;
+				endAngle = alpha;
+				circleStartPoint = circleLine.B;
+				circleEndPoint = circleLine.A;
+			} else { //A to B
+				startAngle = alpha;
+				endAngle = beta;
+				circleStartPoint = circleLine.A;
+				circleEndPoint = circleLine.B;
+			}
+			if (endAngle < startAngle) {
+				endAngle += 2 * Math.PI;
+			}
+			double angleStep = (endAngle - startAngle) / (circlePointCount + 1);
+			double r = s.getDistance(mP);
+			double fi = startAngle;
+			for (Point p : tempCirclePoints) {
+				fi += angleStep;
+				p.x = s.x + Math.cos(fi) * r;
+				p.y = s.y + Math.sin(fi) * r;
+			}
+		}
 	}
 
-	public void insertion() {
+	public void startCircle() {
+		if (circleLine == null) {
+			circleLine = nearestLine;
+			updateCirclePoints();
+		} else {
+			circleLine = null;
+		}
+	}
+
+	public void incCircleSegments() {
+		if (circleLine != null) {
+			circlePointCount++;
+		}
+	}
+
+	public void decCircleSegments() {
+		if (circleLine != null && circlePointCount > 1) {
+			circlePointCount--;
+		}
+	}
+
+	public void insert() {
 		XY mouseXY = ZeldaFrame.getInstance().getMouseXY();
 		Point mP = viewToWorld(mouseXY);
 
 		if (circleLine != null) {
 			//TODO - zapečení tempCirclePoints do world.points
-			return;
-		}
-
-		Point wP = getPointAt(mouseXY.x, mouseXY.y);
-
-		if (wP == null & snapToGrid && gridDensity != -1) {
-			mP.roundToGrid(gridStep);
-			wP = world.getPointAt(mP.x, mP.y, World.MINIMAL_DETECTABLE_DISTANCE);
-		}
-
-		if (insertedLine == null) {
-			preservedInsertionStartPoint = wP;
-			if (wP == null) {
-				wP = new Point(mP);
-				world.points.add(wP);
+			world.points.addAll(tempCirclePoints);
+			Point lastPoint = circleStartPoint;
+			for (Point p : tempCirclePoints) {
+				world.lines.add(Line.constructFromTwoPoints(lastPoint, p));
+				lastPoint = p;
 			}
-			insertedLine = Line.constructFromTwoPoints(wP, mP);
-		} else if (wP == null) {
-			Point oldB = insertedLine.getB();
-			world.points.add(oldB);
-			world.lines.add(insertedLine);
-			insertedLine = Line.constructFromTwoPoints(oldB, mP);
-		} else if (insertedLine.getA() != wP) {
-			insertedLine.setB(wP);
-			world.lines.add(insertedLine);
-			insertedLine = null;
+			world.lines.add(Line.constructFromTwoPoints(lastPoint, circleEndPoint));
+			world.lines.remove(circleLine);
+			circleLine = null;
+			tempCirclePoints.clear();
+		} else {
+
+			Point wP = getPointAt(mouseXY.x, mouseXY.y);
+
+			if (wP == null && snapToGrid && gridDensity != -1) {
+				mP.roundToGrid(gridStep);
+				wP = world.getPointAt(mP.x, mP.y, World.MINIMAL_DETECTABLE_DISTANCE);
+			}
+
+			if (insertedLine == null) {
+				preservedInsertionStartPoint = wP;
+				if (wP == null) {
+					wP = new Point(mP);
+					world.points.add(wP);
+				}
+				insertedLine = Line.constructFromTwoPoints(wP, mP);
+			} else if (wP == null) {
+				Point oldB = insertedLine.getB();
+				world.points.add(oldB);
+				world.lines.add(insertedLine);
+				insertedLine = Line.constructFromTwoPoints(oldB, mP);
+			} else if (insertedLine.getA() != wP) {
+				insertedLine.setB(wP);
+				world.lines.add(insertedLine);
+				insertedLine = null;
+			}
 		}
 	}
 
@@ -622,27 +729,6 @@ class OrthoCamera {
 			world.points.remove(oldA);
 			world.lines.remove(previous);
 			insertedLine = previous;
-		}
-	}
-
-	public void startCircle() {
-		if (circleLine == null) {
-			circleLine = nearestLine;
-			updateCirclePoints();
-		} else {
-			circleLine = null;
-		}
-	}
-
-	public void incCircleSegments() {
-		if (circleLine != null) {
-			circlePointCount++;
-		}
-	}
-
-	public void decCircleSegments() {
-		if (circleLine != null && circlePointCount > 1) {
-			circlePointCount--;
 		}
 	}
 

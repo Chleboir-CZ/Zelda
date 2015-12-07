@@ -407,6 +407,7 @@ public final class Line implements Selectable {
 	 */
 	public double getSegmentDistanceSquare(double x, double y) {
 		double denominator = (a * a + b * b);
+		assert denominator != 0;
 		double cn = (b * x - a * y);
 		double iPx = (b * cn - c * a) / denominator;
 		double iPy = (-b * c - a * cn) / denominator;
