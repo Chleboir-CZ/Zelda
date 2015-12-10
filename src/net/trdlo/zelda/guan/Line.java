@@ -85,6 +85,10 @@ public final class Line implements Selectable {
 		c = -a * A.x - b * A.y;
 	}
 
+	public boolean isValid() {
+		return (a != 0) || (b != 0);
+	}
+
 	public Point getA() {
 		return A;
 	}
@@ -156,6 +160,8 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public boolean contains(double x, double y) {
+		assert isValid();
+		
 		return Math.abs(a * x + b * y + c) < World.MINIMAL_DETECTABLE_DISTANCE;
 	}
 
@@ -166,6 +172,8 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public boolean contains(Point p) {
+		assert isValid();
+		
 		return Math.abs(a * p.x + b * p.y + c) < World.MINIMAL_DETECTABLE_DISTANCE;
 	}
 
@@ -179,6 +187,7 @@ public final class Line implements Selectable {
 	 */
 	public double getPosition(double x, double y) {
 		assert contains(x, y);
+		assert isValid();
 
 		double vx = B.x - A.x, vy = B.y - A.y;
 
@@ -198,6 +207,7 @@ public final class Line implements Selectable {
 	 */
 	public double getPosition(Point p) {
 		assert contains(p);
+		assert isValid();
 
 		double vx = B.x - A.x, vy = B.y - A.y;
 
@@ -242,6 +252,9 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public boolean isParallel(Line l) {
+		assert isValid();
+		assert l.isValid();
+
 		return a * l.b - b * l.a == 0; //tolerance?
 	}
 
@@ -262,6 +275,9 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public boolean isPerpendicular(Line l) {
+		assert isValid();
+		assert l.isValid();
+
 		return a * l.a + b * l.b == 0; //tolerance?
 	}
 
@@ -278,11 +294,14 @@ public final class Line implements Selectable {
 	/**
 	 * Vypočítá úhel, který svírají tato přímka s další
 	 *
-	 * @param line	druhá přímka
+	 * @param l	druhá přímka
 	 * @return	úhel v radiánech v protisměru hodinových ručiček, který tato přímka svírá s druhou dodanou
 	 */
-	public double getAngle(Line line) {
-		return Math.acos((a * line.a + b * line.b) / (Math.sqrt(a * a + b * b) * Math.sqrt(line.a * line.a + line.b * line.b)));
+	public double getAngle(Line l) {
+		assert isValid();
+		assert l.isValid();
+
+		return Math.acos((a * l.a + b * l.b) / (Math.sqrt(a * a + b * b) * Math.sqrt(l.a * l.a + l.b * l.b)));
 	}
 
 	/**
@@ -334,10 +353,11 @@ public final class Line implements Selectable {
 	 */
 	public Point getIntersection(Line line) {
 		double denominator = (a * line.b - line.a * b);
-		if (Math.abs(denominator) < MINIMAL_DENOMINOATOR) {
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
+			return new Point((b * line.c - c * line.b) / denominator, (line.a * c - a * line.c) / denominator);
+		} else {
 			return null;
 		}
-		return new Point((b * line.c - c * line.b) / denominator, (line.a * c - a * line.c) / denominator);
 	}
 
 	/**
@@ -406,8 +426,9 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public double getSegmentDistanceSquare(double x, double y) {
+		assert isValid();
+
 		double denominator = (a * a + b * b);
-		assert denominator != 0;
 		double cn = (b * x - a * y);
 		double iPx = (b * cn - c * a) / denominator;
 		double iPy = (-b * c - a * cn) / denominator;
@@ -584,6 +605,9 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes tuto přímku
 	 */
 	public Line reflect(Line original) {
+		assert isValid();
+		assert original.isValid();
+
 		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point SA = getIntersection(Line.constructFromPointAndVector(original.A, a, b));
 		Point AR = new Point(2 * SA.x - original.A.x, 2 * SA.y - original.A.y);
@@ -599,6 +623,9 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes kolmici na tuto přímku bodem průniku s dodanou přímkou nebo null
 	 */
 	public Line bounceOff(Line original) {
+		assert isValid();
+		assert original.isValid();
+
 		//TODO zvážit, zda jde provést bez výroby objektů na haldě
 		Point iP = getIntersection(original);
 		if (iP != null) {
@@ -616,6 +643,9 @@ public final class Line implements Selectable {
 	 * @return	úsečka symetrická přes kolmici na tuto přímku bodem průniku s dodanou přímkou nebo null
 	 */
 	public Line bounceOffRay(Line original) {
+		assert isValid();
+		assert original.isValid();
+
 		//TODO zvážit, zda jde provést bez výroby objektů na haldě		
 		//najít průnik originálu s touto přímkou
 		Point iP = getIntersection(original);
@@ -638,6 +668,8 @@ public final class Line implements Selectable {
 	 * @return
 	 */
 	public Point getNearestPointInSegment(Point p) {
+		assert isValid();
+
 		double denominator = (a * a + b * b);
 		double cn = (b * p.x - a * p.y);
 		double iPx = (b * cn - c * a) / denominator;
