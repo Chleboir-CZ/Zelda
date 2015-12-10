@@ -27,6 +27,10 @@ public final class Point implements Selectable {
 		return new Point(awtPoint.x, awtPoint.y);
 	}
 
+	static boolean lineMatchesPattern(String line) {
+		return PAT_POINT.matcher(line).matches();
+	}
+
 	static LoadedPoint loadFromString(String line) {
 		Matcher m = PAT_POINT.matcher(line);
 		if (m.matches()) {

@@ -58,6 +58,10 @@ public final class Line implements Selectable {
 		return l;
 	}
 
+	static boolean lineMatchesPattern(String line) {
+		return PAT_LINE.matcher(line).matches();
+	}
+
 	static LoadedLine loadFromString(String line) {
 		Matcher m = PAT_LINE.matcher(line);
 		if (m.matches()) {
@@ -161,7 +165,7 @@ public final class Line implements Selectable {
 	 */
 	public boolean contains(double x, double y) {
 		assert isValid();
-		
+
 		return Math.abs(a * x + b * y + c) < World.MINIMAL_DETECTABLE_DISTANCE;
 	}
 
@@ -173,7 +177,7 @@ public final class Line implements Selectable {
 	 */
 	public boolean contains(Point p) {
 		assert isValid();
-		
+
 		return Math.abs(a * p.x + b * p.y + c) < World.MINIMAL_DETECTABLE_DISTANCE;
 	}
 
