@@ -50,11 +50,11 @@ class World {
 			String line;
 			Map<Integer, Point> idPointMap = new HashMap<>();
 			while ((line = br.readLine()) != null) {
-				if (Point.PAT_POINT.matcher(line).matches()) {
+				if (Point.lineMatchesPattern(line)) {
 					LoadedPoint lp = Point.loadFromString(line);
 					idPointMap.put(lp.id, lp.point);
 					points.add(lp.point);
-				} else if (Line.PAT_LINE.matcher(line).matches()) {
+				} else if (Line.lineMatchesPattern(line)) {
 					LoadedLine ll = Line.loadFromString(line);
 					Point A = idPointMap.get(ll.idA);
 					if (A == null) {
