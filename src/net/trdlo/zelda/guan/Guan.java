@@ -66,10 +66,11 @@ public class Guan implements GameInterface {
 		return "Guan tile-less game demo.";
 	}
 
-	private final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
-	private final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
-	private final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
-	private final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_DESCRIBE = Pattern.compile("^\\s*setdescription\\s*(.*)\\s*$", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
@@ -91,6 +92,8 @@ public class Guan implements GameInterface {
 			} catch (Exception ex) {
 				Console.getInstance().echo("Could not save file: " + ex.toString());
 			}
+		} else if ((m = PAT_DESCRIBE.matcher(command)).matches()) {
+			camera.setSelectionDescription(m.group(1));
 		} else {
 			return false;
 		}
@@ -100,37 +103,44 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		switch (e.getKeyChar()) {
-			case 'g':
-				camera.nextGridDensity();
-				break;
-			case 's':
-				camera.toggleSnapToGrid();
-				break;
-			case 'v':
-				camera.setBoundsDebug(!camera.isBoundsDebug());
-				break;
-			case 'i':
-				camera.insertPointAtLine();
-				break;
-			case ' ':
-				camera.insert();
-				break;
-			case '\b':
-				camera.unInsert();
-				break;
-			case 'm':
-				camera.mergePoints();
-				break;
-			case 'c':
-				camera.startCircle();
-				break;
-			case '+':
-				camera.incCircleSegments();
-				break;
-			case '-':
-				camera.decCircleSegments();
-				break;
+		if (camera.isTyping()) {
+			camera.charTyped(e.getKeyChar());
+		} else {
+			switch (e.getKeyChar()) {
+				case 'g':
+					camera.nextGridDensity();
+					break;
+				case 's':
+					camera.toggleSnapToGrid();
+					break;
+				case 'v':
+					camera.setBoundsDebug(!camera.isBoundsDebug());
+					break;
+				case 'i':
+					camera.insertPointAtLine();
+					break;
+				case ' ':
+					camera.insert();
+					break;
+				case '\b':
+					camera.unInsert();
+					break;
+				case 'm':
+					camera.mergePoints();
+					break;
+				case 'c':
+					camera.startCircle();
+					break;
+				case '+':
+					camera.incCircleSegments();
+					break;
+				case '-':
+					camera.decCircleSegments();
+					break;
+				case 't':
+					camera.initTypingDesc();
+					break;
+			}
 		}
 	}
 

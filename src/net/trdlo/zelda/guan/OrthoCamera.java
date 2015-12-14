@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,10 +54,27 @@ class OrthoCamera {
 	private int gridDensity = 6;
 	private int gridStep = 64;
 
+	private StringBuilder descBuilder;
+
 	public OrthoCamera(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
 
-		selection = new HashSet<>();
+		selection = new HashSet<Point>() {
+			@Override
+			public boolean remove(Object o) {
+				boolean removed = super.remove(o);
+				if (removed && isEmpty()) {
+					stopTypingDesc();
+				}
+				return removed;
+			}
+
+			@Override
+			public void clear() {
+				super.clear();
+				stopTypingDesc();
+			}
+		};
 		tempSelection = new HashSet<>();
 	}
 
@@ -265,14 +283,20 @@ class OrthoCamera {
 				graphics.setColor(Point.SELECTION_COLOR);
 				px += dx;
 				py += dy;
+				if (isTyping()) {
+					renderPoint(graphics, px, py, descBuilder.toString() + ((System.nanoTime() / 500000000L & 1) == 0 ? "_" : ""));
+				} else {
+					renderPoint(graphics, px, py, point.description);
+				}
 			} else if (point == nearestPoint) {
 				graphics.setStroke(Point.DEFAULT_STROKE);
 				graphics.setColor(Point.SELECTION_COLOR);
+				renderPoint(graphics, px, py, point.description);
 			} else {
 				graphics.setStroke(Point.DEFAULT_STROKE);
 				graphics.setColor(Point.DEFAULT_COLOR);
+				renderPoint(graphics, px, py, point.description);
 			}
-			renderPoint(graphics, px, py, point.description);
 		}
 
 		//renderReflectionsDebug(graphics);
@@ -280,10 +304,10 @@ class OrthoCamera {
 			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 
 		if (insertedLine != null) {
@@ -645,7 +669,7 @@ class OrthoCamera {
 	}
 
 	public void startCircle() {
-		if (circleLine == null) {
+		if (circleLine == null && insertedLine == null) {
 			circleLine = nearestLine;
 			updateCirclePoints();
 		} else {
@@ -656,12 +680,14 @@ class OrthoCamera {
 	public void incCircleSegments() {
 		if (circleLine != null) {
 			circlePointCount++;
+			updateCirclePoints();
 		}
 	}
 
 	public void decCircleSegments() {
 		if (circleLine != null && circlePointCount > 1) {
 			circlePointCount--;
+			updateCirclePoints();
 		}
 	}
 
@@ -670,7 +696,6 @@ class OrthoCamera {
 		Point mP = viewToWorld(mouseXY);
 
 		if (circleLine != null) {
-			//TODO - zapečení tempCirclePoints do world.points
 			world.points.addAll(tempCirclePoints);
 			Point lastPoint = circleStartPoint;
 			for (Point p : tempCirclePoints) {
@@ -775,6 +800,57 @@ class OrthoCamera {
 			} else {
 				Console.getInstance().echo(5000, "Only overlapping points can be merged!");
 			}
+		}
+	}
+
+	public void initTypingDesc() {
+		if (selection.size() > 1) {
+			descBuilder = new StringBuilder();
+		} else if (!selection.isEmpty()) {
+			descBuilder = new StringBuilder(selection.iterator().next().getDescription());
+		}
+	}
+
+	public boolean isTyping() {
+		return descBuilder != null;
+	}
+
+	public void stopTypingDesc() {
+		descBuilder = null;
+	}
+
+	public static boolean isPrintableChar(char c) {
+		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
+		return (!Character.isISOControl(c))
+				&& c != KeyEvent.CHAR_UNDEFINED
+				&& block != null && block != Character.UnicodeBlock.SPECIALS;
+	}
+
+	public void charTyped(char c) {
+		assert descBuilder != null;
+
+		if (c == '\n') {
+			setSelectionDescription();
+			stopTypingDesc();
+		} else if (c == '\b') {
+			if (descBuilder.length() > 0) {
+				descBuilder.deleteCharAt(descBuilder.length() - 1);
+			}
+		} else if (isPrintableChar(c)) {
+			descBuilder.append(c);
+		}
+	}
+
+	public void setSelectionDescription() {
+		String desc = descBuilder.toString();
+		for (Point p : selection) {
+			p.description = desc;
+		}
+	}
+
+	public void setSelectionDescription(String desc) {
+		for (Point p : selection) {
+			p.description = desc;
 		}
 	}
 

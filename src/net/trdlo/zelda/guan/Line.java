@@ -129,6 +129,24 @@ public final class Line implements Selectable {
 		refreshCoefs();
 	}
 
+	public void setAB(Point A, Point B) {
+		assert A != null;
+		assert B != null;
+		assert A != B;
+
+		if (autoUpdate) {
+			this.A.removeConnectedLine(this);
+			this.B.removeConnectedLine(this);
+		}
+		this.A = A;
+		this.B = B;
+		if (autoUpdate) {
+			A.addConnectedLine(this);
+			B.addConnectedLine(this);
+		}
+		refreshCoefs();
+	}
+
 	public void changePoint(Point old, Point nu) {
 		if (old == A) {
 			setA(nu);

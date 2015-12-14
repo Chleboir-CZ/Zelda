@@ -215,7 +215,7 @@ public class Console implements CommandExecuter {
 		return true;
 	}
 
-	private boolean isPrintableChar(char c) {
+	public static boolean isPrintableChar(char c) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 		return (FEED_FONT.canDisplay(c)
 				&& !Character.isISOControl(c))
