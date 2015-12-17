@@ -120,10 +120,12 @@ class World {
 		double maxDistSqr = NU.sqr(maxDist);
 		double minDistSq = Double.MAX_VALUE;
 		for (Line l : lines) {
-			double distSq = l.getSegmentDistanceSquare(x, y);
-			if (distSq < minDistSq) {
-				minDistSq = distSq;
-				nearest = l;
+			if (l.isValid()) {
+				double distSq = l.getSegmentDistanceSquare(x, y);
+				if (distSq < minDistSq) {
+					minDistSq = distSq;
+					nearest = l;
+				}
 			}
 		}
 		if (nearest != null && minDistSq < maxDistSqr) {

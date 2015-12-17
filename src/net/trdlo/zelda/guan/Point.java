@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Stroke;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -159,7 +160,7 @@ public final class Point implements Selectable {
 	}
 
 	String saveToString(int saveID) {
-		return "Point " + saveID + " [" + x + ";" + y + "] " + description;
+		return "Point " + saveID + " [" + String.format(Locale.ENGLISH, "%f", x) + ";" + String.format(Locale.ENGLISH, "%f", y) + "] " + description;
 	}
 
 	public boolean inRect(double x1, double y1, double x2, double y2) {
