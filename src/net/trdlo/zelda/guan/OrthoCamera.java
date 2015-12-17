@@ -50,6 +50,8 @@ class OrthoCamera {
 	private final List<Point> tempCirclePoints = new ArrayList<>();
 	private Point circleStartPoint;
 	private Point circleEndPoint;
+	private Point circleCenter;
+	private double circleStartAngle, circleEndAngle, circleRadius;
 
 	private int gridDensity = 6;
 	private int gridStep = 64;
@@ -204,9 +206,11 @@ class OrthoCamera {
 		Point iP;
 		for (Line cross : world.lines) {
 			if (cross != line && (iP = cross.getSegmentSegmentIntersection(line)) != null) {
-				XY iP1 = worldToView(iP);
-				graphics.setColor(Color.RED);
-				graphics.drawArc(iP1.x - 8, iP1.y - 8, 16, 16, 0, 360);
+				if (cross.A != line.A && cross.B != line.B && cross.A != line.B && cross.B != line.A) {
+					XY iP1 = worldToView(iP);
+					graphics.setColor(Color.RED);
+					graphics.drawArc(iP1.x - 8, iP1.y - 8, 16, 16, 0, 360);
+				}
 			}
 		}
 	}
@@ -317,6 +321,13 @@ class OrthoCamera {
 		}
 
 		if (circleLine != null && !tempCirclePoints.isEmpty()) {
+			if (circleCenter != null) {
+				graphics.setStroke(DASHED_STROKE);
+				graphics.setColor(Color.LIGHT_GRAY);
+				int radius = (int) (circleRadius * zoomCoef());
+				graphics.drawArc(worldToViewX(circleCenter.x) - radius, worldToViewY(circleCenter.y) - radius, 2 * radius, 2 * radius, 360 - NU.radToDeg(circleEndAngle), NU.radToDeg(circleEndAngle - circleStartAngle));
+			}
+			graphics.setStroke(DEFAULT_STROKE);
 			graphics.setColor(Color.YELLOW);
 			Point lastPoint = circleStartPoint;
 			for (Point p : tempCirclePoints) {
@@ -615,9 +626,9 @@ class OrthoCamera {
 		double nx = circleLine.A.x - mP.x;
 		double ny = circleLine.A.y - mP.y;
 		Line secondAxis = Line.constructFromPointAndNormal(s, nx, ny);
-		s = circleLineAxis.getIntersection(secondAxis);
+		circleCenter = circleLineAxis.getIntersection(secondAxis);
 
-		if (s == null /*TODO: tolerance 5 deg*/) {
+		if (circleCenter == null /*TODO: tolerance 5 deg*/) {
 			if (NU.inRange(0, circleLine.getPosition(mP), 1)) {
 				updateCirclePointsCount();
 				double vx = circleLine.B.x - circleLine.A.x;
@@ -638,32 +649,31 @@ class OrthoCamera {
 		} else {
 			updateCirclePointsCount();
 
-			double alpha = Math.atan2(circleLine.A.y - s.y, circleLine.A.x - s.x);
-			double beta = Math.atan2(circleLine.B.y - s.y, circleLine.B.x - s.x);
-			double gamma = Math.atan2(mP.y - s.y, mP.x - s.x);
-			double startAngle, endAngle;
+			double alpha = Math.atan2(circleLine.A.y - circleCenter.y, circleLine.A.x - circleCenter.x);
+			double beta = Math.atan2(circleLine.B.y - circleCenter.y, circleLine.B.x - circleCenter.x);
+			double gamma = Math.atan2(mP.y - circleCenter.y, mP.x - circleCenter.x);
 
 			if ((alpha < beta && beta < gamma) || (beta < gamma && gamma < alpha) || (gamma < alpha && alpha < beta)) { //B to A
-				startAngle = beta;
-				endAngle = alpha;
+				circleStartAngle = beta;
+				circleEndAngle = alpha;
 				circleStartPoint = circleLine.B;
 				circleEndPoint = circleLine.A;
 			} else { //A to B
-				startAngle = alpha;
-				endAngle = beta;
+				circleStartAngle = alpha;
+				circleEndAngle = beta;
 				circleStartPoint = circleLine.A;
 				circleEndPoint = circleLine.B;
 			}
-			if (endAngle < startAngle) {
-				endAngle += 2 * Math.PI;
+			if (circleEndAngle < circleStartAngle) {
+				circleEndAngle += 2 * Math.PI;
 			}
-			double angleStep = (endAngle - startAngle) / (circlePointCount + 1);
-			double r = s.getDistance(mP);
-			double fi = startAngle;
+			double angleStep = (circleEndAngle - circleStartAngle) / (circlePointCount + 1);
+			circleRadius = circleCenter.getDistance(mP);
+			double fi = circleStartAngle;
 			for (Point p : tempCirclePoints) {
 				fi += angleStep;
-				p.x = s.x + Math.cos(fi) * r;
-				p.y = s.y + Math.sin(fi) * r;
+				p.x = circleCenter.x + Math.cos(fi) * circleRadius;
+				p.y = circleCenter.y + Math.sin(fi) * circleRadius;
 			}
 		}
 	}
@@ -772,23 +782,22 @@ class OrthoCamera {
 				if (p.connectedLines != null) {
 					for (Line l : p.connectedLines) {
 						linesConflict = !linesAffected.add(l);
-						if (linesConflict) {
-							break POINT_LOOP;
-						}
 					}
 				}
 			}
 
-			if (linesConflict) {
-				Console.getInstance().echo(5000, "Can't merge both ends of a single line!", selection.size());
-			} else if (right - left < World.MINIMAL_DETECTABLE_DISTANCE && bottom - top < World.MINIMAL_DETECTABLE_DISTANCE) {
+			if (right - left < World.MINIMAL_DETECTABLE_DISTANCE && bottom - top < World.MINIMAL_DETECTABLE_DISTANCE) {
 				Iterator<Point> it = selection.iterator();
 				Point preservedFirst = it.next();
 				while (it.hasNext()) {
 					Point merged = it.next();
 					if (merged.connectedLines != null) {
 						for (Line l : new ArrayList<>(merged.connectedLines)) {
-							l.changePoint(merged, preservedFirst);
+							if ((l.getA() == preservedFirst && l.getB() == merged) || (l.getB() == preservedFirst && l.getA() == merged)) {
+								world.lines.remove(l);
+							} else {
+								l.changePoint(merged, preservedFirst);
+							}
 						}
 					}
 					world.points.remove(merged);

@@ -38,4 +38,8 @@ public final class NU {
 	public static double roundToMultipleOf(double number, double divisor) {
 		return divisor * Math.round(number / divisor);
 	}
+
+	public static int radToDeg(double rad) {
+		return (int) (180 * rad / Math.PI);
+	}
 }
