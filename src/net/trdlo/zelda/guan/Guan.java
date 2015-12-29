@@ -1,7 +1,5 @@
 package net.trdlo.zelda.guan;
 
-import net.trdlo.zelda.XY;
-import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -17,7 +15,7 @@ public class Guan implements GameInterface {
 	private ZeldaFrame zFrame;
 
 	private World world;
-	private final EditorView camera;
+	private final AbstractView camera;
 
 	public Guan() {
 		world = new World();
@@ -51,19 +49,14 @@ public class Guan implements GameInterface {
 		return "Guan tile-less game demo.";
 	}
 
-	private static final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
-	private static final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
-	private static final Pattern PAT_DESCRIBE = Pattern.compile("^\\s*setdescription\\s*(.*)\\s*$", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
 		Matcher m;
-		if (PAT_GET_BOUNDS_DEBUG.matcher(command).matches()) {
-			console.echo("bounds-debug " + (camera.isBoundsDebug() ? "1" : "0"));
-		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
-			camera.setBoundsDebug("1".equals(m.group(1)));
+		if (camera.executeCommand(command, console)) {
+			return true;
 		} else if (PAT_SAVE.matcher(command).matches()) {
 			try {
 				world.save();
@@ -77,8 +70,6 @@ public class Guan implements GameInterface {
 			} catch (Exception ex) {
 				Console.getInstance().echo("Could not save file: " + ex.toString());
 			}
-		} else if ((m = PAT_DESCRIBE.matcher(command)).matches()) {
-			camera.setSelectionDescription(m.group(1));
 		} else {
 			return false;
 		}
@@ -95,21 +86,19 @@ public class Guan implements GameInterface {
 	public void keyPressed(KeyEvent e) {
 		if (!camera.keyPressed(e)) {
 			if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
-				if (!camera.cancelOperation()) {
-					zFrame.terminate();
-				}
+				zFrame.terminate();
 			}
 		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-
+		camera.keyReleased(e);
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-
+		camera.mouseClicked(e);
 	}
 
 	@Override

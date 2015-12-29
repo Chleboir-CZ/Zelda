@@ -15,20 +15,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
 import net.trdlo.zelda.ZeldaFrame;
 
 class EditorView extends AbstractView {
 
-	public static final double ZOOM_BASE = 1.090507733; //2^(1/8)
 	private static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
 
 	private boolean boundsDebug = false;
-
-	private World world;
-	private double x, y;
-	private int zoom;
 
 	private double zoomCoefLimit;
 	private Rectangle componentBounds, cameraBounds;
@@ -99,6 +96,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	@Override
 	public void update() {
 		readAsynchronoutInput();
 	}
@@ -243,6 +241,7 @@ class EditorView extends AbstractView {
 		renderPoint(graphics, p.x, p.y, p.description);
 	}
 
+	@Override
 	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
 		this.componentBounds = componentBounds;
 
@@ -641,6 +640,7 @@ class EditorView extends AbstractView {
 			return;
 		}
 
+		//TODO: zapracovat snap to grid?
 		Point s = new Point((circleLine.A.x + circleLine.B.x) / 2, (circleLine.A.y + circleLine.B.y) / 2);
 		Line circleLineAxis = circleLine.getPerpendicular(s);
 		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
@@ -792,20 +792,11 @@ class EditorView extends AbstractView {
 	public void mergePoints() {
 		if (selection.size() >= 2) {
 			double left = Double.MAX_VALUE, right = -Double.MAX_VALUE, top = Double.MAX_VALUE, bottom = -Double.MAX_VALUE;
-			Set<Line> linesAffected = new HashSet<>();
-			boolean linesConflict = false;
-			POINT_LOOP:
 			for (Point p : selection) {
 				left = Math.min(left, p.getX());
 				right = Math.max(right, p.getX());
 				top = Math.min(top, p.getY());
 				bottom = Math.max(bottom, p.getY());
-
-				if (p.connectedLines != null) {
-					for (Line l : p.connectedLines) {
-						linesConflict = !linesAffected.add(l);
-					}
-				}
 			}
 
 			if (right - left < World.MINIMAL_DETECTABLE_DISTANCE && bottom - top < World.MINIMAL_DETECTABLE_DISTANCE) {
@@ -889,6 +880,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	@Override
 	public boolean keyTyped(KeyEvent e) {
 		if (isTyping()) {
 			return charTyped(e.getKeyChar());
@@ -934,8 +926,11 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
+	@Override
 	public boolean keyPressed(KeyEvent e) {
 		switch (e.getKeyChar()) {
+			case KeyEvent.VK_ESCAPE:
+				return cancelOperation();
 			case KeyEvent.VK_DELETE:
 				deleteSelection();
 				break;
@@ -945,14 +940,17 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
+	@Override
 	public boolean keyReleased(KeyEvent e) {
 		return false;
 	}
 
+	@Override
 	public boolean mouseClicked(MouseEvent e) {
 		return false;
 	}
 
+	@Override
 	public boolean mousePressed(MouseEvent e) {
 		switch (e.getButton()) {
 			case MouseEvent.BUTTON1:
@@ -968,6 +966,7 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
+	@Override
 	public boolean mouseReleased(MouseEvent e) {
 		switch (e.getButton()) {
 			case MouseEvent.BUTTON1:
@@ -983,14 +982,17 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
+	@Override
 	public boolean mouseEntered(MouseEvent e) {
 		return false;
 	}
 
+	@Override
 	public boolean mouseExited(MouseEvent e) {
 		return false;
 	}
 
+	@Override
 	public boolean mouseDragged(MouseEvent e) {
 		if (viewDrag != null) {
 			XY current = new XY(e);
@@ -1001,8 +1003,28 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
+	@Override
 	public boolean mouseWheelMoved(MouseWheelEvent e) {
 		zoom(-e.getWheelRotation(), new XY(e));
+		return true;
+	}
+
+	private static final Pattern PAT_GET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SET_BOUNDS_DEBUG = Pattern.compile("^\\s*bounds-debug\\s+([01])\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_DESCRIBE = Pattern.compile("^\\s*setdescription\\s*(.*)\\s*$", Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		Matcher m;
+		if (PAT_GET_BOUNDS_DEBUG.matcher(command).matches()) {
+			console.echo("bounds-debug " + (isBoundsDebug() ? "1" : "0"));
+		} else if ((m = PAT_SET_BOUNDS_DEBUG.matcher(command)).matches()) {
+			setBoundsDebug("1".equals(m.group(1)));
+		} else if ((m = PAT_DESCRIBE.matcher(command)).matches()) {
+			setSelectionDescription(m.group(1));
+		} else {
+			return false;
+		}
 		return true;
 	}
 
