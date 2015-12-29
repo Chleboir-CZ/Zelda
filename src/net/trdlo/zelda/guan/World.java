@@ -21,12 +21,13 @@ class World {
 
 	final Set<Point> points;
 	final Set<Line> lines;
+	final Set<Player> players;
 
 	Rectangle bounds;
 
 	World() {
 		points = new LinkedHashSet<>();
-		this.lines = new LinkedHashSet<Line>() {
+		lines = new LinkedHashSet<Line>() {
 			@Override
 			public boolean add(Line l) {
 				l.connect();
@@ -41,6 +42,8 @@ class World {
 				return super.remove(o);
 			}
 		};
+		players = new LinkedHashSet<>();
+		players.add(new Player());
 
 		bounds = new Rectangle(-1000, -1000, 2000, 2000);
 	}

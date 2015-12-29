@@ -3,11 +3,13 @@ package net.trdlo.zelda.guan;
 import net.trdlo.zelda.XY;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,7 +19,7 @@ import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
 import net.trdlo.zelda.ZeldaFrame;
 
-class OrthoCamera {
+class EditorView extends AbstractView {
 
 	public static final double ZOOM_BASE = 1.090507733; //2^(1/8)
 	private static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
@@ -32,6 +34,7 @@ class OrthoCamera {
 	private Rectangle componentBounds, cameraBounds;
 
 	private Point dragStart, dragEnd;
+	private XY viewDrag = null;
 	private boolean snapToGrid = true;
 	private Point moveStart, moveEnd, snappedPoint, moveDiff;
 	private final Set<Point> avoidedPoints = new HashSet<>();
@@ -58,7 +61,7 @@ class OrthoCamera {
 
 	private StringBuilder descBuilder;
 
-	public OrthoCamera(World world, double x, double y, int zoom) {
+	public EditorView(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
 
 		selection = new HashSet<Point>() {
@@ -87,8 +90,17 @@ class OrthoCamera {
 		this.zoom = zoom;
 	}
 
-	public void update() {
+	private void readAsynchronoutInput() {
+		if (ZeldaFrame.isPressed(KeyEvent.VK_ADD)) {
+			zoom(1, null);
+		}
+		if (ZeldaFrame.isPressed(KeyEvent.VK_SUBTRACT)) {
+			zoom(-1, null);
+		}
+	}
 
+	public void update() {
+		readAsynchronoutInput();
 	}
 
 	private int worldToViewX(double x) {
@@ -337,6 +349,15 @@ class OrthoCamera {
 			}
 			graphics.drawLine(worldToViewX(lastPoint.x), worldToViewY(lastPoint.y), worldToViewX(circleEndPoint.x), worldToViewY(circleEndPoint.y));
 		}
+
+		for (Player p : world.players) {
+			int vx = worldToViewX(p.x);
+			int vy = worldToViewY(p.y);
+			graphics.drawArc(vx - 8, vy - 8, 16, 16, 0, 360);
+			int vx2 = vx + (int) (Math.cos(p.orientation) * 16);
+			int vy2 = vy + (int) (Math.sin(p.orientation) * 16);
+			graphics.drawLine(vx, vy, vx2, vy2);
+		}
 	}
 
 	private double zoomCoef() {
@@ -477,7 +498,7 @@ class OrthoCamera {
 		}
 	}
 
-	public void mouseMoved(MouseEvent e) {
+	public boolean mouseMoved(MouseEvent e) {
 		int vx = e.getX(), vy = e.getY();
 		nearestPoint = getPointAt(vx, vy, Point.HIGHLIGHT_MAX_DISTANCE);
 		nearestLine = getLineAt(vx, vy, Line.HIGHLIGHT_MAX_DISTANCE);
@@ -497,6 +518,7 @@ class OrthoCamera {
 		} else if (circleLine != null) {
 			updateCirclePoints();
 		}
+		return true;
 	}
 
 	public void mouse1dragged(MouseEvent e) {
@@ -835,7 +857,7 @@ class OrthoCamera {
 				&& block != null && block != Character.UnicodeBlock.SPECIALS;
 	}
 
-	public void charTyped(char c) {
+	public boolean charTyped(char c) {
 		assert descBuilder != null;
 
 		if (c == '\n') {
@@ -847,7 +869,11 @@ class OrthoCamera {
 			}
 		} else if (isPrintableChar(c)) {
 			descBuilder.append(c);
+		} else {
+			return false;
 		}
+
+		return true;
 	}
 
 	public void setSelectionDescription() {
@@ -861,6 +887,123 @@ class OrthoCamera {
 		for (Point p : selection) {
 			p.description = desc;
 		}
+	}
+
+	public boolean keyTyped(KeyEvent e) {
+		if (isTyping()) {
+			return charTyped(e.getKeyChar());
+		} else {
+			switch (e.getKeyChar()) {
+				case 'g':
+					nextGridDensity();
+					break;
+				case 's':
+					toggleSnapToGrid();
+					break;
+				case 'v':
+					setBoundsDebug(!isBoundsDebug());
+					break;
+				case 'i':
+					insertPointAtLine();
+					break;
+				case ' ':
+					insert();
+					break;
+				case '\b':
+					unInsert();
+					break;
+				case 'm':
+					mergePoints();
+					break;
+				case 'c':
+					startCircle();
+					break;
+				case '+':
+					incCircleSegments();
+					break;
+				case '-':
+					decCircleSegments();
+					break;
+				case 't':
+					initTypingDesc();
+					break;
+				default:
+					return false;
+			}
+		}
+		return true;
+	}
+
+	public boolean keyPressed(KeyEvent e) {
+		switch (e.getKeyChar()) {
+			case KeyEvent.VK_DELETE:
+				deleteSelection();
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
+
+	public boolean keyReleased(KeyEvent e) {
+		return false;
+	}
+
+	public boolean mouseClicked(MouseEvent e) {
+		return false;
+	}
+
+	public boolean mousePressed(MouseEvent e) {
+		switch (e.getButton()) {
+			case MouseEvent.BUTTON1:
+				mouse1pressed(e);
+				break;
+			case MouseEvent.BUTTON3:
+				viewDrag = new XY(e);
+				ZeldaFrame.getInstance().setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
+
+	public boolean mouseReleased(MouseEvent e) {
+		switch (e.getButton()) {
+			case MouseEvent.BUTTON1:
+				mouse1released(e);
+				break;
+			case MouseEvent.BUTTON3:
+				viewDrag = null;
+				ZeldaFrame.getInstance().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
+
+	public boolean mouseEntered(MouseEvent e) {
+		return false;
+	}
+
+	public boolean mouseExited(MouseEvent e) {
+		return false;
+	}
+
+	public boolean mouseDragged(MouseEvent e) {
+		if (viewDrag != null) {
+			XY current = new XY(e);
+			move(viewDrag.diff(current));
+			viewDrag = current;
+		}
+		mouse1dragged(e);
+		return true;
+	}
+
+	public boolean mouseWheelMoved(MouseWheelEvent e) {
+		zoom(-e.getWheelRotation(), new XY(e));
+		return true;
 	}
 
 }

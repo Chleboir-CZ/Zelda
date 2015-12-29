@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
 
-public final class Point implements Selectable {
+public final class Point {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)\\z", Pattern.CASE_INSENSITIVE);
 	public static final int DISPLAY_SIZE = 8;

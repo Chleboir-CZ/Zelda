@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
 
-public final class Line implements Selectable {
+public final class Line {
 
 	public static final double MINIMAL_DENOMINOATOR = 1e-5;
 

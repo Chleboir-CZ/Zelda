@@ -17,9 +17,7 @@ public class Guan implements GameInterface {
 	private ZeldaFrame zFrame;
 
 	private World world;
-	private final OrthoCamera camera;
-
-	private XY viewDrag = null;
+	private final EditorView camera;
 
 	public Guan() {
 		world = new World();
@@ -28,7 +26,7 @@ public class Guan implements GameInterface {
 		} catch (Exception ex) {
 			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
 		}
-		camera = new OrthoCamera(world, 0, 0, 0);
+		camera = new EditorView(world, 0, 0, 0);
 
 	}
 
@@ -37,23 +35,10 @@ public class Guan implements GameInterface {
 		camera.render(graphics, zFrame.getBounds(), renderFraction);
 	}
 
-	private void readAsynchronoutInput() {
-		//TODO: možná přesunout do kamery
-		//TODO: v případě režimu circle nedělat zoom (proto přesun do circle)
-		if (zFrame.isPressed(KeyEvent.VK_ADD)) {
-			camera.zoom(1, null);
-		}
-		if (zFrame.isPressed(KeyEvent.VK_SUBTRACT)) {
-			camera.zoom(-1, null);
-		}
-	}
-
 	@Override
 	public void update() {
 		world.update();
 		camera.update();
-
-		readAsynchronoutInput();
 	}
 
 	@Override
@@ -103,58 +88,17 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		if (camera.isTyping()) {
-			camera.charTyped(e.getKeyChar());
-		} else {
-			switch (e.getKeyChar()) {
-				case 'g':
-					camera.nextGridDensity();
-					break;
-				case 's':
-					camera.toggleSnapToGrid();
-					break;
-				case 'v':
-					camera.setBoundsDebug(!camera.isBoundsDebug());
-					break;
-				case 'i':
-					camera.insertPointAtLine();
-					break;
-				case ' ':
-					camera.insert();
-					break;
-				case '\b':
-					camera.unInsert();
-					break;
-				case 'm':
-					camera.mergePoints();
-					break;
-				case 'c':
-					camera.startCircle();
-					break;
-				case '+':
-					camera.incCircleSegments();
-					break;
-				case '-':
-					camera.decCircleSegments();
-					break;
-				case 't':
-					camera.initTypingDesc();
-					break;
-			}
-		}
+		camera.keyTyped(e);
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		switch (e.getKeyChar()) {
-			case KeyEvent.VK_DELETE:
-				camera.deleteSelection();
-				break;
-			case KeyEvent.VK_ESCAPE:
+		if (!camera.keyPressed(e)) {
+			if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
 				if (!camera.cancelOperation()) {
 					zFrame.terminate();
 				}
-				break;
+			}
 		}
 	}
 
@@ -170,44 +114,27 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		if (e.getButton() == MouseEvent.BUTTON1) {
-			camera.mouse1pressed(e);
-		}
-		if (e.getButton() == MouseEvent.BUTTON3) {
-			viewDrag = new XY(e);
-			zFrame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		}
+		camera.mousePressed(e);
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		if (e.getButton() == MouseEvent.BUTTON1) {
-			camera.mouse1released(e);
-		}
-		if (e.getButton() == MouseEvent.BUTTON3) {
-			viewDrag = null;
-			zFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-		}
+		camera.mouseReleased(e);
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-
+		camera.mouseEntered(e);
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-
+		camera.mouseExited(e);
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (viewDrag != null) {
-			XY current = new XY(e);
-			camera.move(viewDrag.diff(current));
-			viewDrag = current;
-		}
-		camera.mouse1dragged(e);
+		camera.mouseDragged(e);
 	}
 
 	@Override
@@ -217,7 +144,7 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		camera.zoom(-e.getWheelRotation(), new XY(e));
+		camera.mouseWheelMoved(e);
 	}
 
 	public static void main(String args[]) {

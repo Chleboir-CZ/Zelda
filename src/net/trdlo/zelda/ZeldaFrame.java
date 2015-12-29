@@ -45,7 +45,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	private final Queue<KeyEvent> keyEventQueue;
 	private final Queue<MouseEvent> mouseEventQueue;
 
-	private final boolean keyMap[];
+	private static final boolean KEY_MAP[] = new boolean[256];
 	private boolean keyInputDebug = false;
 	private XY mouseXY = new XY(0, 0);
 
@@ -76,7 +76,6 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 		defaultFont = new Font("Monospaced", Font.BOLD, 12);
 
-		keyMap = new boolean[256];
 		console = Console.getInstance();
 	}
 
@@ -117,8 +116,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		setRenderLength(getTime() - renderStart);
 	}
 
-	public boolean isPressed(int keyCode) {
-		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
+	public static boolean isPressed(int keyCode) {
+		return keyCode >= 0 && keyCode < 256 && KEY_MAP[keyCode];
 	}
 
 	public XY getMouseXY() {
@@ -164,7 +163,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					if (!console.keyPressed(e)) {
 						if (key < 256) {
-							keyMap[key] = true;
+							KEY_MAP[key] = true;
 						}
 						gameInterface.keyPressed(e);
 					}
@@ -175,7 +174,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 						console.echo(3000, "Released: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (key < 256) {
-						keyMap[key] = false;
+						KEY_MAP[key] = false;
 					}
 					if (!console.keyReleased(e)) {
 						gameInterface.keyReleased(e);
