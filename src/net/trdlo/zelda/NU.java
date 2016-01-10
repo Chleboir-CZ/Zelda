@@ -42,4 +42,24 @@ public final class NU {
 	public static int radToDeg(double rad) {
 		return (int) (180 * rad / Math.PI);
 	}
+
+	public static double degToRad(double deg) {
+		return Math.PI * deg / 180;
+	}
+
+	/**
+	 * Calculates an angle in range (-PI ; PI>
+	 *
+	 * @param rad	input angle, works only with numbers (not NANs and INFs)
+	 * @return	angle in range (-PI ; PI>
+	 */
+	public static double normalizeAngle(double rad) {
+		while (rad > Math.PI) {
+			rad -= 2 * Math.PI;
+		}
+		while (rad <= -Math.PI) {
+			rad += 2 * Math.PI;
+		}
+		return rad;
+	}
 }

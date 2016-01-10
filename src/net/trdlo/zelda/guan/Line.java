@@ -3,6 +3,10 @@ package net.trdlo.zelda.guan;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Stroke;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.NU;
@@ -77,6 +81,8 @@ public final class Line {
 	private double a, b, c;
 	private boolean autoUpdate = false;
 
+	public double cachedLen = Double.NaN;
+
 	/**
 	 * Prázdný konstruktor používaný jen místními statickými továrními metodami
 	 */
@@ -87,6 +93,7 @@ public final class Line {
 		a = A.y - B.y;
 		b = B.x - A.x;
 		c = -a * A.x - b * A.y;
+		cachedLen = Double.NaN;
 	}
 
 	public boolean isValid() {
@@ -155,6 +162,17 @@ public final class Line {
 		} else {
 			assert false;
 		}
+	}
+
+	public boolean hasEndPoint(Point search) {
+		return A == search || B == search;
+	}
+
+	public double getLength() {
+		if (Double.isNaN(cachedLen)) {
+			cachedLen = A.getDistance(B);
+		}
+		return cachedLen;
 	}
 
 	public void connect() {
@@ -394,6 +412,24 @@ public final class Line {
 			double ix = (b * segment.c - c * segment.b) / denominator;
 			double iy = (segment.a * c - a * segment.c) / denominator;
 			if (NU.inRange(0, segment.getPosition(ix, iy), 1)) {
+				return new Point(ix, iy);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Nalezne průsečík této polopřímky a úsečky
+	 *
+	 * @param segment	druhá přímka
+	 * @return	bod, kde se protnou, nebo null, pokud se neprotnou
+	 */
+	public Point getRaySegmentIntersection(Line segment) {
+		double denominator = (a * segment.b - segment.a * b);
+		if (Math.abs(denominator) >= MINIMAL_DENOMINOATOR) {
+			double ix = (b * segment.c - c * segment.b) / denominator;
+			double iy = (segment.a * c - a * segment.c) / denominator;
+			if (NU.inRange(0, segment.getPosition(ix, iy), 1) && getPosition(ix, iy) >= 0) {
 				return new Point(ix, iy);
 			}
 		}
@@ -709,6 +745,72 @@ public final class Line {
 		} else {
 			return new Point(iPx, iPy);
 		}
+	}
+
+	/**
+	 * Seznam společných bodů (průnik) kružnice s touto přímkou
+	 *
+	 * @param center
+	 * @param radius
+	 * @return
+	 */
+	public List<Point> getCircleIntersection(Point center, double radius) {
+		assert isValid();
+
+		double vx = B.x - A.x;
+		double vy = B.y - A.y;
+		double cax = center.x - A.x;
+		double cay = center.y - A.y;
+
+		double lineLenSq = vx * vx + vy * vy;
+		double bBy2 = vx * cax + vy * cay;
+
+		double pBy2 = bBy2 / lineLenSq;
+
+		double chlemst = cax * cax + cay * cay - radius * radius;
+		double q = chlemst / lineLenSq;
+
+		double disc = pBy2 * pBy2 - q;
+		if (disc < 0) {
+			return Collections.emptyList();
+		} else if (disc == 0) {
+			Point p1 = new Point(A.x + vx * pBy2, A.y + vy * pBy2);
+			List<Point> retList = new ArrayList<>(1);
+			retList.add(p1);
+			return retList;
+		} else {
+			double discSqrt = Math.sqrt(disc);
+			double abScalingFactor1 = -pBy2 + discSqrt;
+			double abScalingFactor2 = -pBy2 - discSqrt;
+
+			Point p1 = new Point(A.x - vx * abScalingFactor1, A.y - vy * abScalingFactor1);
+			Point p2 = new Point(A.x - vx * abScalingFactor2, A.y - vy * abScalingFactor2);
+			List<Point> retList = new ArrayList<>(2);
+			retList.add(p1);
+			retList.add(p2);
+			return retList;
+		}
+	}
+
+	/**
+	 * Seznam společných bodů (průnik) kružnice s touto úsečkou
+	 *
+	 * @param center
+	 * @param radius
+	 * @return
+	 */
+	public List<Point> getSegmentCircleIntersection(Point center, double radius) {
+		//TODO bounding box optimizace => pokud box lajny je disjunktní s boxem kruznice, rovnou vratit prazdny list (Collections.emptyList())
+		//tim se vyhneme zbytečným průnikům (odmicninám), které se později zahodí
+
+		List<Point> points = getCircleIntersection(center, radius);
+		for (Iterator<Point> it = points.iterator(); it.hasNext();) {
+			Point p = it.next();
+			if (!NU.inRange(0, getPosition(p), 1)) {
+				it.remove();
+			}
+		}
+		return points;
 	}
 
 	@Override

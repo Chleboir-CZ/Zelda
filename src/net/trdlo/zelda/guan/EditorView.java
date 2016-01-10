@@ -58,6 +58,8 @@ class EditorView extends AbstractView {
 
 	private StringBuilder descBuilder;
 
+	private List<Line> horizont;
+
 	public EditorView(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
 
@@ -279,15 +281,19 @@ class EditorView extends AbstractView {
 				graphics.setColor(Line.SELECTION_COLOR);
 				graphics.setStroke(Line.SELECTION_STROKE);
 			} else {
-				graphics.setColor(Line.DEFAULT_COLOR);
+				if (line == nearestLine) {
+					graphics.setColor(Line.SELECTION_COLOR);
+				} else {
+					graphics.setColor(Line.DEFAULT_COLOR);
+				}
 				graphics.setStroke(Line.DEFAULT_STROKE);
 			}
 
-			if (line == nearestLine) {
-				graphics.setColor(Color.YELLOW);
-			}
-
 			graphics.drawLine(worldToViewX(lAx), worldToViewY(lAy), worldToViewX(lBx), worldToViewY(lBy));
+			if (line == selectedLine) {
+				graphics.setColor(Color.PINK);
+				graphics.drawString(String.format("len = %.2f", line.getLength()), worldToViewX((lAx + lBx) / 2), worldToViewY((lAy + lBy) / 2));
+			}
 			renderCrossingDebug(graphics, line);
 		}
 
@@ -312,6 +318,11 @@ class EditorView extends AbstractView {
 				graphics.setColor(Point.DEFAULT_COLOR);
 				renderPoint(graphics, px, py, point.description);
 			}
+		}
+
+		for (Point point : Horizont.debugCirclePoints) {
+			graphics.setColor(Color.RED);
+			renderPoint(graphics, point.x, point.y, point.getDescription());
 		}
 
 		//renderReflectionsDebug(graphics);
@@ -356,6 +367,23 @@ class EditorView extends AbstractView {
 			int vx2 = vx + (int) (Math.cos(p.orientation) * 16);
 			int vy2 = vy + (int) (Math.sin(p.orientation) * 16);
 			graphics.drawLine(vx, vy, vx2, vy2);
+		}
+
+		if (horizont != null) {
+			Player player = world.players.iterator().next();
+			Point pp = new Point(player.x, player.y);
+
+			graphics.setStroke(DEFAULT_STROKE);
+			graphics.setColor(Color.PINK);
+			for (Line line : horizont) {
+				graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
+			}
+			graphics.setStroke(DASHED_STROKE);
+			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
+			if ((System.nanoTime() / 1000000000L & 1) == 0) {
+				startAngle += (int) ((System.nanoTime() % 1000000000L) * 360 / 1000000000L);
+			}
+			graphics.drawArc(worldToViewX(pp.x - player.vDist), worldToViewY(pp.y - player.vDist), (int) (player.vDist * 2), (int) (player.vDist * 2), startAngle, -NU.radToDeg(player.fov));
 		}
 	}
 
@@ -497,6 +525,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	@Override
 	public boolean mouseMoved(MouseEvent e) {
 		int vx = e.getX(), vy = e.getY();
 		nearestPoint = getPointAt(vx, vy, Point.HIGHLIGHT_MAX_DISTANCE);
@@ -880,6 +909,10 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	private void testHorizont() {
+		horizont = new Horizont(world.lines, world.players.iterator().next()).computeHorizont();
+	}
+
 	@Override
 	public boolean keyTyped(KeyEvent e) {
 		if (isTyping()) {
@@ -918,6 +951,15 @@ class EditorView extends AbstractView {
 					break;
 				case 't':
 					initTypingDesc();
+					break;
+				case 'h':
+					testHorizont();
+					break;
+				case 'j':
+					world.players.iterator().next().orientation -= 0.3;
+					break;
+				case 'k':
+					world.players.iterator().next().orientation += 0.31;
 					break;
 				default:
 					return false;
