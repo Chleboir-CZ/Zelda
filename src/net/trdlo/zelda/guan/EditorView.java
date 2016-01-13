@@ -90,17 +90,16 @@ class EditorView extends AbstractView {
 	}
 
 	private void readAsynchronoutInput() {
-		if (ZeldaFrame.isPressed(KeyEvent.VK_ADD)) {
-			zoom(1, null);
-		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_SUBTRACT)) {
-			zoom(-1, null);
-		}
+//		if (ZeldaFrame.isPressed(KeyEvent.VK_ADD)) {
+//
+//		}
+
 	}
 
 	@Override
 	public void update() {
 		readAsynchronoutInput();
+
 	}
 
 	private int worldToViewX(double x) {
@@ -360,6 +359,8 @@ class EditorView extends AbstractView {
 			graphics.drawLine(worldToViewX(lastPoint.x), worldToViewY(lastPoint.y), worldToViewX(circleEndPoint.x), worldToViewY(circleEndPoint.y));
 		}
 
+		graphics.setColor(Color.red);
+		graphics.setStroke(DEFAULT_STROKE);
 		for (Player p : world.players) {
 			int vx = worldToViewX(p.x);
 			int vy = worldToViewY(p.y);
@@ -404,7 +405,7 @@ class EditorView extends AbstractView {
 		}
 
 		double c1 = zoomCoef();
-		if (zoomCoefLimit < c1 || change > 0) {
+		if ((zoomCoefLimit < c1 || change > 0) && zoom + change < ZOOM_MAX) {
 			zoom += change;
 		}
 		double coefChange = zoomCoef() / c1;
@@ -624,8 +625,9 @@ class EditorView extends AbstractView {
 	}
 
 	public boolean cancelOperation() {
-		if (insertedLine != null) {
+		if (insertedLine != null || circleLine != null) {
 			insertedLine = null;
+			circleLine = null;
 		} else if ((moveStart != null) || (dragStart != null)) {
 			moveStart = null;
 			moveEnd = null;
