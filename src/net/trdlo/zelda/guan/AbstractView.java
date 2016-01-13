@@ -10,6 +10,7 @@ import net.trdlo.zelda.CommandExecuter;
 abstract class AbstractView implements CommandExecuter {
 
 	public static final double ZOOM_BASE = 1.090507733; //2^(1/8)
+	public static final double ZOOM_MAX = 32;
 	protected World world;
 	protected double x, y;
 	protected int zoom;
