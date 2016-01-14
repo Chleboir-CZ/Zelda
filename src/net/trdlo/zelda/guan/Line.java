@@ -378,8 +378,8 @@ public final class Line {
 	public double getHalfNormalizedCosAlpha(Point point) {
 		double nx = A.y - B.y;
 		double ny = B.x - A.x;
-		double vx = point.x - A.x;
-		double vy = point.y - A.y;
+		double vx = point.x - B.x;
+		double vy = point.y - B.y;
 		double vLen = Math.sqrt(vx * vx + vy * vy);
 
 		return nx * (vy / vLen) - (vx / vLen) * ny;

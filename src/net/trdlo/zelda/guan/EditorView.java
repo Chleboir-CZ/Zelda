@@ -60,6 +60,7 @@ class EditorView extends AbstractView {
 	private StringBuilder descBuilder;
 
 	Polygon horizPoly;
+	boolean horizontEnabled = true;
 
 	public EditorView(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
@@ -91,10 +92,22 @@ class EditorView extends AbstractView {
 	}
 
 	private void readAsynchronoutInput() {
-//		if (ZeldaFrame.isPressed(KeyEvent.VK_ADD)) {
-//
-//		}
-
+		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
+			world.players.iterator().next().orientation -= 0.3;
+		}
+		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
+			world.players.iterator().next().orientation += 0.31;
+		}
+		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
+			Player p = world.players.iterator().next();
+			p.x += Math.cos(p.orientation) * p.speed;
+			p.y += Math.sin(p.orientation) * p.speed;
+		}
+		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
+			Player p = world.players.iterator().next();
+			p.x -= Math.cos(p.orientation) * p.speed;
+			p.y -= Math.sin(p.orientation) * p.speed;
+		}
 	}
 
 	@Override
@@ -298,7 +311,9 @@ class EditorView extends AbstractView {
 			renderCrossingDebug(graphics, line);
 		}
 
-		if (horizPoly != null) {
+		if (horizontEnabled) {
+			horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
+
 			Player player = world.players.iterator().next();
 			Point pp = new Point(player.x, player.y);
 
@@ -313,7 +328,7 @@ class EditorView extends AbstractView {
 			if ((System.nanoTime() / 1000000000L & 1) == 0) {
 				startAngle += (int) ((System.nanoTime() % 1000000000L) * 360 / 1000000000L);
 			}
-			graphics.drawArc(worldToViewX(pp.x - player.vDist), worldToViewY(pp.y - player.vDist), (int) (player.vDist * 2), (int) (player.vDist * 2), startAngle, -NU.radToDeg(player.fov));
+			graphics.drawArc(worldToViewX(pp.x - player.vDist), worldToViewY(pp.y - player.vDist), (int) (player.vDist * 2 * zoomCoef()), (int) (player.vDist * 2 * zoomCoef()), startAngle, -NU.radToDeg(player.fov));
 		}
 
 		for (Point point : world.points) {
@@ -925,10 +940,6 @@ class EditorView extends AbstractView {
 		return new Polygon(xPoints, yPoints, count);
 	}
 
-	private void testHorizont() {
-		horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
-	}
-
 	@Override
 	public boolean keyTyped(KeyEvent e) {
 		if (isTyping()) {
@@ -968,14 +979,8 @@ class EditorView extends AbstractView {
 				case 't':
 					initTypingDesc();
 					break;
-				case 'h':
-					testHorizont();
-					break;
-				case 'j':
-					world.players.iterator().next().orientation -= 0.3;
-					break;
-				case 'k':
-					world.players.iterator().next().orientation += 0.31;
+				case 'f':
+					horizontEnabled = !horizontEnabled;
 					break;
 				default:
 					return false;
@@ -986,7 +991,7 @@ class EditorView extends AbstractView {
 
 	@Override
 	public boolean keyPressed(KeyEvent e) {
-		switch (e.getKeyChar()) {
+		switch (e.getKeyCode()) {
 			case KeyEvent.VK_ESCAPE:
 				return cancelOperation();
 			case KeyEvent.VK_DELETE:
@@ -1005,7 +1010,16 @@ class EditorView extends AbstractView {
 
 	@Override
 	public boolean mouseClicked(MouseEvent e) {
-		return false;
+		switch (e.getButton()) {
+			case MouseEvent.BUTTON2:
+				Player p = world.players.iterator().next();
+				p.x = viewToWorldX(e.getX());
+				p.y = viewToWorldY(e.getY());
+				break;
+			default:
+				return false;
+		}
+		return true;
 	}
 
 	@Override
