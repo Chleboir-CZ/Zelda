@@ -168,6 +168,16 @@ public final class Line {
 		return A == search || B == search;
 	}
 
+	public Point getOtherPoint(Point even) {
+		if (A == even) {
+			return B;
+		} else if (B == even) {
+			return A;
+		} else {
+			return null;
+		}
+	}
+
 	public double getLength() {
 		if (Double.isNaN(cachedLen)) {
 			cachedLen = A.getDistance(B);
@@ -342,6 +352,51 @@ public final class Line {
 		assert l.isValid();
 
 		return Math.acos((a * l.a + b * l.b) / (Math.sqrt(a * a + b * b) * Math.sqrt(l.a * l.a + l.b * l.b)));
+	}
+
+	/**
+	 * Zjisti, zda je bod v levé polorovině od této přímky (ve směru A -> B)
+	 *
+	 * @param point	zkoumaný bod
+	 * @return	true, pokud je v pravé polorovině
+	 */
+	public boolean isInLeftHalfPane(Point point) {
+		double ux = B.x - A.x;
+		double uy = B.y - A.y;
+		double vx = point.x - A.x;
+		double vy = point.y - A.y;
+
+		return (ux * vy - vx * uy) > 0;
+	}
+
+	/**
+	 * Vrací cosinus uhlu, ktery svírají 2 přímky
+	 *
+	 * @param point
+	 * @return
+	 */
+	public double getHalfNormalizedCosAlpha(Point point) {
+		double nx = A.y - B.y;
+		double ny = B.x - A.x;
+		double vx = point.x - A.x;
+		double vy = point.y - A.y;
+		double vLen = Math.sqrt(vx * vx + vy * vy);
+
+		return nx * (vy / vLen) - (vx / vLen) * ny;
+	}
+
+	/**
+	 * Vygeneruje bod na polopřímce v dané vzdálenosti od počátku
+	 *
+	 * @param distance	vzdálenost od počátku
+	 * @return	Point
+	 */
+	public Point getPointAtDistanceFromA(double distance) {
+		double vx = B.x - A.x;
+		double vy = B.y - A.y;
+		double coef = distance / Math.sqrt(vx * vx + vy * vy);
+
+		return new Point(A.x + coef * vx, A.y + coef * vy);
 	}
 
 	/**

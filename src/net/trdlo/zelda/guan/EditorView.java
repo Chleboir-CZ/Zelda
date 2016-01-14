@@ -5,6 +5,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
@@ -58,7 +59,7 @@ class EditorView extends AbstractView {
 
 	private StringBuilder descBuilder;
 
-	private List<Line> horizont;
+	Polygon horizPoly;
 
 	public EditorView(World world, double x, double y, int zoom) {
 		setWorld(world, x, y, zoom);
@@ -132,6 +133,7 @@ class EditorView extends AbstractView {
 
 	private void renderGrid(Graphics2D graphics) {
 		if (gridDensity >= 0) {
+			graphics.setStroke(DEFAULT_STROKE);
 			graphics.setColor(Color.DARK_GRAY);
 
 			int left = (int) NU.ceilToMultipleOf(viewToWorldX(0), gridStep);
@@ -296,6 +298,24 @@ class EditorView extends AbstractView {
 			renderCrossingDebug(graphics, line);
 		}
 
+		if (horizPoly != null) {
+			Player player = world.players.iterator().next();
+			Point pp = new Point(player.x, player.y);
+
+			graphics.setStroke(DEFAULT_STROKE);
+			graphics.setColor(Color.DARK_GRAY);
+			graphics.fillPolygon(horizPoly);
+			graphics.setColor(Color.PINK);
+			graphics.drawPolygon(horizPoly);
+
+			graphics.setStroke(DASHED_STROKE);
+			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
+			if ((System.nanoTime() / 1000000000L & 1) == 0) {
+				startAngle += (int) ((System.nanoTime() % 1000000000L) * 360 / 1000000000L);
+			}
+			graphics.drawArc(worldToViewX(pp.x - player.vDist), worldToViewY(pp.y - player.vDist), (int) (player.vDist * 2), (int) (player.vDist * 2), startAngle, -NU.radToDeg(player.fov));
+		}
+
 		for (Point point : world.points) {
 			double px = point.x, py = point.y;
 			if (selection.contains(point) || tempSelection.contains(point)) {
@@ -359,7 +379,7 @@ class EditorView extends AbstractView {
 			graphics.drawLine(worldToViewX(lastPoint.x), worldToViewY(lastPoint.y), worldToViewX(circleEndPoint.x), worldToViewY(circleEndPoint.y));
 		}
 
-		graphics.setColor(Color.red);
+		graphics.setColor(Color.GREEN);
 		graphics.setStroke(DEFAULT_STROKE);
 		for (Player p : world.players) {
 			int vx = worldToViewX(p.x);
@@ -368,23 +388,6 @@ class EditorView extends AbstractView {
 			int vx2 = vx + (int) (Math.cos(p.orientation) * 16);
 			int vy2 = vy + (int) (Math.sin(p.orientation) * 16);
 			graphics.drawLine(vx, vy, vx2, vy2);
-		}
-
-		if (horizont != null) {
-			Player player = world.players.iterator().next();
-			Point pp = new Point(player.x, player.y);
-
-			graphics.setStroke(DEFAULT_STROKE);
-			graphics.setColor(Color.PINK);
-			for (Line line : horizont) {
-				graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
-			}
-			graphics.setStroke(DASHED_STROKE);
-			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
-			if ((System.nanoTime() / 1000000000L & 1) == 0) {
-				startAngle += (int) ((System.nanoTime() % 1000000000L) * 360 / 1000000000L);
-			}
-			graphics.drawArc(worldToViewX(pp.x - player.vDist), worldToViewY(pp.y - player.vDist), (int) (player.vDist * 2), (int) (player.vDist * 2), startAngle, -NU.radToDeg(player.fov));
 		}
 	}
 
@@ -911,8 +914,19 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	private Polygon convertLineListToPoly(List<Line> horiz) {
+		int count = horiz.size();
+		int[] xPoints = new int[count];
+		int[] yPoints = new int[count];
+		for (int i = 0; i < count; i++) {
+			xPoints[i] = worldToViewX(horiz.get(i).A.x);
+			yPoints[i] = worldToViewY(horiz.get(i).A.y);
+		}
+		return new Polygon(xPoints, yPoints, count);
+	}
+
 	private void testHorizont() {
-		horizont = new Horizont(world.lines, world.players.iterator().next()).computeHorizont();
+		horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
 	}
 
 	@Override

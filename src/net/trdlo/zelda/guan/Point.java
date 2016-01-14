@@ -47,7 +47,7 @@ public final class Point {
 
 	public Set<Line> connectedLines = null;
 
-	public double tempAngle;
+	public double tempAngle, tempDistSqr;
 
 	public Point(double x, double y, String description) {
 		this.x = x;
