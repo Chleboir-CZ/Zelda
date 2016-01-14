@@ -14,7 +14,7 @@ import net.trdlo.zelda.NU;
 public final class Point {
 
 	public static final Pattern PAT_POINT = Pattern.compile("^\\s*Point\\s+(\\d+)\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*(.*)\\z", Pattern.CASE_INSENSITIVE);
-	public static final int DISPLAY_SIZE = 8;
+	public static final int DISPLAY_SIZE = 15;
 	public static final int HIGHLIGHT_MAX_DISTANCE = 8;
 
 	public static final Stroke DEFAULT_STROKE = new BasicStroke(1);

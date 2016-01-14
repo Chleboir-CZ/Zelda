@@ -48,7 +48,16 @@ public class Horizont {
 		points = new TreeSet<>(new Comparator<Point>() {
 			@Override
 			public int compare(Point o1, Point o2) {
-				return o1.tempAngle < o2.tempAngle ? -1 : (o1.tempAngle > o2.tempAngle ? 1 : o1.hashCode() - o2.hashCode());
+				if (o1.tempAngle != o2.tempAngle) {
+					return o1.tempAngle < o2.tempAngle ? -1 : 1;
+				} else {
+					double distDiff = o1.tempDistSqr - o2.tempDistSqr;
+					if (distDiff != 0) {
+						return distDiff < 0 ? -1 : 1;
+					} else {
+						return o1.hashCode() - o2.hashCode();
+					}
+				}
 			}
 		});
 	}
@@ -194,7 +203,7 @@ public class Horizont {
 		int limit = 0;
 		for (Point point : points) {
 			limit++;
-			if (limit > 1) {
+			if (limit >= 1) {
 				limit--;
 			}
 			if (currentRC.line == null) {
