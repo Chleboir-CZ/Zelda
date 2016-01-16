@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import net.trdlo.zelda.NU;
+import net.trdlo.zelda.ZeldaFrame;
 
 public class Horizont {
 
@@ -234,10 +235,14 @@ public class Horizont {
 				Line pointRay = Line.constructFromTwoPoints(observerPoint, point);
 				Line sharpestLine = getSharpestLine(pointRay, currentRC.line);
 				if (sharpestLine == null) {
-					//nenavazuje vhodná lajna? => tečna => zanořujeme
-					RayCollision diveRC = getFirstCollision(pointRay, lines, point);
-					horizont.add(Line.constructFromTwoPoints(point, diveRC.point));
-					currentRC = diveRC;
+					//nenavazuje vhodná lajna? => tečna - zanořujeme, nebo je bod na hranicni kruznici
+					if (point.tempDistSqr == observer.vDistSqr) {
+						currentRC = new RayCollision(point, null);
+					} else {
+						RayCollision diveRC = getFirstCollision(pointRay, lines, point);
+						horizont.add(Line.constructFromTwoPoints(point, diveRC.point));
+						currentRC = diveRC;
+					}
 				} else {
 					//lajna doprava je vybrana, pokracujeme po ni
 					currentRC = new RayCollision(point, sharpestLine);
@@ -247,21 +252,29 @@ public class Horizont {
 				double pointDistSq = observerPoint.getDistanceSquare(point);
 				Line pointRay = Line.constructFromTwoPoints(observerPoint, point);
 				//prunik paprsku (observer -> zkoumany bod) s aktualni useckou
-				Point pointImage = pointRay.getIntersection(currentRC.line); //TODO: tohle je obcas null, kdy?
-				double curLineDistSq = observerPoint.getDistanceSquare(pointImage);
+				Point pointImage = pointRay.getIntersection(currentRC.line);
+				double curLineDistSq;
+				if (pointImage != null) {
+					//bezny pripad: prunik pointRay a current line urcuje bod, kdery je bud bliz nebo dal nez zkoumany point
+					curLineDistSq = observerPoint.getDistanceSquare(pointImage);
+				} else {
+					//specialni pripad: current line je stejna jako pointRay => neni spolecny bod. Vzdalenost current line je blizsi z koncovych bodu
+					curLineDistSq = Math.min(observerPoint.getDistanceSquare(currentRC.line.A), observerPoint.getDistanceSquare(currentRC.line.B));
+				}
 				if (pointDistSq < curLineDistSq) {
 					//vynoreni
 					//prida se usecka od posledni pozice k "pruniku"
 					horizont.add(Line.constructFromTwoPoints(currentRC.point, point));
 					//pointRay se upravi a zrecykluje jako usecka vynoreni
 					Line sharpestLine = getSharpestLine(pointRay, null);
-					assert sharpestLine != null;
+					if (sharpestLine != null) { //null by bylo, kdyby existovala izolovana lajna ve smeru k pozorovateli pred current lajnou
+						pointRay.setA(pointImage);
+						horizont.add(pointRay);
 
-					pointRay.setA(pointImage);
-					horizont.add(pointRay);
-
-					currentRC = new RayCollision(point, sharpestLine);
+						currentRC = new RayCollision(point, sharpestLine);
+					}
 				}
+
 			}
 		}
 
