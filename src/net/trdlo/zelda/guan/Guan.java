@@ -24,7 +24,7 @@ public class Guan implements GameInterface {
 		} catch (Exception ex) {
 			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
 		}
-		camera = new EditorView(world, 0, 0, 0);
+		camera = new EditorView(world, 0, 0, -8);
 
 	}
 

@@ -183,7 +183,11 @@ public class Horizont {
 						}
 					} else {
 						//případ, kdy bod má navázanou lajnu, které není koncový, pak je jen jediná taková lajna
-						return otherConnectedLine;
+						if (!ray.isParallel(otherConnectedLine)) {
+							return otherConnectedLine;
+						} else {
+							return null;
+						}
 					}
 				}
 			}
@@ -201,13 +205,15 @@ public class Horizont {
 		ray.B = currentRC.point;
 		horizont.add(ray);
 
-		int limit = 0;
+		int pointCounter = 0;
 		for (Point point : points) {
-			limit++;
-			if (limit >= 1) {
-				limit--;
-			}
+			pointCounter++;
+
 			if (currentRC.line == null) {
+				if (point.getDistanceSquare(currentRC.point) < World.MINIMAL_DETECTABLE_DISTANCE) {
+					continue;
+				}
+
 				double angleDiff = point.tempAngle - currentRC.point.tempAngle;
 				int segments = 1 + (int) (angleDiff / HORIZONT_ANGLE_LIMIT);
 				int steps = segments + (point.tempDistSqr < observer.vDistSqr ? 1 : 0);
@@ -226,8 +232,12 @@ public class Horizont {
 				horizont.add(Line.constructFromTwoPoints(from, point));
 
 				Line sharpestLine = getSharpestLine(Line.constructFromTwoPoints(observerPoint, point), null);
-				assert sharpestLine != null;
-				currentRC = new RayCollision(point, sharpestLine);
+				if (sharpestLine != null) {
+					currentRC = new RayCollision(point, sharpestLine);
+				} else {
+					//TODO: Zdokumentovat, kdy k tomuto stavu dojde, pak smazat assert
+					assert false;
+				}
 			} else if (point.connectedLines != null && point.connectedLines.contains(currentRC.line)) {
 				//konec teto lajny
 				horizont.add(Line.constructFromTwoPoints(currentRC.point, point));
