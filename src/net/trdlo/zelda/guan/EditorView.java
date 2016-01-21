@@ -100,13 +100,13 @@ class EditorView extends AbstractView {
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
 			Player p = world.players.iterator().next();
-			p.x += Math.cos(p.orientation) * p.speed;
-			p.y += Math.sin(p.orientation) * p.speed;
+			p.x += Math.cos(p.orientation) * Player.speed;
+			p.y += Math.sin(p.orientation) * Player.speed;
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
 			Player p = world.players.iterator().next();
-			p.x -= Math.cos(p.orientation) * p.speed;
-			p.y -= Math.sin(p.orientation) * p.speed;
+			p.x -= Math.cos(p.orientation) * Player.speed;
+			p.y -= Math.sin(p.orientation) * Player.speed;
 		}
 	}
 
@@ -312,7 +312,9 @@ class EditorView extends AbstractView {
 		}
 
 		if (horizontEnabled) {
-			horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
+			List<Line> hl = new Horizont(world.lines, world.players.iterator().next()).computeHorizont();
+			horizPoly = convertLineListToPoly(hl);
+			//horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
 
 			Player player = world.players.iterator().next();
 			Point pp = new Point(player.x, player.y);
@@ -321,7 +323,10 @@ class EditorView extends AbstractView {
 			graphics.setColor(Color.DARK_GRAY);
 			graphics.fillPolygon(horizPoly);
 			graphics.setColor(Color.PINK);
-			graphics.drawPolygon(horizPoly);
+			//graphics.drawPolygon(horizPoly);
+			for (Line line : hl) {
+				graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
+			}
 
 			graphics.setStroke(DASHED_STROKE);
 			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
