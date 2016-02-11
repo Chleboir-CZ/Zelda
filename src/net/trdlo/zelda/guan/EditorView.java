@@ -59,7 +59,8 @@ class EditorView extends AbstractView {
 
 	private StringBuilder descBuilder;
 
-	Polygon horizPoly;
+	private List<Point> horizont;
+	private Polygon horizPoly;
 	boolean horizontEnabled = true;
 
 	public EditorView(World world, double x, double y, int zoom) {
@@ -100,13 +101,13 @@ class EditorView extends AbstractView {
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
 			Player p = world.players.iterator().next();
-			p.x += Math.cos(p.orientation) * Player.speed;
-			p.y += Math.sin(p.orientation) * Player.speed;
+			p.x += Math.cos(p.orientation) * p.speed;
+			p.y += Math.sin(p.orientation) * p.speed;
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
 			Player p = world.players.iterator().next();
-			p.x -= Math.cos(p.orientation) * Player.speed;
-			p.y -= Math.sin(p.orientation) * Player.speed;
+			p.x -= Math.cos(p.orientation) * p.speed;
+			p.y -= Math.sin(p.orientation) * p.speed;
 		}
 	}
 
@@ -247,9 +248,11 @@ class EditorView extends AbstractView {
 		graphics.drawRect(vx - Point.DISPLAY_SIZE / 2, vy - Point.DISPLAY_SIZE / 2, Point.DISPLAY_SIZE, Point.DISPLAY_SIZE);
 
 		if (!desc.isEmpty()) {
+			Color prevColor = graphics.getColor();
 			graphics.setColor(Point.DESCRIPTION_COLOR);
 			graphics.setFont(Point.DESCRIPTION_FONT);
 			graphics.drawString(desc, vx + Point.DISPLAY_SIZE, vy + Point.DISPLAY_SIZE);
+			graphics.setColor(prevColor);
 		}
 	}
 
@@ -312,9 +315,8 @@ class EditorView extends AbstractView {
 		}
 
 		if (horizontEnabled) {
-			List<Line> hl = new Horizont(world.lines, world.players.iterator().next()).computeHorizont();
-			horizPoly = convertLineListToPoly(hl);
-			//horizPoly = convertLineListToPoly(new Horizont(world.lines, world.players.iterator().next()).computeHorizont());
+			horizont = TorchLight.getTorchLightPolygon(world.lines, world.players.iterator().next());
+			horizPoly = convertPointListToPoly(horizont);
 
 			Player player = world.players.iterator().next();
 			Point pp = new Point(player.x, player.y);
@@ -324,9 +326,15 @@ class EditorView extends AbstractView {
 			graphics.fillPolygon(horizPoly);
 			graphics.setColor(Color.PINK);
 			//graphics.drawPolygon(horizPoly);
-			for (Line line : hl) {
-				graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
+			Point first = horizont.get(0), prev = null;
+			for (Point p : horizont) {
+				if (prev != null) {
+					graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(p.x), worldToViewY(p.y));
+				}
+				prev = p;
+				renderPoint(graphics, p);
 			}
+			graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(first.x), worldToViewY(first.y));
 
 			graphics.setStroke(DASHED_STROKE);
 			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
@@ -934,6 +942,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
+	@Deprecated
 	private Polygon convertLineListToPoly(List<Line> horiz) {
 		int count = horiz.size();
 		int[] xPoints = new int[count];
@@ -941,6 +950,17 @@ class EditorView extends AbstractView {
 		for (int i = 0; i < count; i++) {
 			xPoints[i] = worldToViewX(horiz.get(i).A.x);
 			yPoints[i] = worldToViewY(horiz.get(i).A.y);
+		}
+		return new Polygon(xPoints, yPoints, count);
+	}
+
+	private Polygon convertPointListToPoly(List<Point> horiz) {
+		int count = horiz.size();
+		int[] xPoints = new int[count];
+		int[] yPoints = new int[count];
+		for (int i = 0; i < count; i++) {
+			xPoints[i] = worldToViewX(horiz.get(i).x);
+			yPoints[i] = worldToViewY(horiz.get(i).y);
 		}
 		return new Polygon(xPoints, yPoints, count);
 	}
