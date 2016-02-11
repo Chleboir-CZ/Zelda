@@ -69,10 +69,9 @@ public final class Line {
 	static LoadedLine loadFromString(String line) {
 		Matcher m = PAT_LINE.matcher(line);
 		if (m.matches()) {
-			m.group(1);
 			return new LoadedLine(Integer.valueOf(m.group(1)), Integer.valueOf(m.group(2)));
 		} else {
-			return null;
+			throw new IllegalArgumentException("Supplied line does not match pattern.");
 		}
 	}
 

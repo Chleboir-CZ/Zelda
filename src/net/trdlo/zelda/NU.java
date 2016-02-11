@@ -40,7 +40,7 @@ public final class NU {
 	}
 
 	public static int radToDeg(double rad) {
-		return (int) (180 * rad / Math.PI);
+		return (int) Math.round(180 * rad / Math.PI);
 	}
 
 	public static double degToRad(double deg) {

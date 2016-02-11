@@ -35,10 +35,9 @@ public final class Point {
 	static LoadedPoint loadFromString(String line) {
 		Matcher m = PAT_POINT.matcher(line);
 		if (m.matches()) {
-			m.group(1);
 			return new LoadedPoint(new Point(Double.valueOf(m.group(2)), Double.valueOf(m.group(3)), m.group(4)), Integer.valueOf(m.group(1)));
 		} else {
-			return null;
+			throw new IllegalArgumentException("Supplied line does not match pattern.");
 		}
 	}
 
