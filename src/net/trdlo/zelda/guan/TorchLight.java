@@ -237,11 +237,19 @@ public class TorchLight {
 				//pripad: neni current.line => chodime po obvodu (vnejsi kruznice)
 
 				//pripad, kdy ex. dva identcko body na vnejsi kruznici X point-ray -> preskocit!
-				//vznika zanorenim na horizont podel "svisle" lajny
-				//Ok: zruseno vyresenim ***, zustava testvaci assert
+				//NEVZNIKA VYRESENIM ***: zanorenim na horizont podel "svisle" lajny
+				//VZNIKA DALE: pokud kruznice protne vrchol (spojnici dvou usecek) a nadetekuje tak 2 body, jeden pro kazdou z usecek
 				//vyjimka: 2 shodné body, ale jeden -pi a druhy +pi (pri pohledu 360° a neni nic na dohled, jde se z prvniho bodu primo na posledni)
 				if (point.getDistanceSquare(current.point) < World.MINIMAL_DETECTABLE_DISTANCE && Math.abs(point.tempAngle - current.point.tempAngle) < Math.PI) {
-					assert false : "Stále mohou existovat dva body na stejné souřadnici?";
+					continue;
+//					try {
+//						Thread.sleep(1000 * 5);
+//					} catch (InterruptedException ex) {
+//
+//					}
+//					assert false : "Stále mohou existovat dva body na stejné souřadnici? Podařilo se následující: \n"
+//						+ current.point.toString() + " #" + current.point.hashCode() + "); connected lines: " + (current.point.connectedLines != null ? current.point.connectedLines.toString() : "null") + "\n"
+//						+ point.toString() + " #" + point.hashCode() + "); connected lines: " + (point.connectedLines != null ? point.connectedLines.toString() : "null");
 				}
 
 				//na konci krokovani obvodu se vynorime k bodu nebo narazime na bod na obvodu, skrz který vede lajna

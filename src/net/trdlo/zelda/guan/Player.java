@@ -9,7 +9,7 @@ public class Player {
 
 	public static final Pattern PAT_PLAYER = Pattern.compile("^\\s*Player\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*([-+]?\\d*\\.?\\d+)(?:\\s*(\\d*\\.?\\d+))?", Pattern.CASE_INSENSITIVE);
 	public double x, y;
-	public int speed;
+	public double speed;
 	public double vx, vy;
 	public double orientation;
 	public double fov, vDist, vDistSqr;
