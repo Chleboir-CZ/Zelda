@@ -248,8 +248,8 @@ public final class Line {
 	}
 
 	/**
-	 * Vrací pozici bodu p na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu <0; 1>,
-	 * pak leží i na úsečce AB.
+	 * Vrací pozici bodu p na přímce (danou body A, B) jako násobek vektoru A->B. Pokud je výsledek v intervalu
+	 * &lt;0&#59; 1&gt;, pak leží i na úsečce AB.
 	 *
 	 * @param p
 	 * @return	pozice daného bodu v násobku vektoru A->B

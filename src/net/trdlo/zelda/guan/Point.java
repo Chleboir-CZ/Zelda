@@ -173,6 +173,10 @@ public final class Point {
 		y = NU.roundToMultipleOf(y, gridStep);
 	}
 
+	public void tempAngleByObserver(Player observer) {
+		tempAngle = NU.normalizeAngle(Math.atan2(y - observer.y, x - observer.x) - observer.orientation);
+	}
+
 }
 
 class LoadedPoint {

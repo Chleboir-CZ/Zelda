@@ -83,7 +83,7 @@ public class TorchLight {
 			Point point = line.getA();
 			point.tempDistSqr = point.getDistanceSquare(observerPoint);
 			if (point.tempDistSqr <= distSqrLimit) {
-				point.tempAngle = NU.normalizeAngle(Math.atan2(point.y - observer.y, point.x - observer.x) - observer.orientation);
+				point.tempAngleByObserver(observer);
 				if (Math.abs(point.tempAngle) <= observer.fov / 2) {
 					point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
 					radarPoints.add(point);
@@ -95,7 +95,7 @@ public class TorchLight {
 			point = line.getB();
 			point.tempDistSqr = point.getDistanceSquare(observerPoint);
 			if (point.tempDistSqr <= distSqrLimit) {
-				point.tempAngle = NU.normalizeAngle(Math.atan2(point.y - observer.y, point.x - observer.x) - observer.orientation);
+				point.tempAngleByObserver(observer);
 				if (Math.abs(point.tempAngle) <= observer.fov / 2) {
 					point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
 					radarPoints.add(point);
@@ -106,7 +106,7 @@ public class TorchLight {
 
 			for (Point p : line.getSegmentCircleIntersection(observerPoint, observer.vDist)) {
 				p.addConnectedLine(line);
-				p.tempAngle = NU.normalizeAngle(Math.atan2(p.y - observer.y, p.x - observer.x) - observer.orientation);
+				p.tempAngleByObserver(observer);
 				if (Math.abs(p.tempAngle) <= observer.fov / 2) {
 					p.tempDistSqr = observer.vDistSqr;
 					p.setDescription(String.format("%d°", NU.radToDeg(p.tempAngle)));
@@ -161,12 +161,12 @@ public class TorchLight {
 
 		if (nearestPoint != null && nearestSqr <= observer.vDistSqr) {
 			nearestPoint.tempDistSqr = nearestSqr;
-			nearestPoint.tempAngle = NU.normalizeAngle(Math.atan2(nearestPoint.y - observer.y, nearestPoint.x - observer.x) - observer.orientation);
+			nearestPoint.tempAngleByObserver(observer);
 			return new LinePoint(nearestPoint, nearestLine);
 		} else {
 			Point horizontPoint = ray.getPointAtDistanceFromA(observer.vDist);
 			horizontPoint.tempDistSqr = observer.vDistSqr;
-			horizontPoint.tempAngle = NU.normalizeAngle(Math.atan2(horizontPoint.y - observer.y, horizontPoint.x - observer.x) - observer.orientation);
+			horizontPoint.tempAngleByObserver(observer);
 			return new LinePoint(horizontPoint, null);
 		}
 	}
@@ -178,7 +178,7 @@ public class TorchLight {
 	 * @param ignoredLine	lajna, kterou ignorujeme
 	 * @return
 	 */
-	private Line getSharpestLine(Line ray, Line ignoredLine) {
+	private Line getSharpestLine(Line ray, Line ignoredLine, boolean allowRayCollinear) {
 		Line sharpestLine = null;
 		Point point = ray.B;
 		double bestAngle = -Double.MAX_VALUE;
@@ -187,7 +187,7 @@ public class TorchLight {
 				if (otherConnectedLine != ignoredLine) {
 					Point otherPoint = otherConnectedLine.getOtherPoint(point);
 					if (otherPoint != null) {
-						if (ray.isInLeftHalfPane(otherPoint)) {
+						if (ray.isInLeftHalfPane(otherPoint) || (allowRayCollinear && ray.contains(otherPoint) && ray.getPosition(point) > 0)) {
 							double alpha = ray.getHalfNormalizedCosAlpha(otherPoint);
 							if (alpha > bestAngle) {
 								bestAngle = alpha;
@@ -222,6 +222,12 @@ public class TorchLight {
 		}
 
 		LinePoint current = getFirstCollision(createLeftEdgeRay(), lines, null);
+		current.point.tempAngle = -observer.fov / 2; //fix +3.14 possible by Atan2
+
+		Point lastPoint = getFirstCollision(createRightEdgeRay(), lines, null).point;
+		lastPoint.tempAngle = +observer.fov / 2; //fix -3.14 possible by Atan2
+
+		radarPoints.add(lastPoint);
 
 		int pointCounter = 0;
 		for (Point point : radarPoints) {
@@ -232,16 +238,18 @@ public class TorchLight {
 
 				//pripad, kdy ex. dva identcko body na vnejsi kruznici X point-ray -> preskocit!
 				//vznika zanorenim na horizont podel "svisle" lajny
-				//TODO: mohlo by se zrusit vyresenim ***
-				if (point.getDistanceSquare(current.point) < World.MINIMAL_DETECTABLE_DISTANCE) {
-					continue;
+				//Ok: zruseno vyresenim ***, zustava testvaci assert
+				//vyjimka: 2 shodné body, ale jeden -pi a druhy +pi (pri pohledu 360° a neni nic na dohled, jde se z prvniho bodu primo na posledni)
+				if (point.getDistanceSquare(current.point) < World.MINIMAL_DETECTABLE_DISTANCE && Math.abs(point.tempAngle - current.point.tempAngle) < Math.PI) {
+					assert false : "Stále mohou existovat dva body na stejné souřadnici?";
 				}
 
 				//na konci krokovani obvodu se vynorime k bodu nebo narazime na bod na obvodu, skrz který vede lajna
-				Line sharpestLine = getSharpestLine(Line.constructFromTwoPoints(observerPoint, point), null);
+				Line sharpestLine = getSharpestLine(Line.constructFromTwoPoints(observerPoint, point), null, false);
 				//z tohoto bodu vede lajna doprava, vybereme tu nejlepší
-				//nebo extrém - bod sice není jedináček, ale jediná lajna z něho vede "svisle" -> není sharp
-				if (sharpestLine == null) {
+				//nebo extrém: bod sice není jedináček, ale jediná lajna z něho vede "svisle" -> není sharp
+				//výjimka z extrému: lastPoint
+				if (sharpestLine == null && point != lastPoint) {
 					//pak chceme další bod na řadě! Dokrokujeme to ke smysluplnému bodu
 					continue;
 				}
@@ -261,7 +269,7 @@ public class TorchLight {
 
 				current = new LinePoint(point, sharpestLine);
 
-			} else if (point.connectedLines != null && point.connectedLines.contains(current.line)) {
+			} else if (point == lastPoint || (point.connectedLines != null && point.connectedLines.contains(current.line))) {
 				//line není null, bod na radaru je její součástí (koncový nebo i uprostřed)
 
 				horizont.add(current.point);
@@ -269,7 +277,7 @@ public class TorchLight {
 				if (current.line.hasEndPoint(point)) {
 					//bod je koncovým lajny
 					Line pointRay = Line.constructFromTwoPoints(observerPoint, point);
-					Line sharpestLine = getSharpestLine(pointRay, current.line); //TODO *** zvážit povolení "svislého" kroku
+					Line sharpestLine = getSharpestLine(pointRay, current.line, true); //OK *** povolen i "svislý" krok
 
 					if (sharpestLine == null) {
 						//nic relevantního z něho nevede doprava => tečna, zanoříme a uvidíme
@@ -305,7 +313,7 @@ public class TorchLight {
 					//bod je bliz => vynoreni (jinak nic, vezme se dalsi bod)
 
 					//vybere se nejlepsi navazujici lajna (nej-sharp)
-					Line sharpestLine = getSharpestLine(pointRay, null);
+					Line sharpestLine = getSharpestLine(pointRay, null, false);
 					if (sharpestLine != null) {
 						//prida se pocatecni bod
 						horizont.add(current.point);
@@ -323,10 +331,6 @@ public class TorchLight {
 		}
 
 		horizont.add(current.point);
-
-		LinePoint lastRC = getFirstCollision(createRightEdgeRay(), lines, null);
-		horizont.add(lastRC.point);
-
 		return horizont;
 	}
 }

@@ -28,7 +28,7 @@ public class Player {
 		this.x = x;
 		this.y = y;
 		this.orientation = orientation;
-		this.fov = fov;
+		this.fov = NU.ensureRange(0, fov, 2 * Math.PI);
 	}
 
 	static boolean lineMatchesPattern(String line) {
