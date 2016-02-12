@@ -11,9 +11,13 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.trdlo.zelda.CommandExecuter;
+import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
 
-class World {
+class World implements CommandExecuter {
 
 	public static final double MINIMAL_DETECTABLE_DISTANCE = 0.01;
 
@@ -43,7 +47,6 @@ class World {
 			}
 		};
 		players = new LinkedHashSet<>();
-		players.add(new Player());
 
 		bounds = new Rectangle(-1000, -1000, 2000, 2000);
 	}
@@ -68,6 +71,8 @@ class World {
 						throw new Exception("Point index " + ll.idB + " not found. Can't load world!");
 					}
 					lines.add(Line.constructFromTwoPoints(A, B));
+				} else if (Player.lineMatchesPattern(line)) {
+					players.add(Player.loadFromString(line));
 				}
 			}
 			loadedFrom = fileName;
@@ -78,6 +83,10 @@ class World {
 		try (Writer w = new BufferedWriter(new FileWriter(fileName))) {
 			int id = 0;
 			Map<Point, Integer> pointIdMap = new HashMap<>();
+			for (Player p : players) {
+				w.write(p.saveToString());
+				w.write("\n");
+			}
 			for (Point p : points) {
 				w.write(p.saveToString(id));
 				w.write("\n");
@@ -169,5 +178,21 @@ class World {
 
 	public void deleteLine(Line delLine) {
 		lines.remove(delLine);
+	}
+
+	private static final Pattern PAT_SETFOV = Pattern.compile("setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);
+
+	@Override
+	public boolean executeCommand(String command, Console console) {
+		Matcher m;
+		if ((m = PAT_SETFOV.matcher(command)).matches()) {
+			double fov = NU.degToRad(Integer.valueOf(m.group(1)));
+			for (Player p : players) {
+				p.fov = fov;
+			}
+		} else {
+			return false;
+		}
+		return true;
 	}
 }

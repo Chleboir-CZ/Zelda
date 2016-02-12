@@ -23,9 +23,9 @@ public class Guan implements GameInterface {
 			world.loadFromFile("maps/test.map");
 		} catch (Exception ex) {
 			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
+			world = new World();
 		}
 		camera = new EditorView(world, 0, 0, -8);
-
 	}
 
 	@Override
@@ -56,6 +56,8 @@ public class Guan implements GameInterface {
 	public boolean executeCommand(String command, Console console) {
 		Matcher m;
 		if (camera.executeCommand(command, console)) {
+			return true;
+		} else if (world.executeCommand(command, console)) {
 			return true;
 		} else if (PAT_SAVE.matcher(command).matches()) {
 			try {
