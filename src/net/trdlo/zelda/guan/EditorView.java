@@ -367,11 +367,6 @@ class EditorView extends AbstractView {
 			}
 		}
 
-		for (Point point : Horizont.debugCirclePoints) {
-			graphics.setColor(Color.RED);
-			renderPoint(graphics, point.x, point.y, point.getDescription());
-		}
-
 		//renderReflectionsDebug(graphics);
 		if (dragStart != null && dragEnd != null) {
 			graphics.setStroke(DASHED_STROKE);

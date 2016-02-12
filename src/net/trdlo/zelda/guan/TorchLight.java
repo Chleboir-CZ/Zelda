@@ -34,11 +34,7 @@ public class TorchLight {
 
 	private final SortedSet<Point> radarPoints;
 
-	public static final List<Point> DEBUG_CIRCLE_POINTS = new ArrayList<>();
-
 	public static List<Point> getTorchLightPolygon(Set<Line> lines, Player observer) {
-		DEBUG_CIRCLE_POINTS.clear();
-
 		TorchLight tl = new TorchLight(lines, observer);
 
 		return tl.computeHorizont();
@@ -85,33 +81,32 @@ public class TorchLight {
 			if (point.tempDistSqr <= distSqrLimit) {
 				point.tempAngleByObserver(observer);
 				if (Math.abs(point.tempAngle) <= observer.fov / 2) {
-					point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
+					//point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
 					radarPoints.add(point);
 				}
-			} else {
-				point.setDescription("");
-			}
+			}// else {
+			//	point.setDescription("");
+			//}
 
 			point = line.getB();
 			point.tempDistSqr = point.getDistanceSquare(observerPoint);
 			if (point.tempDistSqr <= distSqrLimit) {
 				point.tempAngleByObserver(observer);
 				if (Math.abs(point.tempAngle) <= observer.fov / 2) {
-					point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
+					//point.setDescription(String.format("%d°", NU.radToDeg(point.tempAngle)));
 					radarPoints.add(point);
 				}
-			} else {
-				point.setDescription("");
-			}
+			}// else {
+			//	point.setDescription("");
+			//}
 
 			for (Point p : line.getSegmentCircleIntersection(observerPoint, observer.vDist)) {
 				p.addConnectedLine(line);
 				p.tempAngleByObserver(observer);
 				if (Math.abs(p.tempAngle) <= observer.fov / 2) {
 					p.tempDistSqr = observer.vDistSqr;
-					p.setDescription(String.format("%d°", NU.radToDeg(p.tempAngle)));
+					//p.setDescription(String.format("%d°", NU.radToDeg(p.tempAngle)));
 					radarPoints.add(p);
-					DEBUG_CIRCLE_POINTS.add(p);
 				}
 			}
 		}
@@ -207,15 +202,14 @@ public class TorchLight {
 	public List<Point> computeHorizont() {
 		loadPoints();
 
-		List<Point> horizont = new ArrayList<Point>() {
+		List<Point> horizont = new ArrayList<>();/* {
 			private int i = 0;
-
 			@Override
 			public boolean add(Point e) {
 				e.setDescription(String.valueOf(i++));
 				return super.add(e);
 			}
-		};
+		};*/
 
 		if (!fullCircleView()) {
 			horizont.add(observerPoint);
@@ -229,9 +223,9 @@ public class TorchLight {
 
 		radarPoints.add(lastPoint);
 
-		int pointCounter = 0;
+		//int pointCounter = 0;
 		for (Point point : radarPoints) {
-			pointCounter++;
+			//pointCounter++;
 
 			if (current.line == null) {
 				//pripad: neni current.line => chodime po obvodu (vnejsi kruznice)
