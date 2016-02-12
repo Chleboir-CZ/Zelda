@@ -3,14 +3,11 @@ package net.trdlo.zelda.guan;
 import net.trdlo.zelda.XY;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,17 +22,18 @@ import net.trdlo.zelda.ZeldaFrame;
 class EditorView extends AbstractView {
 
 	private static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0);
+	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
+	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
+
+	private static final java.awt.Cursor DEFAULT_CURSOR = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.DEFAULT_CURSOR);
+	private static final java.awt.Cursor DRAG_CURSOR = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR);
 
 	private boolean boundsDebug = false;
 
-	private double zoomCoefLimit;
-	private Rectangle componentBounds, cameraBounds;
-
 	private Point dragStart, dragEnd;
-	private XY viewDrag = null;
 	private boolean snapToGrid = true;
 	private Point moveStart, moveEnd, snappedPoint, moveDiff;
-	private final Set<Point> avoidedPoints = new HashSet<>();
+	private final Set<Point> snappAvoidedPoints = new HashSet<>();
 	private Point nearestPoint;
 	private final Set<Point> selection;
 	private Set<Point> tempSelection;
@@ -64,7 +62,11 @@ class EditorView extends AbstractView {
 	boolean horizontEnabled = true;
 
 	public EditorView(World world, double x, double y, int zoom) {
-		setWorld(world, x, y, zoom);
+		super(world);
+
+		this.x = x;
+		this.y = y;
+		this.zoom = zoom;
 
 		selection = new HashSet<Point>() {
 			@Override
@@ -85,27 +87,19 @@ class EditorView extends AbstractView {
 		tempSelection = new HashSet<>();
 	}
 
-	public final void setWorld(World world, double x, double y, int zoom) {
-		this.world = world;
-		this.x = x;
-		this.y = y;
-		this.zoom = zoom;
-	}
-
 	private void readAsynchronoutInput() {
+		Player p = world.getTestPlayer();
 		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
-			world.players.iterator().next().orientation -= 0.3;
+			p.orientation -= 0.3;
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
-			world.players.iterator().next().orientation += 0.31;
+			p.orientation += 0.31;
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
-			Player p = world.players.iterator().next();
 			p.x += Math.cos(p.orientation) * p.speed;
 			p.y += Math.sin(p.orientation) * p.speed;
 		}
 		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
-			Player p = world.players.iterator().next();
 			p.x -= Math.cos(p.orientation) * p.speed;
 			p.y -= Math.sin(p.orientation) * p.speed;
 		}
@@ -115,34 +109,6 @@ class EditorView extends AbstractView {
 	public void update() {
 		readAsynchronoutInput();
 
-	}
-
-	private int worldToViewX(double x) {
-		assert componentBounds != null;
-		return (int) ((componentBounds.width / 2) + (x - this.x) * zoomCoef());
-	}
-
-	public int worldToViewY(double y) {
-		assert componentBounds != null;
-		return (int) ((componentBounds.height / 2) + (y - this.y) * zoomCoef());
-	}
-
-	public XY worldToView(Point p) {
-		return new XY(worldToViewX(p.x), worldToViewY(p.y));
-	}
-
-	public double viewToWorldX(int x) {
-		assert componentBounds != null;
-		return (x - (componentBounds.width / 2)) / zoomCoef() + this.x;
-	}
-
-	public double viewToWorldY(int y) {
-		assert componentBounds != null;
-		return (y - (componentBounds.height / 2)) / zoomCoef() + this.y;
-	}
-
-	public Point viewToWorld(XY xy) {
-		return new Point(viewToWorldX(xy.x), viewToWorldY(xy.y));
 	}
 
 	private void renderGrid(Graphics2D graphics) {
@@ -165,9 +131,6 @@ class EditorView extends AbstractView {
 			}
 		}
 	}
-
-	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
-	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
 
 	private void renderBoundsDebug(Graphics2D graphics) {
 		if (world.bounds == null) {
@@ -261,9 +224,7 @@ class EditorView extends AbstractView {
 	}
 
 	@Override
-	public void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
-		this.componentBounds = componentBounds;
-
+	public void render(Graphics2D graphics, float renderFraction) {
 		renderGrid(graphics);
 
 		if (boundsDebug) {
@@ -315,10 +276,10 @@ class EditorView extends AbstractView {
 		}
 
 		if (horizontEnabled) {
-			horizont = TorchLight.getTorchLightPolygon(world.lines, world.players.iterator().next());
+			Player player = world.getTestPlayer();
+			horizont = TorchLight.getTorchLightPolygon(world.lines, player);
 			horizPoly = convertPointListToPoly(horizont);
 
-			Player player = world.players.iterator().next();
 			Point pp = new Point(player.x, player.y);
 
 			graphics.setStroke(DEFAULT_STROKE);
@@ -372,10 +333,10 @@ class EditorView extends AbstractView {
 			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 
 		if (insertedLine != null) {
@@ -414,118 +375,46 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	private double zoomCoef() {
-		return Math.max(zoomCoefLimit, Math.pow(ZOOM_BASE, zoom));
-	}
-
-	public void zoom(int change, XY fixedPoint) {
-		if (componentBounds == null) {
-			return;
-		}
-
-		double wx = x;
-		double wy = y;
-		if (fixedPoint != null) {
-			wx = viewToWorldX(fixedPoint.x);
-			wy = viewToWorldY(fixedPoint.y);
-		}
-
-		double c1 = zoomCoef();
-		if ((zoomCoefLimit < c1 || change > 0) && zoom + change < ZOOM_MAX) {
-			zoom += change;
-		}
-		double coefChange = zoomCoef() / c1;
-
-		double dx = (wx - x) / coefChange;
-		double dy = (wy - y) / coefChange;
-
-		x = wx - dx;
-		y = wy - dy;
-		checkBounds();
-	}
-
-	public void move(XY diff) {
-		x += diff.x / zoomCoef();
-		y += diff.y / zoomCoef();
-		checkBounds();
-	}
-
-	public void checkBounds() {
-		if (world.bounds == null) {
-			return;
-		}
-
-		zoomCoefLimit = Math.min(componentBounds.width / (double) world.bounds.width, componentBounds.height / (double) world.bounds.height);
-
-		double left = world.bounds.x + (componentBounds.width / 2) / zoomCoef();
-		double right = world.bounds.x + world.bounds.width - (componentBounds.width / 2) / zoomCoef();
-		double top = world.bounds.y + (componentBounds.height / 2) / zoomCoef();
-		double bottom = world.bounds.y + world.bounds.height - (componentBounds.height / 2) / zoomCoef();
-
-		cameraBounds = new Rectangle((int) left, (int) top, (int) (right - left), (int) (bottom - top));
-
-		if (left < right) {
-			if (x < left) {
-				x = left;
-			}
-			if (x > right) {
-				x = right;
-			}
-		} else {
-			x = world.bounds.x + world.bounds.width / 2;
-		}
-		if (top < bottom) {
-			if (y < top) {
-				y = top;
-			}
-			if (y > bottom) {
-				y = bottom;
-			}
-		} else {
-			y = world.bounds.y + world.bounds.height / 2;
-		}
-	}
-
-	public boolean isBoundsDebug() {
+	private boolean isBoundsDebug() {
 		return boundsDebug;
 	}
 
-	public void setBoundsDebug(boolean showBoundsDebug) {
+	private void setBoundsDebug(boolean showBoundsDebug) {
 		this.boundsDebug = showBoundsDebug;
 	}
 
-	public Point getPointAt(int x, int y, double limitDistance) {
+	private Point getPointAt(int x, int y, double limitDistance) {
 		return world.getPointAt(viewToWorldX(x), viewToWorldY(y), limitDistance / zoomCoef());
 	}
 
-	public Point getPointAt(int x, int y) {
+	private Point getPointAt(int x, int y) {
 		return getPointAt(x, y, Point.DISPLAY_SIZE);
 	}
 
-	public Line getLineAt(int x, int y, double limitDistance) {
+	private Line getLineAt(int x, int y, double limitDistance) {
 		return world.getLineAt(viewToWorldX(x), viewToWorldY(y), limitDistance / zoomCoef());
 	}
 
-	public Line getLineAt(int x, int y) {
+	private Line getLineAt(int x, int y) {
 		return getLineAt(x, y, Line.SELECTION_MAX_DISTANCE);
 	}
 
-	public Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
+	protected Set<Point> getPointsIn(int x1, int y1, int x2, int y2) {
 		return world.getPointsIn(viewToWorldX(x1), viewToWorldY(y1), viewToWorldX(x2), viewToWorldY(y2));
 	}
 
-	private void avoidedPointsBySnapped() {
+	private void updateSnappAvoidedPoints() {
 		assert snappedPoint != null;
 
-		avoidedPoints.clear();
+		snappAvoidedPoints.clear();
 		if (snappedPoint.connectedLines != null) {
 			for (Line l : snappedPoint.connectedLines) {
-				avoidedPoints.add(l.getA() == snappedPoint ? l.getB() : l.getA());
+				snappAvoidedPoints.add(l.getA() == snappedPoint ? l.getB() : l.getA());
 			}
 		}
 	}
 
-	public void mouse1pressed(MouseEvent e) {
+	private void mouse1pressed(MouseEvent e) {
 		additiveSelection = e.isShiftDown();
 		Point pointAt;
 		Line lineAt;
@@ -539,7 +428,7 @@ class EditorView extends AbstractView {
 				selection.add(pointAt);
 				moveStart = new Point(viewToWorldX(e.getX()), viewToWorldY(e.getY()));
 				snappedPoint = pointAt;
-				avoidedPointsBySnapped();
+				updateSnappAvoidedPoints();
 				moveDiff = moveStart.diff(snappedPoint);
 			}
 			selectedLine = null;
@@ -576,7 +465,7 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
-	public void mouse1dragged(MouseEvent e) {
+	private boolean mouse1dragged(MouseEvent e) {
 		double wx = viewToWorldX(e.getX()), wy = viewToWorldY(e.getY());
 		if (dragStart != null) {
 			if (dragEnd == null) {
@@ -595,7 +484,7 @@ class EditorView extends AbstractView {
 
 			Point pointAt = world.getPointAt(wx, wy, Point.DISPLAY_SIZE / zoomCoef());
 
-			if (pointAt != null && !avoidedPoints.contains(pointAt)) {
+			if (pointAt != null && !snappAvoidedPoints.contains(pointAt)) {
 				moveEnd.setXY(pointAt.x, pointAt.y);
 				moveEnd.moveBy(moveDiff);
 			} else {
@@ -605,10 +494,13 @@ class EditorView extends AbstractView {
 					moveEnd.moveBy(moveDiff);
 				}
 			}
+		} else {
+			return false;
 		}
+		return true;
 	}
 
-	public void mouse1released(MouseEvent e) {
+	private void mouse1released(MouseEvent e) {
 		if (dragStart != null) {
 			if (!additiveSelection) {
 				selection.clear();
@@ -626,11 +518,11 @@ class EditorView extends AbstractView {
 			}
 			moveStart = null;
 			snappedPoint = null;
-			avoidedPoints.clear();
+			snappAvoidedPoints.clear();
 		}
 	}
 
-	public void deleteSelection() {
+	private void deleteSelection() {
 		if (selectedLine != null) {
 			world.deleteLine(selectedLine);
 		} else {
@@ -638,7 +530,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void nextGridDensity() {
+	private void nextGridDensity() {
 		gridDensity--;
 		if (gridDensity == -2) {
 			gridDensity = 8;
@@ -646,11 +538,11 @@ class EditorView extends AbstractView {
 		gridStep = (int) Math.pow(2, gridDensity);
 	}
 
-	public void toggleSnapToGrid() {
+	private void toggleSnapToGrid() {
 		snapToGrid = !snapToGrid;
 	}
 
-	public boolean cancelOperation() {
+	private boolean cancelOperation() {
 		if (insertedLine != null || circleLine != null) {
 			insertedLine = null;
 			circleLine = null;
@@ -668,7 +560,7 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
-	public void insertPointAtLine() {
+	private void insertPointAtLine() {
 		if (nearestLine != null) {
 			Point p = nearestLine.getNearestPointInSegment(viewToWorld(ZeldaFrame.getInstance().getMouseXY()));
 			if (p != null) {
@@ -697,7 +589,7 @@ class EditorView extends AbstractView {
 			return;
 		}
 
-		//TODO: zapracovat snap to grid?
+		//TODO: zapracovat nejak snap to grid? => mozna snapovat na elipsy 1:4, 2:4, 3:4, 1:1, 3:2, 2:1, 3:1 ...
 		Point s = new Point((circleLine.A.x + circleLine.B.x) / 2, (circleLine.A.y + circleLine.B.y) / 2);
 		Line circleLineAxis = circleLine.getPerpendicular(s);
 		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
@@ -757,7 +649,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void startCircle() {
+	private void startCircle() {
 		if (circleLine == null && insertedLine == null) {
 			circleLine = nearestLine;
 			updateCirclePoints();
@@ -766,21 +658,21 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void incCircleSegments() {
+	private void incCircleSegments() {
 		if (circleLine != null) {
 			circlePointCount++;
 			updateCirclePoints();
 		}
 	}
 
-	public void decCircleSegments() {
+	private void decCircleSegments() {
 		if (circleLine != null && circlePointCount > 1) {
 			circlePointCount--;
 			updateCirclePoints();
 		}
 	}
 
-	public void insert() {
+	private void insert() {
 		XY mouseXY = ZeldaFrame.getInstance().getMouseXY();
 		Point mP = viewToWorld(mouseXY);
 
@@ -824,7 +716,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void unInsert() {
+	private void unInsert() {
 		if (insertedLine == null) {
 			return;
 		}
@@ -846,7 +738,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void mergePoints() {
+	private void mergePoints() {
 		if (selection.size() >= 2) {
 			double left = Double.MAX_VALUE, right = -Double.MAX_VALUE, top = Double.MAX_VALUE, bottom = -Double.MAX_VALUE;
 			for (Point p : selection) {
@@ -882,7 +774,7 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public void initTypingDesc() {
+	private void initTypingDesc() {
 		if (selection.size() > 1) {
 			descBuilder = new StringBuilder();
 		} else if (!selection.isEmpty()) {
@@ -890,22 +782,22 @@ class EditorView extends AbstractView {
 		}
 	}
 
-	public boolean isTyping() {
+	private boolean isTyping() {
 		return descBuilder != null;
 	}
 
-	public void stopTypingDesc() {
+	private void stopTypingDesc() {
 		descBuilder = null;
 	}
 
-	public static boolean isPrintableChar(char c) {
+	private static boolean isPrintableChar(char c) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 		return (!Character.isISOControl(c))
-				&& c != KeyEvent.CHAR_UNDEFINED
-				&& block != null && block != Character.UnicodeBlock.SPECIALS;
+			&& c != KeyEvent.CHAR_UNDEFINED
+			&& block != null && block != Character.UnicodeBlock.SPECIALS;
 	}
 
-	public boolean charTyped(char c) {
+	private boolean charTyped(char c) {
 		assert descBuilder != null;
 
 		if (c == '\n') {
@@ -924,40 +816,17 @@ class EditorView extends AbstractView {
 		return true;
 	}
 
-	public void setSelectionDescription() {
+	private void setSelectionDescription() {
 		String desc = descBuilder.toString();
 		for (Point p : selection) {
 			p.description = desc;
 		}
 	}
 
-	public void setSelectionDescription(String desc) {
+	private void setSelectionDescription(String desc) {
 		for (Point p : selection) {
 			p.description = desc;
 		}
-	}
-
-	@Deprecated
-	private Polygon convertLineListToPoly(List<Line> horiz) {
-		int count = horiz.size();
-		int[] xPoints = new int[count];
-		int[] yPoints = new int[count];
-		for (int i = 0; i < count; i++) {
-			xPoints[i] = worldToViewX(horiz.get(i).A.x);
-			yPoints[i] = worldToViewY(horiz.get(i).A.y);
-		}
-		return new Polygon(xPoints, yPoints, count);
-	}
-
-	private Polygon convertPointListToPoly(List<Point> horiz) {
-		int count = horiz.size();
-		int[] xPoints = new int[count];
-		int[] yPoints = new int[count];
-		for (int i = 0; i < count; i++) {
-			xPoints[i] = worldToViewX(horiz.get(i).x);
-			yPoints[i] = worldToViewY(horiz.get(i).y);
-		}
-		return new Polygon(xPoints, yPoints, count);
 	}
 
 	@Override
@@ -1029,10 +898,21 @@ class EditorView extends AbstractView {
 	}
 
 	@Override
+	public java.awt.Cursor getCursor(Cursor cursor) {
+		switch (cursor) {
+			case DRAG:
+				return DRAG_CURSOR;
+			case NORMAL:
+			default:
+				return DEFAULT_CURSOR;
+		}
+	}
+
+	@Override
 	public boolean mouseClicked(MouseEvent e) {
 		switch (e.getButton()) {
 			case MouseEvent.BUTTON2:
-				Player p = world.players.iterator().next();
+				Player p = world.getTestPlayer();
 				p.x = viewToWorldX(e.getX());
 				p.y = viewToWorldY(e.getY());
 				break;
@@ -1044,32 +924,30 @@ class EditorView extends AbstractView {
 
 	@Override
 	public boolean mousePressed(MouseEvent e) {
-		switch (e.getButton()) {
-			case MouseEvent.BUTTON1:
-				mouse1pressed(e);
-				break;
-			case MouseEvent.BUTTON3:
-				viewDrag = new XY(e);
-				ZeldaFrame.getInstance().setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				break;
-			default:
-				return false;
+		if (!super.mousePressed(e)) {
+			switch (e.getButton()) {
+				case MouseEvent.BUTTON1:
+					mouse1pressed(e);
+					break;
+				default:
+					return false;
+			}
+			return true;
 		}
 		return true;
 	}
 
 	@Override
 	public boolean mouseReleased(MouseEvent e) {
-		switch (e.getButton()) {
-			case MouseEvent.BUTTON1:
-				mouse1released(e);
-				break;
-			case MouseEvent.BUTTON3:
-				viewDrag = null;
-				ZeldaFrame.getInstance().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-				break;
-			default:
-				return false;
+		if (!super.mouseReleased(e)) {
+			switch (e.getButton()) {
+				case MouseEvent.BUTTON1:
+					mouse1released(e);
+					break;
+				default:
+					return false;
+			}
+			return true;
 		}
 		return true;
 	}
@@ -1086,18 +964,9 @@ class EditorView extends AbstractView {
 
 	@Override
 	public boolean mouseDragged(MouseEvent e) {
-		if (viewDrag != null) {
-			XY current = new XY(e);
-			move(viewDrag.diff(current));
-			viewDrag = current;
+		if (!super.mouseDragged(e)) {
+			return mouse1dragged(e);
 		}
-		mouse1dragged(e);
-		return true;
-	}
-
-	@Override
-	public boolean mouseWheelMoved(MouseWheelEvent e) {
-		zoom(-e.getWheelRotation(), new XY(e));
 		return true;
 	}
 

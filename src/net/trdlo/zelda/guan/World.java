@@ -21,6 +21,10 @@ class World implements CommandExecuter {
 
 	public static final double MINIMAL_DETECTABLE_DISTANCE = 0.01;
 
+	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SETFOV = Pattern.compile("^\\s*setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);
+
 	private String loadedFrom;
 
 	final Set<Point> points;
@@ -49,6 +53,13 @@ class World implements CommandExecuter {
 		players = new LinkedHashSet<>();
 
 		bounds = new Rectangle(-1000, -1000, 2000, 2000);
+	}
+
+	public Player getTestPlayer() {
+		if (players.isEmpty()) {
+			players.add(new Player());
+		}
+		return players.iterator().next();
 	}
 
 	public final void loadFromFile(String fileName) throws Exception {
@@ -180,8 +191,6 @@ class World implements CommandExecuter {
 		lines.remove(delLine);
 	}
 
-	private static final Pattern PAT_SETFOV = Pattern.compile("setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);
-
 	@Override
 	public boolean executeCommand(String command, Console console) {
 		Matcher m;
@@ -189,6 +198,19 @@ class World implements CommandExecuter {
 			double fov = NU.degToRad(Integer.valueOf(m.group(1)));
 			for (Player p : players) {
 				p.fov = fov;
+			}
+		} else if (PAT_SAVE.matcher(command).matches()) {
+			try {
+				save();
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
+			}
+		} else if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
+			String fileName = m.group("file");
+			try {
+				saveToFile(fileName);
+			} catch (Exception ex) {
+				Console.getInstance().echo("Could not save file: " + ex.toString());
 			}
 		} else {
 			return false;

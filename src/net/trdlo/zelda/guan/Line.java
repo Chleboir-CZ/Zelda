@@ -15,7 +15,7 @@ public final class Line {
 
 	public static final double MINIMAL_DENOMINOATOR = 1e-5;
 
-	public static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_LINE = Pattern.compile("^\\s*Line\\s+(\\d+)\\s+(\\d+)\\s*\\z", Pattern.CASE_INSENSITIVE);
 	public static final double SELECTION_MAX_DISTANCE = 3;
 	public static final double HIGHLIGHT_MAX_DISTANCE = 64;
 

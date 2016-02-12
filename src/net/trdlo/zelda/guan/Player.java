@@ -7,7 +7,7 @@ import net.trdlo.zelda.NU;
 
 public class Player {
 
-	public static final Pattern PAT_PLAYER = Pattern.compile("^\\s*Player\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*([-+]?\\d*\\.?\\d+)(?:\\s*(\\d*\\.?\\d+))?", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_PLAYER = Pattern.compile("^\\s*Player\\s*\\[\\s*([-+]?\\d*\\.?\\d+)\\s*;\\s*([-+]?\\d*\\.?\\d+)\\s*\\]\\s*([-+]?\\d*\\.?\\d+)(?:\\s*(\\d*\\.?\\d+))?", Pattern.CASE_INSENSITIVE);
 	public double x, y;
 	public double speed;
 	public double vx, vy;

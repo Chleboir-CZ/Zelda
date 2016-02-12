@@ -1,11 +1,10 @@
 package net.trdlo.zelda.guan;
 
 import java.awt.Graphics2D;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.ZeldaFrame;
@@ -15,7 +14,7 @@ public class Guan implements GameInterface {
 	private ZeldaFrame zFrame;
 
 	private World world;
-	private final AbstractView camera;
+	private final AbstractView view;
 
 	public Guan() {
 		world = new World();
@@ -25,18 +24,23 @@ public class Guan implements GameInterface {
 			Console.getInstance().echo("Could not load map! Proceeding with an empty one.");
 			world = new World();
 		}
-		camera = new EditorView(world, 0, 0, -8);
+
+		if (Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK)) {
+			view = new GameView(world);
+		} else {
+			view = new EditorView(world, 0, 0, -8);
+		}
 	}
 
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
-		camera.render(graphics, zFrame.getBounds(), renderFraction);
+		view.render(graphics, zFrame.getBounds(), renderFraction);
 	}
 
 	@Override
 	public void update() {
 		world.update();
-		camera.update();
+		view.update();
 	}
 
 	@Override
@@ -49,44 +53,19 @@ public class Guan implements GameInterface {
 		return "Guan tile-less game demo.";
 	}
 
-	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
-	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
-
 	@Override
 	public boolean executeCommand(String command, Console console) {
-		Matcher m;
-		if (camera.executeCommand(command, console)) {
-			return true;
-		} else if (world.executeCommand(command, console)) {
-			return true;
-		} else if (PAT_SAVE.matcher(command).matches()) {
-			try {
-				world.save();
-			} catch (Exception ex) {
-				Console.getInstance().echo("Could not save file: " + ex.toString());
-			}
-		} else if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
-			String fileName = m.group("file");
-			try {
-				world.saveToFile(fileName);
-			} catch (Exception ex) {
-				Console.getInstance().echo("Could not save file: " + ex.toString());
-			}
-		} else {
-			return false;
-		}
-
-		return true;
+		return view.executeCommand(command, console) || world.executeCommand(command, console);
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		camera.keyTyped(e);
+		view.keyTyped(e);
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (!camera.keyPressed(e)) {
+		if (!view.keyPressed(e)) {
 			if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
 				zFrame.terminate();
 			}
@@ -95,47 +74,47 @@ public class Guan implements GameInterface {
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		camera.keyReleased(e);
+		view.keyReleased(e);
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		camera.mouseClicked(e);
+		view.mouseClicked(e);
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		camera.mousePressed(e);
+		view.mousePressed(e);
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		camera.mouseReleased(e);
+		view.mouseReleased(e);
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		camera.mouseEntered(e);
+		view.mouseEntered(e);
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		camera.mouseExited(e);
+		view.mouseExited(e);
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		camera.mouseDragged(e);
+		view.mouseDragged(e);
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		camera.mouseMoved(e);
+		view.mouseMoved(e);
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		camera.mouseWheelMoved(e);
+		view.mouseWheelMoved(e);
 	}
 
 	public static void main(String args[]) {
