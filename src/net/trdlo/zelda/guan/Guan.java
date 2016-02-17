@@ -6,6 +6,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import net.trdlo.zelda.Console;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.ZeldaFrame;
 
@@ -118,6 +119,6 @@ public class Guan implements GameInterface {
 	}
 
 	public static void main(String args[]) {
-		ZeldaFrame.buildInstance(new Guan()).run();
+		FrameFactory.buildInstance(new Guan()).run();
 	}
 }

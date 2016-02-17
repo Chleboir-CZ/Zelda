@@ -2,20 +2,19 @@ package net.trdlo.zelda.guan;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.image.BufferedImage;
 import net.trdlo.zelda.Console;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.XY;
-import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.ZeldaCursor;
 
 class GameView extends AbstractView {
 
 	private static final Color DEFAULT_TORCH_FILL_COLOR = Color.WHITE;
 
-	private static final java.awt.Cursor DEFAULT_CURSOR = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0, 0), "blank");
+	private static final ZeldaCursor DEFAULT_CURSOR = null;//ZeldaCursor
 
 	public GameView(World world) {
 		super(world);
@@ -23,17 +22,17 @@ class GameView extends AbstractView {
 
 	protected void readAsynchronoutInput() {
 		Player p = world.getTestPlayer();
-		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_LEFT)) {
 			p.orientation -= 0.3;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_RIGHT)) {
 			p.orientation += 0.31;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_UP)) {
 			p.x += Math.cos(p.orientation) * p.speed;
 			p.y += Math.sin(p.orientation) * p.speed;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_DOWN)) {
 			p.x -= Math.cos(p.orientation) * p.speed;
 			p.y -= Math.sin(p.orientation) * p.speed;
 		}
@@ -83,7 +82,7 @@ class GameView extends AbstractView {
 	}
 
 	@Override
-	public java.awt.Cursor getCursor(Cursor cursor) {
+	public ZeldaCursor getCursor(CursorType cursor) {
 		return DEFAULT_CURSOR;
 	}
 

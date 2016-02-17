@@ -2,7 +2,6 @@ package net.trdlo.zelda.tiled;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
@@ -10,9 +9,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import net.trdlo.zelda.Console;
-import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
+import net.trdlo.zelda.XY;
+import net.trdlo.zelda.ZeldaFrame;
 
 public class TiledGame implements GameInterface, InputListener {
 
@@ -66,7 +67,7 @@ public class TiledGame implements GameInterface, InputListener {
 			}
 		}
 
-		Point p = zFrame.getMousePosition();
+		XY p = zFrame.getMouseXY();
 		if (p != null) {
 			int selX = (int) (getWorldX(p.x, p.y) + 0.5f);
 			int selY = (int) (getWorldY(p.x, p.y) + 0.5f);
@@ -234,7 +235,7 @@ public class TiledGame implements GameInterface, InputListener {
 
 	public static void main(String[] args) {
 		try {
-			ZeldaFrame.buildInstance(new TiledGame()).run();
+			FrameFactory.buildInstance(new TiledGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

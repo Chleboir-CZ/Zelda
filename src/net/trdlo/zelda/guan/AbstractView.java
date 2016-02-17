@@ -1,6 +1,5 @@
 package net.trdlo.zelda.guan;
 
-import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -9,12 +8,13 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.util.List;
 import net.trdlo.zelda.CommandExecuter;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.XY;
-import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.ZeldaCursor;
 
 abstract class AbstractView implements CommandExecuter {
 
-	public static enum Cursor {
+	public static enum CursorType {
 		NORMAL, DRAG
 	}
 
@@ -49,7 +49,7 @@ abstract class AbstractView implements CommandExecuter {
 	public abstract void render(Graphics2D graphics, float renderFraction);
 
 	private void firstRender() {
-		ZeldaFrame.getInstance().setCursor(getCursor(Cursor.NORMAL));
+		FrameFactory.getInstance().setCursor(getCursor(CursorType.NORMAL));
 	}
 
 	public final void render(Graphics2D graphics, Rectangle componentBounds, float renderFraction) {
@@ -66,7 +66,7 @@ abstract class AbstractView implements CommandExecuter {
 
 	public abstract boolean keyReleased(KeyEvent e);
 
-	public abstract java.awt.Cursor getCursor(Cursor cursor);
+	public abstract ZeldaCursor getCursor(CursorType cursor);
 
 	public abstract boolean mouseClicked(MouseEvent e);
 
@@ -74,7 +74,7 @@ abstract class AbstractView implements CommandExecuter {
 		switch (e.getButton()) {
 			case MouseEvent.BUTTON3:
 				viewDrag = new XY(e);
-				ZeldaFrame.getInstance().setCursor(getCursor(Cursor.DRAG));
+				FrameFactory.getInstance().setCursor(getCursor(CursorType.DRAG));
 				break;
 			default:
 				return false;
@@ -86,7 +86,7 @@ abstract class AbstractView implements CommandExecuter {
 		switch (e.getButton()) {
 			case MouseEvent.BUTTON3:
 				viewDrag = null;
-				ZeldaFrame.getInstance().setCursor(getCursor(Cursor.NORMAL));
+				FrameFactory.getInstance().setCursor(getCursor(CursorType.NORMAL));
 				break;
 			default:
 				return false;

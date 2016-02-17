@@ -16,8 +16,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.trdlo.zelda.Console;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.NU;
-import net.trdlo.zelda.ZeldaFrame;
+import net.trdlo.zelda.ZeldaCursor;
 
 class EditorView extends AbstractView {
 
@@ -25,8 +26,8 @@ class EditorView extends AbstractView {
 	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 	private static final Stroke SELECTION_STROKE = new BasicStroke(2);
 
-	private static final java.awt.Cursor DEFAULT_CURSOR = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.DEFAULT_CURSOR);
-	private static final java.awt.Cursor DRAG_CURSOR = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR);
+	private static final ZeldaCursor DEFAULT_CURSOR = null;//java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.DEFAULT_CURSOR);
+	private static final ZeldaCursor DRAG_CURSOR = null;//java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR);
 
 	private boolean boundsDebug = false;
 
@@ -89,17 +90,17 @@ class EditorView extends AbstractView {
 
 	private void readAsynchronoutInput() {
 		Player p = world.getTestPlayer();
-		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_LEFT)) {
 			p.orientation -= 0.3;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_RIGHT)) {
 			p.orientation += 0.31;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_UP)) {
 			p.x += Math.cos(p.orientation) * p.speed;
 			p.y += Math.sin(p.orientation) * p.speed;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
+		if (FrameFactory.getInstance().isPressed(KeyEvent.VK_DOWN)) {
 			p.x -= Math.cos(p.orientation) * p.speed;
 			p.y -= Math.sin(p.orientation) * p.speed;
 		}
@@ -286,16 +287,16 @@ class EditorView extends AbstractView {
 			graphics.setColor(Color.DARK_GRAY);
 			graphics.fillPolygon(horizPoly);
 			graphics.setColor(Color.PINK);
-			//graphics.drawPolygon(horizPoly);
-			Point first = horizont.get(0), prev = null;
-			for (Point p : horizont) {
-				if (prev != null) {
-					graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(p.x), worldToViewY(p.y));
-				}
-				prev = p;
-				renderPoint(graphics, p);
-			}
-			graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(first.x), worldToViewY(first.y));
+			graphics.drawPolygon(horizPoly);
+//			Point first = horizont.get(0), prev = null;
+//			for (Point p : horizont) {
+//				if (prev != null) {
+//					graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(p.x), worldToViewY(p.y));
+//				}
+//				prev = p;
+//				renderPoint(graphics, p);
+//			}
+//			graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(first.x), worldToViewY(first.y));
 
 			graphics.setStroke(DASHED_STROKE);
 			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
@@ -562,7 +563,7 @@ class EditorView extends AbstractView {
 
 	private void insertPointAtLine() {
 		if (nearestLine != null) {
-			Point p = nearestLine.getNearestPointInSegment(viewToWorld(ZeldaFrame.getInstance().getMouseXY()));
+			Point p = nearestLine.getNearestPointInSegment(viewToWorld(FrameFactory.getInstance().getMouseXY()));
 			if (p != null) {
 				if (snapToGrid && gridDensity != -1) {
 					p.roundToGrid(gridStep);
@@ -592,7 +593,7 @@ class EditorView extends AbstractView {
 		//TODO: zapracovat nejak snap to grid? => mozna snapovat na elipsy 1:4, 2:4, 3:4, 1:1, 3:2, 2:1, 3:1 ...
 		Point s = new Point((circleLine.A.x + circleLine.B.x) / 2, (circleLine.A.y + circleLine.B.y) / 2);
 		Line circleLineAxis = circleLine.getPerpendicular(s);
-		Point mP = viewToWorld(ZeldaFrame.getInstance().getMouseXY());
+		Point mP = viewToWorld(FrameFactory.getInstance().getMouseXY());
 		s = new Point((circleLine.A.x + mP.x) / 2, (circleLine.A.y + mP.y) / 2);
 		double nx = circleLine.A.x - mP.x;
 		double ny = circleLine.A.y - mP.y;
@@ -673,7 +674,7 @@ class EditorView extends AbstractView {
 	}
 
 	private void insert() {
-		XY mouseXY = ZeldaFrame.getInstance().getMouseXY();
+		XY mouseXY = FrameFactory.getInstance().getMouseXY();
 		Point mP = viewToWorld(mouseXY);
 
 		if (circleLine != null) {
@@ -898,7 +899,7 @@ class EditorView extends AbstractView {
 	}
 
 	@Override
-	public java.awt.Cursor getCursor(Cursor cursor) {
+	public ZeldaCursor getCursor(CursorType cursor) {
 		switch (cursor) {
 			case DRAG:
 				return DRAG_CURSOR;

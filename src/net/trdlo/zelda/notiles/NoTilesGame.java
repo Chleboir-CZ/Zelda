@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import net.trdlo.zelda.Console;
+import net.trdlo.zelda.FrameFactory;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
 import net.trdlo.zelda.ZeldaFrame;
@@ -387,7 +388,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 					delSelectedPoints();
 				}
 				if (c == KeyEvent.VK_SPACE) {
-					Point mp = new Point(viewToWorldX(zFrame.getMousePosition().getX()), viewToWorldY(zFrame.getMousePosition().getY()));
+					Point mp = new Point(viewToWorldX(zFrame.getMouseXY().x), viewToWorldY(zFrame.getMouseXY().y));
 					if (this.getPointAt(mp.x, mp.y) == null) {
 						world.points.add(new Point(mp.x, mp.y));
 					}
@@ -726,7 +727,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	public static void main(String[] args) {
 		try {
-			ZeldaFrame.buildInstance(new NoTilesGame()).run();
+			FrameFactory.buildInstance(new NoTilesGame()).run();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
