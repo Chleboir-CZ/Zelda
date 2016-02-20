@@ -4,6 +4,7 @@ import net.trdlo.zelda.XY;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Polygon;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
@@ -89,17 +90,17 @@ class EditorView extends AbstractView {
 
 	private void readAsynchronoutInput() {
 		Player p = world.getTestPlayer();
-		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_LEFT)) {
 			p.orientation -= 0.3;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_RIGHT)) {
 			p.orientation += 0.31;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_UP)) {
 			p.x += Math.cos(p.orientation) * p.speed;
 			p.y += Math.sin(p.orientation) * p.speed;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_DOWN)) {
 			p.x -= Math.cos(p.orientation) * p.speed;
 			p.y -= Math.sin(p.orientation) * p.speed;
 		}
@@ -225,6 +226,12 @@ class EditorView extends AbstractView {
 
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
+		for (Texture t : world.textures) {
+			XY vPos = worldToView(t.getPosition());
+			Image img = t.getImage();
+			graphics.drawImage(img, vPos.x, vPos.y, (int) (img.getWidth(null) * zoomCoef()), (int) (img.getHeight(null) * zoomCoef()), null);
+		}
+
 		renderGrid(graphics);
 
 		if (boundsDebug) {
@@ -286,16 +293,16 @@ class EditorView extends AbstractView {
 			graphics.setColor(Color.DARK_GRAY);
 			graphics.fillPolygon(horizPoly);
 			graphics.setColor(Color.PINK);
-			//graphics.drawPolygon(horizPoly);
-			Point first = horizont.get(0), prev = null;
-			for (Point p : horizont) {
-				if (prev != null) {
-					graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(p.x), worldToViewY(p.y));
-				}
-				prev = p;
-				renderPoint(graphics, p);
-			}
-			graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(first.x), worldToViewY(first.y));
+			graphics.drawPolygon(horizPoly);
+//			Point first = horizont.get(0), prev = null;
+//			for (Point p : horizont) {
+//				if (prev != null) {
+//					graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(p.x), worldToViewY(p.y));
+//				}
+//				prev = p;
+//				renderPoint(graphics, p);
+//			}
+//			graphics.drawLine(worldToViewX(prev.x), worldToViewY(prev.y), worldToViewX(first.x), worldToViewY(first.y));
 
 			graphics.setStroke(DASHED_STROKE);
 			int startAngle = -NU.radToDeg(player.orientation - player.fov / 2);
