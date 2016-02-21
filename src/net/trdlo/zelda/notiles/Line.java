@@ -102,6 +102,26 @@ public class Line {
 		return Line.constructFromTwoPoints(intersect, reflectedA);
 	}
 
+	public boolean isPointOnSegment(Point p) {
+		double vx = B.x - A.x;
+		double vy = B.y - A.y;
+		if (Math.abs(vx) > Math.abs(vy)) {
+			return (p.x - A.x) / vx >= 0 && (p.x - A.x) / vx <= 1;
+		} else {
+			return (p.y - A.y) / vy >= 0 && (p.y - A.y) / vy <= 1;
+		}
+	}
+	
+	public boolean isPointOnRay(Point p) {
+		double vx = B.x - A.x;
+		double vy = B.y - A.y;
+		if (Math.abs(vx) > Math.abs(vy)) {
+			return (p.x - A.x) / vx >= 0;
+		} else {
+			return (p.y - A.y) / vy >= 0;
+		}		
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -113,6 +133,3 @@ public class Line {
 		return sb.toString();
 	}
 }
-
-
-

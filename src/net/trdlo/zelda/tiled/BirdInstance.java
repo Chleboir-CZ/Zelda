@@ -29,7 +29,7 @@ public class BirdInstance extends GameObjectInstance {
 	private void randomPlaceBird() {
 //		boolean isVert = r.nextBoolean();
 //		boolean isMax = r.nextBoolean();
-//		TODO: prák může začít kdekoli po obvodu
+//		TODO: pták může začít kdekoli po obvodu
 
 		posX = -gameObject.size; // mělo být /2, ale při kreslení neadresujeme střed, nýbrž levý horní roh
 		posY = 0 + r.nextInt(world.mapHeight - 1);

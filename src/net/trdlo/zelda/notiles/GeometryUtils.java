@@ -13,12 +13,20 @@ public class GeometryUtils {
 
 	private static final int RAYTRACE_MAX_DEPTH = 64;
 
-	/**
-	 *
-	 * @param currentLine
-	 * @param collidableLines
-	 * @return
-	 */
+	public static Point iPOfSegmentAndRay(Line segment, Line ray) {
+		assert segment != null;
+		assert ray != null;
+
+		Point iP = ray.intersectPoint(segment);
+		if (iP != null) {
+			if (segment.isPointOnSegment(iP) && ray.isPointOnRay(iP)) {
+				return iP;
+			}
+		}
+		//buď není na úsečce a rayi, nebo je úsečka s rayem rovnoběžná
+		return null;
+	}
+
 	public static List<Line> constructRayPath(Line currentLine, Collection<WorldLine> collidableLines) {
 		List<Line> returnList = new ArrayList<>(RAYTRACE_MAX_DEPTH);
 		returnList.add(currentLine);
@@ -80,15 +88,19 @@ public class GeometryUtils {
 		}
 		return returnList;
 	}
+
+	public static Line getPerpendicularLine(Line l, Point p) {
+		return Line.constructFromPointAndNormal(p, l.b, -l.a);
+	}
 }
 
 class PointAndDistanceAndLine implements Comparable<PointAndDistanceAndLine> {
 
 	double dist;
 	Point p;
-	WorldLine line;
+	Line line;
 
-	public PointAndDistanceAndLine(double dist, Point p, WorldLine line) {
+	public PointAndDistanceAndLine(double dist, Point p, Line line) {
 		this.dist = dist;
 		this.p = p;
 		this.line = line;

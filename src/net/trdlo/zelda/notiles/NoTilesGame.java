@@ -88,6 +88,10 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	JFileChooser fileChooser;
 
+	//TEST STUFF
+	int i;
+	Line viewBackLine;
+
 	public NoTilesGame(World world) {
 		this.world = world;
 
@@ -101,9 +105,13 @@ public class NoTilesGame implements GameInterface, InputListener {
 		x = 0;
 		y = 0;
 		zoom = 1.5;
-		sight = 500;
+		sight = 1000;
 		fOV = Math.PI / 2;
 		orientation = Math.PI * 1.5;
+//		orientation = 0;
+		//DEBUG
+		i = 0;
+		viewBackLine = ViewUtils.getViewTriangleBack(sight, fOV, orientation, world.hero);
 
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(new FileFilter() {
@@ -130,9 +138,18 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	@Override
 	public void update() {
-//		getBoundsofView(world.points, world.hero, orientation, sight, fOV);
-//		ViewUtils.evaluatePointsByAngle(world.points, world.hero, orientation, fOV);
-//		viewPolygon = ViewUtils.getViewPolygon(fOV, orientation, sight, world.hero, world.lines, world.points);
+		if (i == 0) {
+			viewPolygon = ViewUtils.getViewPolygon2(fOV, orientation, sight, world.hero, world.lines, world.points);
+			viewBackLine = ViewUtils.getViewTriangleBack(sight, fOV, orientation, world.hero);
+//			System.out.println(viewPolygon.size());
+		}
+		ViewUtils.evaluatePointsByAngle(world.points, world.hero, orientation, fOV);
+//		i++;
+//		for (Line l : world.lines) {
+//			Point p = GeometryUtils.iPOfSegmentAndRay(l, world.ray);
+//			world.points.add(p);
+//			selectedPoints.add(p);
+//		}
 	}
 
 	@Override
@@ -144,9 +161,9 @@ public class NoTilesGame implements GameInterface, InputListener {
 		defaultStroke = graphics.getStroke();
 		defaultFont = graphics.getFont();
 		graphics.setStroke(dashedStroke);
-		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
-			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
-		}
+//		for (Line line : GeometryUtils.constructRayPath(world.ray, world.lines)) {
+//			graphics.drawLine(worldToViewXr(line.A.x), worldToViewYr(line.A.y), worldToViewXr(line.B.x), worldToViewYr(line.B.y));
+//		}
 		if (dragStart != null && dragEnd != null) {
 			Rectangle rect = new Rectangle(new java.awt.Point(worldToViewXr(dragStart.x), worldToViewYr(dragStart.y)));
 			rect.add(new java.awt.Point(worldToViewXr(dragEnd.x), worldToViewYr(dragEnd.y)));
@@ -154,10 +171,14 @@ public class NoTilesGame implements GameInterface, InputListener {
 			graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 		}
 
-//		graphics.setStroke(dashedStroke);
-//		for (Line l : viewPolygon) {
-//			graphics.drawLine(worldToViewXr(l.A.x), worldToViewYr(l.A.y), worldToViewXr(l.B.x), worldToViewYr(l.B.y));
-//		}
+		//DEBUG
+		graphics.setStroke(selectionStroke);
+		graphics.setColor(Color.yellow);
+		for (Line l : viewPolygon) {
+			graphics.drawLine(worldToViewXr(l.A.x), worldToViewYr(l.A.y), worldToViewXr(l.B.x), worldToViewYr(l.B.y));
+		}
+		graphics.setColor(Color.GREEN);
+		graphics.drawLine(worldToViewXr(viewBackLine.A.x), worldToViewYr(viewBackLine.A.y), worldToViewXr(viewBackLine.B.x), worldToViewYr(viewBackLine.B.y));
 		for (Point p : world.points) {
 			String textToDraw;
 			if (selectedPoints.contains(p)) {
@@ -242,7 +263,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 
 	public Point getPointAt(double x, double y) {
 		for (Point p : world.points) {
-			if (Math.abs((p.x - viewToWorldX(x))) < POINT_DISPLAY_SIZE / 2 && Math.abs((p.y - viewToWorldY(y))) < POINT_DISPLAY_SIZE / 2) {
+			if (Math.abs((p.x - viewToWorldX(x)) * zoom) < POINT_DISPLAY_SIZE / 2 && Math.abs((p.y - viewToWorldY(y)) * zoom) < POINT_DISPLAY_SIZE / 2) {
 				return p;
 			}
 		}

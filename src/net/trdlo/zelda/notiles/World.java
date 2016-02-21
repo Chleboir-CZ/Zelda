@@ -46,13 +46,13 @@ public class World {
 		Point p = new Point(500, 800);
 		Point q = new Point(200, 200);
 		Point r = new Point(800, 200);
-		world.hero = p;
-
+		world.hero = new Point(500, 480);
 		world.points.add(p);
 		world.points.add(q);
 		world.points.add(r);
-		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));
-		world.ray = WorldLine.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
+//		world.points.add(world.hero);
+//		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));
+//		world.ray = WorldLine.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
 		world.points.get(0).worldLineTo(world.points.get(1)).worldLineTo(world.points.get(2)).worldLineTo(world.points.get(0));
 		return world;
 	}
