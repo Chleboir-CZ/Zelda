@@ -12,6 +12,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
@@ -45,7 +46,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	private final Queue<KeyEvent> keyEventQueue;
 	private final Queue<MouseEvent> mouseEventQueue;
 
-	private static final boolean KEY_MAP[] = new boolean[256];
+	private final boolean keyMap[] = new boolean[256];
 	private boolean keyInputDebug = false;
 	private XY mouseXY = new XY(0, 0);
 
@@ -116,8 +117,12 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		setRenderLength(getTime() - renderStart);
 	}
 
-	public static boolean isPressed(int keyCode) {
-		return keyCode >= 0 && keyCode < 256 && KEY_MAP[keyCode];
+	public boolean isPressed(int keyCode) {
+		return keyCode >= 0 && keyCode < 256 && keyMap[keyCode];
+	}
+
+	public void clearPressedKeys() {
+		Arrays.fill(keyMap, false);
 	}
 
 	public XY getMouseXY() {
@@ -163,7 +168,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 					}
 					if (!console.keyPressed(e)) {
 						if (key < 256) {
-							KEY_MAP[key] = true;
+							keyMap[key] = true;
 						}
 						gameInterface.keyPressed(e);
 					}
@@ -174,7 +179,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 						console.echo(3000, "Released: " + key + ", char: '" + e.getKeyChar() + "'");
 					}
 					if (key < 256) {
-						KEY_MAP[key] = false;
+						keyMap[key] = false;
 					}
 					if (!console.keyReleased(e)) {
 						gameInterface.keyReleased(e);

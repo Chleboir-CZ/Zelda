@@ -1,10 +1,13 @@
 package net.trdlo.zelda.guan;
 
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 import net.trdlo.zelda.CommandExecuter;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.NU;
@@ -25,11 +29,14 @@ class World implements CommandExecuter {
 	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
 	private static final Pattern PAT_SETFOV = Pattern.compile("^\\s*setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);
 
+	public static final Pattern PAT_IMAGE = Pattern.compile("^img\\s+([a-zA-Z0-9/_\\-]+\\.(?:png|jpg))\\z", Pattern.CASE_INSENSITIVE);
+
 	private String loadedFrom;
 
 	final Set<Point> points;
 	final Set<Line> lines;
 	final Set<Player> players;
+	final Set<Texture> textures;
 
 	Rectangle bounds;
 
@@ -51,6 +58,7 @@ class World implements CommandExecuter {
 			}
 		};
 		players = new LinkedHashSet<>();
+		textures = new LinkedHashSet<>();
 
 		bounds = new Rectangle(-1000, -1000, 2000, 2000);
 	}
@@ -66,11 +74,30 @@ class World implements CommandExecuter {
 		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
 			String line;
 			Map<Integer, Point> idPointMap = new HashMap<>();
+			Map<String, BufferedImage> imageFileMap = new HashMap<>();
 			while ((line = br.readLine()) != null) {
 				if (Point.lineMatchesPattern(line)) {
 					LoadedPoint lp = Point.loadFromString(line);
 					idPointMap.put(lp.id, lp.point);
 					points.add(lp.point);
+					Matcher m;
+					if ((m = PAT_IMAGE.matcher(lp.point.getDescription())).matches()) {
+						String imgFileName = m.group(1);
+						BufferedImage img = imageFileMap.get(imgFileName);
+						if (img == null) {
+							try {
+								img = ImageIO.read(new File(imgFileName));
+								if (img != null) {
+									imageFileMap.put(imgFileName, img);
+								}
+							} catch (IOException ex) {
+
+							}
+						}
+						if (img != null) {
+							textures.add(new Texture(img, lp.point));
+						}
+					}
 				} else if (Line.lineMatchesPattern(line)) {
 					LoadedLine ll = Line.loadFromString(line);
 					Point A = idPointMap.get(ll.idA);

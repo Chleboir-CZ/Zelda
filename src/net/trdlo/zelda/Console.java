@@ -193,7 +193,7 @@ public class Console implements CommandExecuter {
 			visible = value;
 			motionStart = getTime() - Math.max(0, motionStart + MOTION_LENGTH - getTime());
 			if (value) {
-				//TODO: zFrame.clearKeysPressed()
+				ZeldaFrame.getInstance().clearPressedKeys();
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package net.trdlo.zelda.guan;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -23,17 +24,17 @@ class GameView extends AbstractView {
 
 	protected void readAsynchronoutInput() {
 		Player p = world.getTestPlayer();
-		if (ZeldaFrame.isPressed(KeyEvent.VK_LEFT)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_LEFT)) {
 			p.orientation -= 0.3;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_RIGHT)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_RIGHT)) {
 			p.orientation += 0.31;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_UP)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_UP)) {
 			p.x += Math.cos(p.orientation) * p.speed;
 			p.y += Math.sin(p.orientation) * p.speed;
 		}
-		if (ZeldaFrame.isPressed(KeyEvent.VK_DOWN)) {
+		if (ZeldaFrame.getInstance().isPressed(KeyEvent.VK_DOWN)) {
 			p.x -= Math.cos(p.orientation) * p.speed;
 			p.y -= Math.sin(p.orientation) * p.speed;
 		}
@@ -48,6 +49,13 @@ class GameView extends AbstractView {
 	@Override
 	public void render(Graphics2D graphics, float renderFraction) {
 		Player player = world.getTestPlayer();
+
+		//TODO: bude se renderovat jen do čtverce s baterkou
+		for (Texture t : world.textures) {
+			XY vPos = worldToView(t.getPosition());
+			Image img = t.getImage();
+			graphics.drawImage(img, vPos.x, vPos.y, (int) (img.getWidth(null) * zoomCoef()), (int) (img.getHeight(null) * zoomCoef()), null);
+		}
 
 		graphics.setColor(DEFAULT_TORCH_FILL_COLOR);
 		graphics.fillPolygon(convertPointListToPoly(TorchLight.getTorchLightPolygon(world.lines, player)));
