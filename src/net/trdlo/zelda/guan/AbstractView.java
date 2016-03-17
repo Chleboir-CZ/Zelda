@@ -47,20 +47,6 @@ abstract class AbstractView implements CommandExecuter {
 	}
 
 	/**
-	 * @TODO Refaktor: souřadnice vůči observerovi přímo z TorchLight
-	 * @param x
-	 * @param observer
-	 * @return
-	 */
-	protected int worldToObserverImageX(double x, Player observer) {
-		return (int) ((observer.vDist + x - observer.x) * zoomCoef());
-	}
-
-	protected int worldToObserverImageY(double y, Player observer) {
-		return (int) ((observer.vDist + y - observer.y) * zoomCoef());
-	}
-
-	/**
 	 * Vypočítá polygon pro vyrengerování do Image
 	 *
 	 * @param horiz
@@ -70,9 +56,13 @@ abstract class AbstractView implements CommandExecuter {
 		int count = horiz.size();
 		int[] xPoints = new int[count];
 		int[] yPoints = new int[count];
-		for (int i = 0; i < count; i++) {
-			xPoints[i] = worldToObserverImageX(horiz.get(i).x, observer);
-			yPoints[i] = worldToObserverImageY(horiz.get(i).y, observer);
+		double cx = observer.vDist - observer.x;
+		double cy = observer.vDist - observer.y;
+		double zc = zoomCoef();
+		int i = 0;
+		for (Point p : horiz) {
+			xPoints[i] = (int) ((p.x + cx) * zc);
+			yPoints[i++] = (int) ((p.y + cy) * zc);
 		}
 		return new Polygon(xPoints, yPoints, count);
 	}
