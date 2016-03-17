@@ -284,7 +284,7 @@ class EditorView extends AbstractView {
 
 		if (horizontEnabled) {
 			Player player = world.getTestPlayer();
-			horizont = TorchLight.getTorchLightPolygon(world.lines, player);
+			horizont = TorchLight.getTorchLightPointList(world.lines, player);
 			horizPoly = convertPointListToPoly(horizont);
 
 			Point pp = new Point(player.x, player.y);

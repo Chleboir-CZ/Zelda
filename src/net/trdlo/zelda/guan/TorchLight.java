@@ -34,7 +34,7 @@ public class TorchLight {
 
 	private final SortedSet<Point> radarPoints;
 
-	public static List<Point> getTorchLightPolygon(Set<Line> lines, Player observer) {
+	public static List<Point> getTorchLightPointList(Set<Line> lines, Player observer) {
 		TorchLight tl = new TorchLight(lines, observer);
 
 		return tl.computeHorizont();

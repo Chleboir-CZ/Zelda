@@ -24,7 +24,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 	private static ZeldaFrame instance = null;
 
-	private boolean terminate = false;
+	private volatile boolean terminate = false;
 	private long runStartTime = 0;
 
 	private long updateFrame = 0;
@@ -235,7 +235,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 	}
 
 	public void run() {
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
 		setIgnoreRepaint(true);
 		setUndecorated(true);
@@ -308,7 +308,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 			}
 		} finally {
 			gDevice.setFullScreenWindow(null);
-			dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+			//dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+			dispose();
 		}
 	}
 
@@ -363,6 +364,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 	@Override
 	public void windowClosing(WindowEvent e) {
+		terminate();
 	}
 
 	@Override
