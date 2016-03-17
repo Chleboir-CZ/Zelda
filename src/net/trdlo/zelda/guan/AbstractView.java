@@ -1,6 +1,5 @@
 package net.trdlo.zelda.guan;
 
-import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -15,6 +14,7 @@ import net.trdlo.zelda.ZeldaFrame;
 abstract class AbstractView implements CommandExecuter {
 
 	public static enum Cursor {
+
 		NORMAL, DRAG
 	}
 
@@ -42,6 +42,37 @@ abstract class AbstractView implements CommandExecuter {
 		for (int i = 0; i < count; i++) {
 			xPoints[i] = worldToViewX(horiz.get(i).x);
 			yPoints[i] = worldToViewY(horiz.get(i).y);
+		}
+		return new Polygon(xPoints, yPoints, count);
+	}
+
+	/**
+	 * @TODO Refaktor: souřadnice vůči observerovi přímo z TorchLight
+	 * @param x
+	 * @param observer
+	 * @return
+	 */
+	protected int worldToObserverImageX(double x, Player observer) {
+		return (int) ((observer.vDist + x - observer.x) * zoomCoef());
+	}
+
+	protected int worldToObserverImageY(double y, Player observer) {
+		return (int) ((observer.vDist + y - observer.y) * zoomCoef());
+	}
+
+	/**
+	 * Vypočítá polygon pro vyrengerování do Image
+	 *
+	 * @param horiz
+	 * @return
+	 */
+	protected final Polygon convertPointListToImagePoly(List<Point> horiz, Player observer) {
+		int count = horiz.size();
+		int[] xPoints = new int[count];
+		int[] yPoints = new int[count];
+		for (int i = 0; i < count; i++) {
+			xPoints[i] = worldToObserverImageX(horiz.get(i).x, observer);
+			yPoints[i] = worldToObserverImageY(horiz.get(i).y, observer);
 		}
 		return new Polygon(xPoints, yPoints, count);
 	}

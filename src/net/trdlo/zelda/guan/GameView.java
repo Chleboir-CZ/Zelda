@@ -1,5 +1,6 @@
 package net.trdlo.zelda.guan;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -8,13 +9,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import net.trdlo.zelda.Console;
+import net.trdlo.zelda.NU;
 import net.trdlo.zelda.XY;
 import net.trdlo.zelda.ZeldaFrame;
 
 class GameView extends AbstractView {
-
-	private static final Color DEFAULT_TORCH_FILL_COLOR = Color.WHITE;
 
 	private static final java.awt.Cursor DEFAULT_CURSOR = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB), new java.awt.Point(0, 0), "blank");
 
@@ -57,10 +58,31 @@ class GameView extends AbstractView {
 			graphics.drawImage(img, vPos.x, vPos.y, (int) (img.getWidth(null) * zoomCoef()), (int) (img.getHeight(null) * zoomCoef()), null);
 		}
 
-		graphics.setColor(DEFAULT_TORCH_FILL_COLOR);
-		graphics.fillPolygon(convertPointListToPoly(TorchLight.getTorchLightPolygon(world.lines, player)));
+		int imgSize = (int) (Math.ceil(player.vDist) * zoomCoef()) * 2;
+		BufferedImage torchImage = new BufferedImage(imgSize, imgSize, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D tig = (Graphics2D) torchImage.getGraphics();
 
+		tig.setColor(Color.BLACK);
+		tig.fillRect(0, 0, imgSize, imgSize);
+
+		tig.setComposite(AlphaComposite.Src);
+		tig.setColor(new Color(0, 0, 0, 0));
+		List<Point> pointList = TorchLight.getTorchLightPointList(world.lines, player);
+		tig.fillPolygon(convertPointListToImagePoly(pointList, player));
+		tig.setComposite(AlphaComposite.SrcOver);
+
+		BufferedImage gradientImage = new BufferedImage(imgSize, imgSize, BufferedImage.TYPE_INT_ARGB);
+		int sx = imgSize / 2;
+		for (int y = 0; y < imgSize; y++) {
+			for (int x = 0; x < imgSize; x++) {
+				int comp = (int) (Math.max(Math.sqrt(NU.sqr(x - sx) + NU.sqr(y - sx)) / sx, 0) * 255);
+				int color = comp << 24;
+				gradientImage.setRGB(x, y, color);
+			}
+		}
+		tig.drawImage(gradientImage, null, 0, 0);
 		XY p = worldToView(player);
+		graphics.drawImage(torchImage, p.x - sx, p.y - sx, null);
 
 		graphics.setColor(Color.ORANGE);
 		int pWidth = (int) (16 * zoomCoef());
