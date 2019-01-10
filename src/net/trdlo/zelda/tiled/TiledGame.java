@@ -186,6 +186,11 @@ public class TiledGame implements GameInterface, InputListener {
 		int selX = (int) Math.round(selXf);
 		int selY = (int) Math.round(selYf);
 		if (me.getButton() == MouseEvent.BUTTON1) {
+			if (!(world.getTileInstance(selX, selY) instanceof RoadInstance)) {
+				world.setTile(selX, selY, new RoadInstance(world.roadTile));
+			}
+		}
+		if (me.getButton() == MouseEvent.BUTTON3) {
 			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
 				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
 			}
@@ -228,6 +233,11 @@ public class TiledGame implements GameInterface, InputListener {
 		int selX = (int) Math.round(getWorldX(me.getX(), me.getY()));
 		int selY = (int) Math.round(getWorldY(me.getX(), me.getY()));
 		if ((me.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) == InputEvent.BUTTON1_DOWN_MASK) {
+			if (!(world.getTileInstance(selX, selY) instanceof RoadInstance)) {
+				world.setTile(selX, selY, new RoadInstance(world.roadTile));
+			}
+		}
+		if ((me.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) == InputEvent.BUTTON3_DOWN_MASK) {
 			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
 				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
 			}

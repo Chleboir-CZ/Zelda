@@ -46,6 +46,7 @@ public class World {
 	
 	public final Tile defaultTile;
 	public final Tile waterTile;
+	public final Tile roadTile;
 	private Set<Tile> tileLibrary = new HashSet<>();
 
 	private Set<GameObject> gameObjectLibrary = new HashSet<>();
@@ -59,6 +60,7 @@ public class World {
 		try {
 			tileLibrary.add(defaultTile = new Grass());
 			tileLibrary.add(waterTile = new Water());
+			tileLibrary.add(roadTile = new Road());
 			tileLibrary.add(new Stone());
 			tileLibrary.add(new Bush());
 
