@@ -5,18 +5,25 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.ZeldaFrame;
 import net.trdlo.zelda.GameInterface;
 import net.trdlo.zelda.InputListener;
+import net.trdlo.zelda.XY;
 
 public class TiledGame implements GameInterface, InputListener {
 
+	public static final float SCROLL_INCREMENT = 0.05f;
+	public static final float SCROLL_MAX = 0.5f;
+
 	private World world;
+
 	private float viewX, viewY, dx, dy;
 	private Rectangle bounds;
 
@@ -24,13 +31,12 @@ public class TiledGame implements GameInterface, InputListener {
 
 	private String debugString;
 
+	private long updateTime;
+
 	public TiledGame(World world, float startX, float startY) {
 		this.world = world;
 		this.viewX = startX;
 		this.viewY = startY;
-
-		dx = -0.1f; //tohle se má brát z vůle hráče a ne být přednastaveno, je to posun o 0.1 * 32px za jeden render
-		dy = -0.1f;
 	}
 
 	public TiledGame(World world) {
@@ -38,7 +44,7 @@ public class TiledGame implements GameInterface, InputListener {
 	}
 
 	public TiledGame() throws Exception {
-		this(World.loadFromFile(new File("maps/small.txt"), false));
+		this(World.loadFromFile(new File("maps/default.txt"), false));
 	}
 
 	@Override
@@ -60,9 +66,16 @@ public class TiledGame implements GameInterface, InputListener {
 
 		graphics.setClip(xOffset, yOffset, world.mapWidth * World.GRID_SIZE, world.mapHeight * World.GRID_SIZE);
 
-		for (int j = (int) (viewY - rHeight2); j < (int) Math.ceil(viewY + rHeight2); j++) {
-			for (int i = (int) (viewX - rWidth2); i < (int) Math.ceil(viewX + rWidth2); i++) {
-				graphics.drawImage(world.map[i + j * world.mapWidth].getTile().getImg(), xOffset + i * World.GRID_SIZE, yOffset + j * World.GRID_SIZE, null);
+		for (int y = (int) (viewY - rHeight2); y < (int) Math.ceil(viewY + rHeight2); y++) {
+			for (int x = (int) (viewX - rWidth2); x < (int) Math.ceil(viewX + rWidth2); x++) {
+				TileInstance tileInstance = world.getTileInstance(x, y);
+				int drawX = xOffset + x * World.GRID_SIZE;
+				int drawY = yOffset + y * World.GRID_SIZE;
+				for (BufferedImage img : tileInstance.getImgs(updateTime)) {
+					if (img != null) {
+						graphics.drawImage(img, drawX, drawY, null);
+					}
+				}
 			}
 		}
 
@@ -113,12 +126,12 @@ public class TiledGame implements GameInterface, InputListener {
 		float old = viewX;
 		viewX = Math.min(Math.max(viewX + dx, minX), maxX);
 		if (viewX == old) {
-			dx = -dx; //tady má být, že nedojde-li k posunu (splněno), pak se zastaví posouvání, dx = 0; nyní obrací směr posunu
+			dx = 0;
 		}
 		old = viewY;
 		viewY = Math.min(Math.max(viewY + dy, minY), maxY);
 		if (viewY == old) {
-			dy = -dy; //tady taky
+			dy = 0;
 		}
 	}
 
@@ -168,9 +181,30 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseClicked(MouseEvent me) {
-		float selX = getWorldX(me.getX(), me.getY());
-		float selY = getWorldY(me.getX(), me.getY());
-		debugString = String.format("Mouse cliced at [%d; %d] -> [%9.4f; %9.4f]", me.getX(), me.getY(), selX, selY);
+		float selXf = getWorldX(me.getX(), me.getY());
+		float selYf = getWorldY(me.getX(), me.getY());
+		int selX = (int) Math.round(selXf);
+		int selY = (int) Math.round(selYf);
+		if (me.getButton() == MouseEvent.BUTTON1) {
+			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
+				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
+			}
+		}
+		if (me.getButton() == MouseEvent.BUTTON2) {
+			debugString = String.format("Mouse clicked at [%d; %d] -> [%9.4f; %9.4f]", me.getX(), me.getY(), selXf, selYf);
+			TileInstance ti = world.getTileInstance(selX, selY);
+			if (ti != null) {
+				debugString += String.format(" Tile is of %s", ti.getClass().getName());
+				if (ti instanceof WaterInstance) {
+					WaterInstance wi = (WaterInstance) ti;
+					debugString += String.format(" Sides are [%d] Corners are [", wi.getGrassNeighbourCombo());
+					for (Integer c : wi.getGrassCorners()) {
+						debugString += c.toString();
+					}
+					debugString += "]";
+				}
+			}
+		}
 	}
 
 	@Override
@@ -190,11 +224,18 @@ public class TiledGame implements GameInterface, InputListener {
 	}
 
 	@Override
-	public void mouseDragged(MouseEvent e) {
+	public void mouseDragged(MouseEvent me) {
+		int selX = (int) Math.round(getWorldX(me.getX(), me.getY()));
+		int selY = (int) Math.round(getWorldY(me.getX(), me.getY()));
+		if ((me.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) == InputEvent.BUTTON1_DOWN_MASK) {
+			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
+				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
+			}
+		}
 	}
 
 	@Override
-	public void mouseMoved(MouseEvent e) {
+	public void mouseMoved(MouseEvent me) {
 	}
 
 	@Override
@@ -213,13 +254,30 @@ public class TiledGame implements GameInterface, InputListener {
 	}
 
 	@Override
-	public void update() {
-		world.update();
+	public void update(long time) {
+		updateTime = time;
+
+		XY mouse = zFrame.getMouseXY();
+		if (mouse.x < World.GRID_SIZE) {
+			dx = Math.max(-SCROLL_MAX, dx - SCROLL_INCREMENT);
+		} else if (mouse.x >= bounds.width - World.GRID_SIZE) {
+			dx = Math.min(SCROLL_MAX, dx + SCROLL_INCREMENT);
+		} else {
+			dx = dx > SCROLL_INCREMENT ? dx - SCROLL_INCREMENT : (dx < -SCROLL_INCREMENT ? dx + SCROLL_INCREMENT : 0);
+		}
+		if (mouse.y < World.GRID_SIZE) {
+			dy = Math.max(-SCROLL_MAX, dy - SCROLL_INCREMENT);
+		} else if (mouse.y >= bounds.height - World.GRID_SIZE) {
+			dy = Math.min(SCROLL_MAX, dy + SCROLL_INCREMENT);
+		} else {
+			dy = dy > SCROLL_INCREMENT ? dy - SCROLL_INCREMENT : (dy < -SCROLL_INCREMENT ? dy + SCROLL_INCREMENT : 0);
+		}
+
+		world.update(time);
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent mwe) {
-//		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override

@@ -137,7 +137,7 @@ public class NoTilesGame implements GameInterface, InputListener {
 	}
 
 	@Override
-	public void update() {
+	public void update(long time) {
 		if (i == 0) {
 			viewPolygon = ViewUtils.getViewPolygon2(fOV, orientation, sight, world.hero, world.lines, world.points);
 			viewBackLine = ViewUtils.getViewTriangleBack(sight, fOV, orientation, world.hero);

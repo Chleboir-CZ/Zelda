@@ -6,7 +6,7 @@ public interface GameInterface extends InputListener, CommandExecuter {
 
 	void render(Graphics2D graphics, float renderFraction);
 
-	void update();
+	void update(long time);
 
 	void setZeldaFrame(ZeldaFrame zFrame);
 

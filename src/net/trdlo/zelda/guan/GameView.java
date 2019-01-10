@@ -95,13 +95,13 @@ class GameView extends AbstractView {
 		int pWidth = (int) (16 * zoomCoef());
 		graphics.fillArc(p.x - pWidth / 2, p.y - pWidth / 2, pWidth, pWidth, 0, 360);
 
-		if ((System.nanoTime() / 50000000L % 40) == 0) {
+		/*if ((System.nanoTime() / 50000000L % 40) == 0) {
 			graphics.setStroke(Line.DEFAULT_STROKE);
 			graphics.setColor(Line.DEFAULT_COLOR);
 			for (Line line : world.lines) {
 				graphics.drawLine(worldToViewX(line.A.x), worldToViewY(line.A.y), worldToViewX(line.B.x), worldToViewY(line.B.y));
 			}
-		}
+		}*/
 	}
 
 	@Override

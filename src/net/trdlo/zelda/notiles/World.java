@@ -43,10 +43,10 @@ public class World {
 
 	public static World createTestWorld() {
 		World world = new World();
-		Point p = new Point(500, 800);
-		Point q = new Point(200, 200);
-		Point r = new Point(800, 200);
-		world.hero = new Point(500, 480);
+		Point p = new Point(000, 300);
+		Point q = new Point(-300, -300);
+		Point r = new Point(300, -300);
+		world.hero = new Point(000, 000);
 		world.points.add(p);
 		world.points.add(q);
 		world.points.add(r);
@@ -54,6 +54,20 @@ public class World {
 //		world.randomPointGenerator(20, q, new Point(p.x - q.x, p.y - q.y), new Point(r.x - q.x, r.y - q.y));
 //		world.ray = WorldLine.constructFromTwoPoints(new Point(500, 400), new Point(200, 200));
 		world.points.get(0).worldLineTo(world.points.get(1)).worldLineTo(world.points.get(2)).worldLineTo(world.points.get(0));
+
+		Point s = new Point(100, -200);
+		Point t = new Point(150, -266);
+		Point u = new Point(200, -110);
+		Point v = new Point(150, -21);
+		world.points.add(s);
+		world.points.add(t);
+		world.points.add(u);
+		world.points.add(v);
+
+		s.worldLineTo(t).worldLineTo(u).worldLineTo(v).worldLineTo(s);
+		//S nasledujicimi hodnotami padne na ASSERT CLIP-null
+		//s.worldLineTo(150, -250).worldLineTo(200, 0).worldLineTo(150, 100).worldLineTo(s);
+
 		return world;
 	}
 

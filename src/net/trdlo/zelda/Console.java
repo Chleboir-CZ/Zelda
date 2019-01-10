@@ -73,6 +73,7 @@ public class Console implements CommandExecuter {
 
 	private int currentHeight;
 	private boolean mouseCapture = false;
+	private boolean mouseCaptureClick = false;
 
 	private static Console instance;
 
@@ -201,6 +202,10 @@ public class Console implements CommandExecuter {
 	public boolean isVisible() {
 		return visible;
 	}
+	
+	public boolean isIncidentalWithConsole(int x, int y) {
+		return visible && x <= CONSOLE_WIDTH && y <= currentHeight;
+	}
 
 	private static final Pattern PAT_CLEAR = Pattern.compile("^\\s*clear\\s*$", Pattern.CASE_INSENSITIVE);
 
@@ -311,23 +316,30 @@ public class Console implements CommandExecuter {
 		return visible;
 	}
 
-	public boolean mousePressed(MouseEvent e) {
-		if (visible && e.getX() <= CONSOLE_WIDTH && e.getY() <= currentHeight) {
-			mouseCapture = true;
-			return true;
-		}
-
-		return false;
-	}
-
-	public boolean mouseClicked(MouseEvent e) {
+	public boolean mousePressed(MouseEvent me) {
+		mouseCapture = isIncidentalWithConsole(me.getX(), me.getY());
+		//echo("mousePressed at [%d; %d], %s", me.getX(), me.getY(), mouseCapture ? "capturing" : "ignoring" );
 		return mouseCapture;
 	}
 
-	public boolean mouseReleased(MouseEvent e) {
+	public boolean mouseReleased(MouseEvent me) {
+		//echo("mouseReleased at [%d; %d], %s", me.getX(), me.getY(), mouseCapture ? "capturing" : "ignoring" );
+		mouseCaptureClick = mouseCapture;
 		boolean retVal = mouseCapture;
 		mouseCapture = false;
 		return retVal;
+	}
+
+	public boolean mouseClicked(MouseEvent me) {
+		//echo("mouseClicked at [%d; %d], %s", me.getX(), me.getY(), mouseCaptureClick ? "capturing" : "ignoring");
+		boolean retVal = mouseCaptureClick;
+		mouseCaptureClick = false;
+		return retVal;
+	}
+	
+	public boolean mouseDragged(MouseEvent me) {
+		//echo(1000, "mouseDragged at [%d; %d], %s", me.getX(), me.getY(), mouseCapture ? "capturing" : "ignoring" );
+		return mouseCapture;
 	}
 
 }

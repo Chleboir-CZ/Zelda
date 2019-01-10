@@ -1,30 +1,29 @@
 package net.trdlo.zelda.tiled;
 
+import java.awt.image.BufferedImage;
 
-public class TileInstance {
 
-	private Tile tile;
-	private int timeOffset;
+public abstract class TileInstance {
+	
+	protected Tile tile;
+	protected TileInstance[] neighbours;
 
-	public TileInstance(Tile tile, int timeOffset) {
+	public TileInstance(Tile tile) {
 		this.tile = tile;
-		this.timeOffset = timeOffset;
+		neighbours = new TileInstance[World.NEIGHBOUR_COUNT];
 	}
 
 	public Tile getTile() {
 		return tile;
 	}
 
-	public int getTimeOffset() {
-		return timeOffset;
-	}
-
 	public void setTile(Tile tile) {
 		this.tile = tile;
 	}
 
-	public void setTimeOffset(int timeOffset) {
-		this.timeOffset = timeOffset;
-	}
+	public abstract BufferedImage[] getImgs(long time);
 
+	public void setNeighbour(int direction, TileInstance tileInstance) {
+		neighbours[direction] = tileInstance;
+	}
 }

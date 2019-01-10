@@ -37,6 +37,7 @@ class World implements CommandExecuter {
 	final Set<Line> lines;
 	final Set<Player> players;
 	final Set<Texture> textures;
+	//final Set<PointGroup> pointGroups;
 
 	Rectangle bounds;
 

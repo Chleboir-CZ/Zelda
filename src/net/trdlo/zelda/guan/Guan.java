@@ -38,7 +38,7 @@ public class Guan implements GameInterface {
 	}
 
 	@Override
-	public void update() {
+	public void update(long time) {
 		world.update();
 		view.update();
 	}
