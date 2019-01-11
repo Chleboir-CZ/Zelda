@@ -22,6 +22,7 @@ public class TiledGame implements GameInterface, InputListener {
 	public static final float SCROLL_INCREMENT = 0.05f;
 	public static final float SCROLL_MAX = 0.5f;
 
+	private final MenuInterface menu;
 	private World world;
 
 	private float viewX, viewY, dx, dy;
@@ -33,23 +34,27 @@ public class TiledGame implements GameInterface, InputListener {
 
 	private long updateTime;
 
-	public TiledGame(World world, float startX, float startY) {
+	public TiledGame(File mapFile) throws Exception {
+		menu = new Menu(this);
+
+		World w = new World();
+		if (mapFile != null) {
+			w.loadFromFile(mapFile);
+		}
+		
+		setWorld(w);
+	}
+	
+	public void setWorld(World world) {
 		this.world = world;
-		this.viewX = startX;
-		this.viewY = startY;
-	}
-
-	public TiledGame(World world) {
-		this(world, world.mapWidth / 2.0f, world.mapHeight / 2.0f);
-	}
-
-	public TiledGame() throws Exception {
-		this(World.loadFromFile(new File("maps/default.txt"), false));
+		viewX = world.mapWidth / 2.0f;
+		viewY = world.mapHeight / 2.0f;
 	}
 
 	@Override
 	public void setZeldaFrame(ZeldaFrame frame) {
 		this.zFrame = frame;
+		menu.setZeldaFrame(zFrame);
 	}
 
 	@Override
@@ -110,6 +115,8 @@ public class TiledGame implements GameInterface, InputListener {
 		if (debugString != null) {
 			graphics.drawString(debugString, 10, 50);
 		}
+
+		menu.render(graphics, renderFraction);
 	}
 
 	public void limitViewPosition(Rectangle bounds) {
@@ -181,6 +188,10 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseClicked(MouseEvent me) {
+		if (menu.mouseClicked(me)) {
+			return;
+		}
+
 		float selXf = getWorldX(me.getX(), me.getY());
 		float selYf = getWorldY(me.getX(), me.getY());
 		int selX = (int) Math.round(selXf);
@@ -214,10 +225,16 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public void mousePressed(MouseEvent me) {
+		if (menu.mousePressed(me)) {
+			return;
+		}
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent me) {
+		if (menu.mouseReleased(me)) {
+			return;
+		}
 	}
 
 	@Override
@@ -230,6 +247,10 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public void mouseDragged(MouseEvent me) {
+		if (menu.mouseDragged(me)) {
+			return;
+		}
+
 		int selX = (int) Math.round(getWorldX(me.getX(), me.getY()));
 		int selY = (int) Math.round(getWorldY(me.getX(), me.getY()));
 		if ((me.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) == InputEvent.BUTTON1_DOWN_MASK) {
@@ -250,17 +271,26 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public void keyTyped(KeyEvent ke) {
+		if (menu.keyTyped(ke)) {
+			return;
+		}
+
 	}
 
 	@Override
 	public void keyPressed(KeyEvent ke) {
-		if (ke.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			zFrame.terminate();
+		if (menu.keyPressed(ke)) {
+			return;
 		}
+
 	}
 
 	@Override
 	public void keyReleased(KeyEvent ke) {
+		if (menu.keyReleased(ke)) {
+			return;
+		}
+
 	}
 
 	@Override
@@ -284,6 +314,7 @@ public class TiledGame implements GameInterface, InputListener {
 		}
 
 		world.update(time);
+		menu.update(time);
 	}
 
 	@Override
@@ -292,11 +323,12 @@ public class TiledGame implements GameInterface, InputListener {
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
-		return false;
+		return menu.executeCommand(command, console);
 	}
 
 	@Override
 	public void listCommands(String command, Console console) {
+		menu.listCommands(command, console);
 	}
 
 	@Override
@@ -304,11 +336,7 @@ public class TiledGame implements GameInterface, InputListener {
 		return "Tiled Zelda game demo";
 	}
 
-	public static void main(String[] args) {
-		try {
-			ZeldaFrame.buildInstance(new TiledGame()).run();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+	public static void main(String[] args) throws Exception {
+		ZeldaFrame.buildInstance(new TiledGame(new File("maps/d.txt"))).run();
 	}
 }

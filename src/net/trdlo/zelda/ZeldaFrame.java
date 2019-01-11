@@ -52,12 +52,13 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 
 	private final Console console;
 
-	public static ZeldaFrame buildInstance(GameInterface game) {
+	public static ZeldaFrame buildInstance(GameInterface gameInterface) {
 		assert instance == null;
+		assert gameInterface != null;
 
-		instance = new ZeldaFrame(game.getWindowCaption(), game);
+		instance = new ZeldaFrame(gameInterface.getWindowCaption(), gameInterface);
 		instance.setListeners();
-		game.setZeldaFrame(instance);
+		gameInterface.setZeldaFrame(instance);
 		return instance;
 	}
 
@@ -160,7 +161,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 			console.echo("exit ends the program");
 		}
 	}
-	
+
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {
@@ -231,7 +232,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 				case MouseEvent.MOUSE_DRAGGED:
 					if (!console.mouseDragged(me)) {
 						gameInterface.mouseDragged(me);
-					}					
+					}
 					break;
 				case MouseEvent.MOUSE_WHEEL:
 					gameInterface.mouseWheelMoved((MouseWheelEvent) me);

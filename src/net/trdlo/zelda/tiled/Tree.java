@@ -10,14 +10,9 @@ public class Tree extends GameObject {
 
 	BufferedImage img;
 
-	public Tree() throws Exception {
+	public Tree() throws IOException {
 		super('T', 0.5f, Z_OVERHEAD);
-
-		try {
-			img = ImageIO.read(new File("images/tree.png"));
-		} catch (IOException ex) {
-			throw new Exception("Tree instantion did not load it's graphics correctly.", ex);
-		}
+		img = ImageIO.read(new File("images/tree.png"));
 	}
 
 	@Override

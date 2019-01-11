@@ -190,7 +190,7 @@ public class Console implements CommandExecuter {
 		messages.clear();
 	}
 
-	public void setVisible(boolean value) {
+	private void setVisible(boolean value) {
 		if (visible != value) {
 			visible = value;
 			motionStart = getTime() - Math.max(0, motionStart + MOTION_LENGTH - getTime());
@@ -200,11 +200,7 @@ public class Console implements CommandExecuter {
 		}
 	}
 
-	public boolean isVisible() {
-		return visible;
-	}
-
-	public boolean isIncidentalWithConsole(int x, int y) {
+	private boolean isIncidentalWithConsole(int x, int y) {
 		return visible && x <= CONSOLE_WIDTH && y <= currentHeight;
 	}
 
@@ -240,7 +236,7 @@ public class Console implements CommandExecuter {
 		}
 	}
 
-	public static boolean isPrintableChar(char c) {
+	private static boolean isPrintableChar(char c) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 		return (FEED_FONT.canDisplay(c)
 				&& !Character.isISOControl(c))

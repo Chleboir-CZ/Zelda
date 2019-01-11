@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-
 public abstract class SimplyAnimatedObject extends GameObject {
 
 	protected BufferedImage[] images;
@@ -30,7 +29,7 @@ public abstract class SimplyAnimatedObject extends GameObject {
 		AffineTransform t = new AffineTransform();
 		t.translate(x, y);
 		//tohle je jen ukázka zneužití aktuálního času na animaci
-		t.rotate(Math.sin(System.currentTimeMillis() / 200.0) * 0.5, 16, 16);
+		t.rotate(Math.sin(System.currentTimeMillis() / 200.0) * 0.5, World.GRID_SIZE / 2, World.GRID_SIZE / 2);
 
 		graphics.drawImage(images[frameIndex], t, null);
 
