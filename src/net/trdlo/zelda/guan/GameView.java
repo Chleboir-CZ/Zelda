@@ -169,4 +169,7 @@ class GameView extends AbstractView {
 		return false;
 	}
 
+	@Override
+	public void listCommands(String command, Console console) {
+	}
 }

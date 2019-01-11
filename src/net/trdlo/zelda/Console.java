@@ -12,6 +12,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Console implements CommandExecuter {
@@ -202,22 +203,41 @@ public class Console implements CommandExecuter {
 	public boolean isVisible() {
 		return visible;
 	}
-	
+
 	public boolean isIncidentalWithConsole(int x, int y) {
 		return visible && x <= CONSOLE_WIDTH && y <= currentHeight;
 	}
 
-	private static final Pattern PAT_CLEAR = Pattern.compile("^\\s*clear\\s*$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_CLEAR = Pattern.compile("^\\s*clear\\s*\\z", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_HELP = Pattern.compile("^\\s*help\\s*(.*)\\s*\\z", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
+		Matcher m;
 		if (PAT_CLEAR.matcher(command).matches()) {
 			messages.clear();
+		} else if ((m = PAT_HELP.matcher(command)).matches()) {
+			for (CommandExecuter executer : executers) {
+				executer.listCommands(m.group(1), console);
+			}
 		} else {
 			return false;
 		}
 
 		return true;
+	}
+
+	@Override
+	public void listCommands(String command, Console console) {
+		if (command.isEmpty()) {
+			console.echo("== console commands ==");
+			console.echo("clear");
+			console.echo("help");
+		} else if (PAT_CLEAR.matcher(command).matches()) {
+			console.echo("clear clears the console");
+		} else if (PAT_HELP.matcher(command).matches()) {
+			console.echo("help displays the list of known commands. If a command parameter is specified, details of it are displayed.");
+		}
 	}
 
 	public static boolean isPrintableChar(char c) {
@@ -336,7 +356,7 @@ public class Console implements CommandExecuter {
 		mouseCaptureClick = false;
 		return retVal;
 	}
-	
+
 	public boolean mouseDragged(MouseEvent me) {
 		//echo(1000, "mouseDragged at [%d; %d], %s", me.getX(), me.getY(), mouseCapture ? "capturing" : "ignoring" );
 		return mouseCapture;

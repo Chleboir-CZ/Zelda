@@ -25,10 +25,6 @@ class World implements CommandExecuter {
 
 	public static final double MINIMAL_DETECTABLE_DISTANCE = 0.01;
 
-	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*$", Pattern.CASE_INSENSITIVE);
-	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*$", Pattern.CASE_INSENSITIVE);
-	private static final Pattern PAT_SETFOV = Pattern.compile("^\\s*setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);
-
 	public static final Pattern PAT_IMAGE = Pattern.compile("^img\\s+([a-zA-Z0-9/_\\-]+\\.(?:png|jpg))\\z", Pattern.CASE_INSENSITIVE);
 
 	private String loadedFrom;
@@ -218,6 +214,11 @@ class World implements CommandExecuter {
 	public void deleteLine(Line delLine) {
 		lines.remove(delLine);
 	}
+	
+	private static final Pattern PAT_SETFOV = Pattern.compile("^\\s*setfov\\s+(\\d+)\\z", Pattern.CASE_INSENSITIVE);	
+	private static final Pattern PAT_SETFOV_HELP = Pattern.compile("^\\s*setfov\\s*\\z", Pattern.CASE_INSENSITIVE);	
+	private static final Pattern PAT_SAVE = Pattern.compile("^\\s*save\\s*\\z", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save\\s+(?<file>.+)\\s*\\z", Pattern.CASE_INSENSITIVE);
 
 	@Override
 	public boolean executeCommand(String command, Console console) {
@@ -245,4 +246,17 @@ class World implements CommandExecuter {
 		}
 		return true;
 	}
+
+	@Override
+	public void listCommands(String command, Console console) {
+		if (command.isEmpty()) {
+			console.echo("== world commands ==");
+			console.echo("setfov");
+			console.echo("save");
+		} else if (PAT_SETFOV_HELP.matcher(command).matches()) {
+			console.echo("setfov takes a number parameter in degrees, changing the field of view.");
+		} else if (PAT_SAVE.matcher(command).matches()) {
+			console.echo("save saves the world to it's file, if a filename is given it acts as \"save as\"");
+		}
+	}	
 }

@@ -148,6 +148,19 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		return true;
 	}
 
+	@Override
+	public void listCommands(String command, Console console) {
+		if (command.isEmpty()) {
+			console.echo("== main window commands ==");
+			console.echo("key-debug");
+			console.echo("exit");
+		} else if (PAT_GET_KEY_DEBUG.matcher(command).matches()) {
+			console.echo("key-debug takes a parameter of 0/1 to turn on echoing of pressed keys. If left out, reports the state of the setting.");
+		} else if (PAT_EXIT.matcher(command).matches()) {
+			console.echo("exit ends the program");
+		}
+	}
+	
 	public void dispatchInput() {
 		KeyEvent e;
 		while ((e = keyEventQueue.poll()) != null) {

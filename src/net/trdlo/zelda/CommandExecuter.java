@@ -9,5 +9,12 @@ public interface CommandExecuter {
 	 * @param console	konzole, do které může dávat odezvu
 	 * @return	zda příkaz zpracoval; pokud vrátí false, bude se příkazem zabývat někdo další
 	 */
-	public boolean executeCommand(String command, Console console);
+	boolean executeCommand(String command, Console console);
+	
+	/**
+	 * Vypíše do konzole seznam příkazů a pokud je udán příkaz, pak jeho podrobnosti
+	 * @param command 
+	 * @param console 
+	 */
+	void listCommands(String command, Console console);
 }

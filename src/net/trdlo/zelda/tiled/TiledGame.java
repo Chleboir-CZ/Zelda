@@ -296,6 +296,10 @@ public class TiledGame implements GameInterface, InputListener {
 	}
 
 	@Override
+	public void listCommands(String command, Console console) {
+	}
+
+	@Override
 	public String getWindowCaption() {
 		return "Tiled Zelda game demo";
 	}

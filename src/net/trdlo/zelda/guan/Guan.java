@@ -59,6 +59,12 @@ public class Guan implements GameInterface {
 	}
 
 	@Override
+	public void listCommands(String command, Console console) {
+		view.listCommands(command, console);
+		world.listCommands(command, console);
+	}	
+
+	@Override
 	public void keyTyped(KeyEvent e) {
 		view.keyTyped(e);
 	}

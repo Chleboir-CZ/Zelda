@@ -340,10 +340,10 @@ class EditorView extends AbstractView {
 			graphics.setStroke(DASHED_STROKE);
 			graphics.setColor(Color.LIGHT_GRAY);
 			graphics.drawRect(
-				worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
-				worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
-				(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
-				(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
+					worldToViewX(Math.min(dragStart.getX(), dragEnd.getX())),
+					worldToViewY(Math.min(dragStart.getY(), dragEnd.getY())),
+					(int) (Math.abs(dragStart.getX() - dragEnd.getX()) * zoomCoef()),
+					(int) (Math.abs(dragStart.getY() - dragEnd.getY()) * zoomCoef()));
 		}
 
 		if (insertedLine != null) {
@@ -800,8 +800,8 @@ class EditorView extends AbstractView {
 	private static boolean isPrintableChar(char c) {
 		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
 		return (!Character.isISOControl(c))
-			&& c != KeyEvent.CHAR_UNDEFINED
-			&& block != null && block != Character.UnicodeBlock.SPECIALS;
+				&& c != KeyEvent.CHAR_UNDEFINED
+				&& block != null && block != Character.UnicodeBlock.SPECIALS;
 	}
 
 	private boolean charTyped(char c) {
@@ -994,6 +994,19 @@ class EditorView extends AbstractView {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public void listCommands(String command, Console console) {
+		if (command.isEmpty()) {
+			console.echo("== editor commands ==");
+			console.echo("bounds-debug");
+			console.echo("setdescription");
+		} else if (PAT_GET_BOUNDS_DEBUG.matcher(command).matches()) {
+			console.echo("bounds-debug takes a parameter of 0/1 to turn on the displaying of bounds. If left out, reports the state of the setting.");
+		} else if (PAT_DESCRIBE.matcher(command).matches()) {
+			console.echo("setdescription sets the description to selected points");
+		}
 	}
 
 }

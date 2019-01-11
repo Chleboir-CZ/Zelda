@@ -741,6 +741,10 @@ public class NoTilesGame implements GameInterface, InputListener {
 	}
 
 	@Override
+	public void listCommands(String command, Console console) {
+	}
+
+	@Override
 	public String getWindowCaption() {
 		return "Some freakin' title here!";
 	}
