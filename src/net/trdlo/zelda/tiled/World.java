@@ -5,13 +5,17 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import net.trdlo.zelda.XY;
 
 public class World {
@@ -132,17 +136,20 @@ public class World {
 		}
 	}
 
-	private void load(BufferedReader reader) throws IOException, MapLoadException {
-		String line;
+	private void fromString(String data) throws MapLoadException {
 		int y = 0;
 		int maxRowLength = 0;
 		List<List<TileInstance>> rows = new ArrayList<>();
+		objectInstances.clear();
 
-		while ((line = reader.readLine()) != null) {
+		Scanner scanner = new Scanner(data);
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+
 			if (line.isEmpty()) {
 				continue;
 			}
-			
+
 			List<TileInstance> row = new ArrayList<>(line.length());
 
 			for (int x = 0; x < line.length(); x++) {
@@ -171,6 +178,7 @@ public class World {
 			rows.add(row);
 			y++;
 		}
+		scanner.close();
 
 		if (maxRowLength < 8 || rows.size() < 8) {
 			throw new MapLoadException(String.format("Minimal map size is 8 x 8 tiles, here we have %d x %d", maxRowLength, rows.size()));
@@ -192,6 +200,17 @@ public class World {
 		updateTilesNeighbours();
 	}
 
+	private void load(BufferedReader reader) throws IOException, MapLoadException {
+		String line;
+		StringBuilder sb = new StringBuilder();
+		char[] arr = new char[8 * 1024];
+		int numCharsRead;
+		while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1) {
+			sb.append(arr, 0, numCharsRead);
+		}
+		fromString(sb.toString());
+	}
+
 	public void loadFromFile(File file) throws MapLoadException {
 		try {
 			load(new BufferedReader(new InputStreamReader(new FileInputStream(file))));
@@ -199,6 +218,28 @@ public class World {
 			throw new MapLoadException(String.format("Map file %s not found!", file.getAbsolutePath()), ex);
 		} catch (IOException ex) {
 			throw new MapLoadException(String.format("IOException while loading %s!", file.getAbsolutePath()), ex);
+		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (int y = 0; y < mapHeight; y++) {
+			for (int x = 0; x < mapWidth; x++) {
+				sb.append(tileMap[x + y * mapWidth].getTile().getIdentifier());
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+
+	public void save(Writer writer) throws IOException {
+		writer.write(toString());
+	}
+
+	public void saveToFile(File file) throws FileNotFoundException, IOException {
+		try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
+			save(writer);
 		}
 	}
 }

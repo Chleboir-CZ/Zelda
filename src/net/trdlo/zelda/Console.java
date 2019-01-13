@@ -12,6 +12,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +20,7 @@ public class Console implements CommandExecuter {
 
 	private static class Message {
 
-		private static final int DEFAULT_LIFETIME = 0;
+		private static final int DEFAULT_LIFETIME = 1000 * 60 * 5;
 		private static final int FADE_LENGTH = 1000;
 
 		private final String format;
@@ -30,10 +31,6 @@ public class Console implements CommandExecuter {
 			this.format = format;
 			this.params = params;
 			this.removeTime = (lifeTime != 0) ? (getTime() + lifeTime) : 0;
-		}
-
-		public Message(String text, long lifeTime) {
-			this(text, lifeTime, (Object[]) null);
 		}
 
 		public long getRemoveTime() {
@@ -66,8 +63,8 @@ public class Console implements CommandExecuter {
 	private static final Stroke DEFAULT_STROKE = new BasicStroke(1);
 
 	private final List<Message> messages = new LinkedList<>();
-	private StringBuilder currentCommand = new StringBuilder();
-	private List<CommandExecuter> executers = new ArrayList<>();
+	private final StringBuilder currentCommand = new StringBuilder();
+	private final List<CommandExecuter> executers = new ArrayList<>();
 
 	private long motionStart;
 	private boolean visible = false;
@@ -139,43 +136,42 @@ public class Console implements CommandExecuter {
 		graphics.drawString("_", PADDING + fm.stringWidth(stringBeforeCursor), y);
 
 		y -= fontLineHeight;
-		int visibleMsgCount = (currentHeight - (2 * PADDING)) / fontLineHeight;
+		int remainingVisibleLines = (currentHeight - (2 * PADDING)) / fontLineHeight;
 		int i = 0;
-		while (i < messages.size()) {
-			Message msg = messages.get(i);
-			if (msg.removeTime != 0 && msg.removeTime < time) {
-				messages.remove(i);
-				continue;
+		MSG_CYCLE:
+		for (Message msg : messages) {
+			try (Scanner scanner = new Scanner(msg.toString())) {
+				while (scanner.hasNextLine()) {
+					String line = scanner.nextLine();
+					graphics.setColor(new Color(255, 255, 255, msg.getFadeAlpha()));
+					graphics.drawString(line, PADDING, y);
+					y -= fontLineHeight;
+					if (--remainingVisibleLines == 0) {
+						break MSG_CYCLE;
+					}
+				}
 			}
-
-			if (i < visibleMsgCount) {
-				graphics.setColor(new Color(255, 255, 255, msg.getFadeAlpha()));
-				graphics.drawString(msg.toString(), PADDING, y);
-				y -= fontLineHeight;
-			}
-			i++;
 		}
 		graphics.setClip(null);
 	}
 
 	public void update() {
-
+		long time = getTime();
+		messages.removeIf(msg -> msg.removeTime != 0 && msg.removeTime < time);
 	}
 
 	private static long getTime() {
 		return System.nanoTime() / 1000000L;
 	}
 
-	public void echo(int lifeTime, String text) {
-		Message msg = new Message(text, lifeTime);
-		messages.add(0, msg);
-		setVisible(true);
-	}
-
 	public void echo(int lifeTime, String format, Object... params) {
 		Message msg = new Message(format, lifeTime, params);
 		messages.add(0, msg);
 		setVisible(true);
+	}
+
+	public void echo(int lifeTime, String text) {
+		echo(lifeTime, text, (Object[]) null);
 	}
 
 	public void echo(String text) {

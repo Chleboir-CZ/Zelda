@@ -274,7 +274,10 @@ public class TiledGame implements GameInterface, InputListener {
 		if (menu.keyTyped(ke)) {
 			return;
 		}
-
+		
+		if (ke.getKeyChar() == 't') {
+			Console.getInstance().echo(5000, world.toString());
+		}
 	}
 
 	@Override
