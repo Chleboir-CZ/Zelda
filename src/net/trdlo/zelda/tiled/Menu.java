@@ -6,6 +6,7 @@ import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.ZeldaFrame;
 
@@ -77,19 +78,21 @@ public class Menu implements MenuInterface {
 
 	@Override
 	public boolean keyTyped(KeyEvent e) {
-		char typedLower = Character.toLowerCase(e.getKeyChar());
-		if (typedLower == 'x') {
-			zFrame.terminate();
-		}
+		if (visible) {
+			char typedLower = Character.toLowerCase(e.getKeyChar());
+			if (typedLower == 'x') {
+				zFrame.terminate();
+			}
 
-		if (typedLower == 'd' || typedLower == 's' || typedLower == 'h' || typedLower == 'v') {
-			try {
-				World w = new World();
-				w.loadFromFile(new File("maps/" + typedLower + ".txt"));
-				tiledGame.setWorld(w);
-			} catch (Exception ex) {
-				Console.getInstance().echo("Could not load map " + typedLower + ".txt");
-				Console.getInstance().echo(ex.getMessage());
+			if (typedLower == 'd' || typedLower == 's' || typedLower == 'h' || typedLower == 'v') {
+				try {
+					World w = new World();
+					w.loadMapFromFile(new File("maps/" + typedLower + ".txt"));
+					tiledGame.setWorld(w);
+				} catch (IOException | MapLoadException ex) {
+					Console.getInstance().echo("Could not load map " + typedLower + ".txt");
+					Console.getInstance().echo(ex.getMessage());
+				}
 			}
 		}
 

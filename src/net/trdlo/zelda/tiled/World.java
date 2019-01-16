@@ -18,6 +18,11 @@ import java.util.Map;
 import java.util.Scanner;
 import net.trdlo.zelda.XY;
 
+/**
+ * The World stores the level data, both static (tiles, staticObjects) and dynamic (gameObjects).
+ *
+ * @author bayer
+ */
 public class World {
 
 	public static final int GRID_SIZE = 64;
@@ -44,31 +49,39 @@ public class World {
 		new XY(-1, -1)
 	};
 
-	public static Tile defaultTile, grassTile, waterTile, roadTile;
-	private static Map<Character, Identifiable> serializationDictionary = new HashMap<>();
+	public static final int getOppositeDirection(int direction) {
+		return direction ^ 2; //XOR magic: inverting the 2nd bit reverses the direction :-)
+	}
 
-	int mapWidth;
-	int mapHeight;
-	TileInstance[] tileMap;
+	private File currentFile;
+	
+	public static Tile defaultTile, grassTile, waterTile, roadTile;
+	private static Map<Character, Tile> tileDictionary = new HashMap<>();
+
+	int width;
+	int height;
+	TileInstance[] tileInstances;
+
+	private static Map<Character, GameObject> gameObjectDictionary = new HashMap<>();
 	List<GameObjectInstance> objectInstances = new ArrayList<>();
 
 	public World() throws IOException {
 		if (defaultTile == null) {
 			defaultTile = grassTile = new Grass();
-			serializationDictionary.put(grassTile.getIdentifier(), grassTile);
+			tileDictionary.put(grassTile.identifier, grassTile);
 			waterTile = new Water();
-			serializationDictionary.put(waterTile.getIdentifier(), waterTile);
+			tileDictionary.put(waterTile.identifier, waterTile);
 			roadTile = new Road();
-			serializationDictionary.put(roadTile.getIdentifier(), roadTile);
+			tileDictionary.put(roadTile.identifier, roadTile);
 			Stone stone = new Stone();
-			serializationDictionary.put(stone.getIdentifier(), stone);
+			tileDictionary.put(stone.identifier, stone);
 			Bush bush = new Bush();
-			serializationDictionary.put(bush.getIdentifier(), bush);
+			tileDictionary.put(bush.identifier, bush);
 
 			GameObject tree = new Tree();
-			serializationDictionary.put(tree.getIdentifier(), tree);
+			gameObjectDictionary.put(tree.identifier, tree);
 			GameObject bird = new Bird(this);
-			serializationDictionary.put(bird.getIdentifier(), bird);
+			gameObjectDictionary.put(bird.identifier, bird);
 		}
 	}
 
@@ -79,18 +92,18 @@ public class World {
 	}
 
 	public TileInstance getTileInstance(int x, int y) {
-		if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+		if (x < 0 || x >= width || y < 0 || y >= height) {
 			return null;
 		} else {
-			return tileMap[x + y * mapWidth];
+			return tileInstances[x + y * width];
 		}
 	}
 
 	private void setTileInstance(int x, int y, TileInstance tileInstance) {
-		if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+		if (x < 0 || x >= width || y < 0 || y >= height) {
 			throw new IndexOutOfBoundsException();
 		} else {
-			tileMap[x + y * mapWidth] = tileInstance;
+			tileInstances[x + y * width] = tileInstance;
 		}
 	}
 
@@ -103,31 +116,37 @@ public class World {
 		}
 	}
 
-	private void updateTilesNeighbours() {
-		for (int y = 0; y < mapHeight; y++) {
-			for (int x = 0; x < mapWidth; x++) {
+	private void updateTileNeighboursBiDirectional(int x, int y) {
+		TileInstance tileInstance = getTileInstance(x, y);
+		for (int direction = 0; direction < NEIGHBOUR_COUNT; direction++) {
+			XY coord = NEIGHBOUR_COORDINATES[direction];
+			TileInstance neighbour = getTileInstance(x + coord.x, y + coord.y);
+			tileInstance.setNeighbour(direction, neighbour);
+			if (neighbour != null) {
+				neighbour.setNeighbour(getOppositeDirection(direction), tileInstance);
+			}
+		}
+	}
+
+	private void updateAllTilesNeighbours() {
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
 				updateTileNeighbours(x, y);
 			}
 		}
 	}
 
-	public void setTile(int x, int y, TileInstance tileInstance) {
+	public void setTileInstanceUpdateNeighbours(int x, int y, TileInstance tileInstance) {
 		setTileInstance(x, y, tileInstance);
-		updateTileNeighbours(x, y);
-		for (int direction = 0; direction < NEIGHBOUR_COUNT; direction++) {
-			XY coord = NEIGHBOUR_COORDINATES[direction];
-			if (x + coord.x >= 0 && x + coord.x < mapWidth && y + coord.y >= 0 && y + coord.y < mapHeight) {
-				updateTileNeighbours(x + coord.x, y + coord.y);
-			}
-		}
+		updateTileNeighboursBiDirectional(x, y);
 	}
 
 	protected void saveToWriter(BufferedWriter writer) throws Exception {
 		try {
-			writer.write(String.valueOf(mapWidth) + "\n" + String.valueOf(mapHeight) + "\n");
-			for (int y = 0; y < mapHeight; y++) {
-				for (int x = 0; x < mapWidth; x++) {
-					writer.write(tileMap[x + y * mapWidth].getTile().getIdentifier());
+			writer.write(String.valueOf(width) + "\n" + String.valueOf(height) + "\n");
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					writer.write(tileInstances[x + y * width].getTile().identifier);
 				}
 				writer.write("\n");
 			}
@@ -136,111 +155,158 @@ public class World {
 		}
 	}
 
-	private void fromString(String data) throws MapLoadException {
+	/**
+	 * Loads the map from a string up to the first empty line. If lines differ in length, they will be padded with default tiles. The map has to be larger than
+	 * 8 x 8 tiles (would probably indicate a format error)
+	 *
+	 * @param data
+	 * @throws MapLoadException on unknown tile identifier or insufficient map size
+	 */
+	private void mapFromString(String data) throws MapLoadException {
 		int y = 0;
 		int maxRowLength = 0;
 		List<List<TileInstance>> rows = new ArrayList<>();
-		objectInstances.clear();
 
-		Scanner scanner = new Scanner(data);
-		while (scanner.hasNextLine()) {
-			String line = scanner.nextLine();
-
-			if (line.isEmpty()) {
-				continue;
-			}
-
-			List<TileInstance> row = new ArrayList<>(line.length());
-
-			for (int x = 0; x < line.length(); x++) {
-				char tileChar = line.charAt(x);
-				Identifiable identifiable = serializationDictionary.get(tileChar);
-
-				Tile tile;
-				if (identifiable instanceof Tile) {
-					tile = (Tile) identifiable;
-				} else {
-					tile = defaultTile;
-
-					if (identifiable instanceof GameObject) {
-						GameObject gObject = (GameObject) identifiable;
-						GameObjectInstance goInstance = gObject.getInstance(x, y, null);
-						objectInstances.add(goInstance);
-					} else {
-						//throw new Exception("No known object or tile defined for '" + tileChar + "' found");
-					}
-
+		try (Scanner scanner = new Scanner(data)) {
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine().trim();
+				if (line.isEmpty()) {
+					break;
 				}
-				row.add(tile.createInstance(x, y));
-				//world.map[x + rowNumber * world.mapWidth] = new TileInstance(t, 0);
+
+				List<TileInstance> row = new ArrayList<>(line.length());
+
+				for (int x = 0; x < line.length(); x++) {
+					char tileIdentifier = line.charAt(x);
+					Tile tile = tileDictionary.get(tileIdentifier);
+					if (tile == null) {
+						tile = defaultTile;
+						//throw new MapLoadException("No known Tile defined for '" + tileIdentifier + "'");
+						GameObject gameObject = gameObjectDictionary.get(tileIdentifier);
+						if (gameObject != null) {
+							objectInstances.add(gameObject.getInstanceWithDefaults(x, y));
+						} else {
+							//throw new MapLoadException("No known Tile or GameObject defined for '" + tileIdentifier + "'");
+						}
+
+					}
+					row.add(tile.createInstance(x, y));
+				}
+				maxRowLength = Math.max(maxRowLength, row.size());
+				rows.add(row);
+				y++;
 			}
-			maxRowLength = Math.max(maxRowLength, row.size());
-			rows.add(row);
-			y++;
 		}
-		scanner.close();
 
 		if (maxRowLength < 8 || rows.size() < 8) {
 			throw new MapLoadException(String.format("Minimal map size is 8 x 8 tiles, here we have %d x %d", maxRowLength, rows.size()));
 		}
 
-		Collections.sort(objectInstances, GameObjectInstance.zIndexComparator);
+		width = maxRowLength;
+		height = rows.size();
+		tileInstances = new TileInstance[width * height];
 
-		mapWidth = maxRowLength;
-		mapHeight = rows.size();
-		tileMap = new TileInstance[mapWidth * mapHeight];
-
-		for (y = 0; y < mapHeight; y++) {
+		for (y = 0; y < height; y++) {
 			List<TileInstance> row = rows.get(y);
-			for (int x = 0; x < mapWidth; x++) {
+			for (int x = 0; x < width; x++) {
 				TileInstance tileInstance = (x < row.size() ? row.get(x) : defaultTile.createInstance(x, y));
-				tileMap[x + y * mapWidth] = tileInstance;
+				tileInstances[x + y * width] = tileInstance;
 			}
 		}
-		updateTilesNeighbours();
+		updateAllTilesNeighbours();
 	}
 
-	private void load(BufferedReader reader) throws IOException, MapLoadException {
-		String line;
+	private void loadMap(BufferedReader reader) throws IOException, MapLoadException {
 		StringBuilder sb = new StringBuilder();
 		char[] arr = new char[8 * 1024];
 		int numCharsRead;
 		while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1) {
 			sb.append(arr, 0, numCharsRead);
 		}
-		fromString(sb.toString());
+		mapFromString(sb.toString());
 	}
 
-	public void loadFromFile(File file) throws MapLoadException {
+	public void loadMapFromFile(File file) throws MapLoadException {
 		try {
-			load(new BufferedReader(new InputStreamReader(new FileInputStream(file))));
+			loadMap(new BufferedReader(new InputStreamReader(new FileInputStream(file))));
 		} catch (FileNotFoundException ex) {
 			throw new MapLoadException(String.format("Map file %s not found!", file.getAbsolutePath()), ex);
 		} catch (IOException ex) {
 			throw new MapLoadException(String.format("IOException while loading %s!", file.getAbsolutePath()), ex);
 		}
+		currentFile = file;
 	}
 
-	@Override
-	public String toString() {
+	/**
+	 *
+	 * @param data
+	 * @throws MapLoadException
+	 */
+	private void stateFromString(String data) throws MapLoadException {
+		objectInstances.clear();
+		try (Scanner scanner = new Scanner(data)) {
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine().trim();
+				if (line.isEmpty()) {
+					break;
+				}
+				String[] lineParts = line.split("[^\\w]", 2);
+				String gameObjectIdentifier = lineParts[0];
+				String args = lineParts[1].trim();
+				GameObject gameObject = gameObjectDictionary.get(gameObjectIdentifier);
+				if (gameObject == null) {
+					throw new MapLoadException("No known GameObject defined for '" + gameObjectIdentifier + "'");
+				}
+
+				try {
+					objectInstances.add(gameObject.getInstanceFromString(args));
+				} catch (IllegalArgumentException ex) {
+					throw new MapLoadException("Could not load state of " + gameObjectIdentifier + " because parameter is malformed: " + args, ex);
+				}
+			}
+		}
+		Collections.sort(objectInstances, GameObjectInstance.zIndexComparator);
+	}
+
+	public String mapToString() {
 		StringBuilder sb = new StringBuilder();
-		for (int y = 0; y < mapHeight; y++) {
-			for (int x = 0; x < mapWidth; x++) {
-				sb.append(tileMap[x + y * mapWidth].getTile().getIdentifier());
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				sb.append(tileInstances[x + y * width].getTile().identifier);
 			}
 			sb.append("\n");
 		}
 		return sb.toString();
 	}
 
-	public void save(Writer writer) throws IOException {
-		writer.write(toString());
+	private void saveMap(Writer writer) throws IOException {
+		writer.write(mapToString());
 	}
 
-	public void saveToFile(File file) throws FileNotFoundException, IOException {
+	public void saveMapToFile(File file) throws FileNotFoundException, IOException {
 		try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
-			save(writer);
+			saveMap(writer);
 		}
+		currentFile = file;
+	}
+
+	public String stateToString() {
+		StringBuilder sb = new StringBuilder();
+		for (GameObjectInstance objectInstance : objectInstances) {
+			sb.append(objectInstance.gameObject.identifier);
+			sb.append(' ');
+			sb.append(Float.floatToIntBits(objectInstance.getX()));
+			sb.append(' ');
+			sb.append(Float.floatToIntBits(objectInstance.getY()));
+			sb.append(' ');
+			sb.append(objectInstance.stateToString());
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+
+	public File getCurrentFile() {
+		return currentFile;
 	}
 }
 

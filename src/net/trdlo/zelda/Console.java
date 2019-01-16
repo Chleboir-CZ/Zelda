@@ -56,7 +56,7 @@ public class Console implements CommandExecuter {
 	}
 
 	private static final long MOTION_LENGTH = 750;
-	private static final int CONSOLE_WIDTH = 480, CONSOLE_HEIGHT = 480, PADDING = 10;
+	private static final int CONSOLE_MIN_WIDTH = 480, CONSOLE_HEIGHT = 480, PADDING = 10;
 
 	private static final Font FEED_FONT = new Font("Monospaced", Font.BOLD, 12);
 	private static final Font UI_FONT = new Font("Monospaced", Font.BOLD, 12);
@@ -73,6 +73,9 @@ public class Console implements CommandExecuter {
 	private boolean mouseCapture = false;
 	private boolean mouseCaptureClick = false;
 
+	private int currentWidth = CONSOLE_MIN_WIDTH;
+	private int targetWidth = CONSOLE_MIN_WIDTH;
+	
 	private static Console instance;
 
 	private final List<String> commandHistory = new LinkedList<>();
@@ -95,37 +98,37 @@ public class Console implements CommandExecuter {
 
 	public void render(Graphics2D graphics, float renderFraction) {
 		long time = getTime();
-		double showing = Math.min(1, (time - motionStart) / (double) MOTION_LENGTH);
-		showing = (Math.sin(-Math.PI / 2 + showing * Math.PI) + 1) / 2;
+		double fractionShowing = Math.min(1, (time - motionStart) / (double) MOTION_LENGTH);
+		fractionShowing = (Math.sin(-Math.PI / 2 + fractionShowing * Math.PI) + 1) / 2;
 
 		if (!visible) {
-			showing = 1 - showing;
+			fractionShowing = 1 - fractionShowing;
 		}
 
-		if (showing == 0) {
+		if (fractionShowing == 0) {
 			return;
 		}
 
-		int width = CONSOLE_WIDTH;
-		currentHeight = (int) (CONSOLE_HEIGHT * showing);
+		currentWidth = targetWidth; //TODO animate!
+		
+		currentHeight = (int) (CONSOLE_HEIGHT * fractionShowing);
 
 		graphics.setStroke(DEFAULT_STROKE);
 		graphics.setColor(Color.WHITE);
-		graphics.clearRect(0, 0, width, currentHeight);
-		graphics.drawRect(3, 3, width - 7, currentHeight - 7);
+		graphics.clearRect(0, 0, currentWidth, currentHeight);
+		graphics.drawRect(3, 3, currentWidth - 7, currentHeight - 7);
 		graphics.setFont(UI_FONT);
 
 		String str = "[Console]";
-		FontMetrics fm = graphics.getFontMetrics();
-		Rectangle2D rect = fm.getStringBounds(str, graphics);
+		FontMetrics fontMetrics = graphics.getFontMetrics();
+		Rectangle2D rect = fontMetrics.getStringBounds(str, graphics);
 
-		graphics.clearRect(width - 10 - (int) rect.getWidth() + 2, currentHeight - 10, (int) rect.getWidth() - 6, 10);
-
+		graphics.clearRect(currentWidth - 10 - (int) rect.getWidth() + 2, currentHeight - 10, (int) rect.getWidth() - 6, 10);
 		graphics.setColor(Color.WHITE);
-		graphics.drawString(str, width - 10 - (int) rect.getWidth(), currentHeight - 2);
+		graphics.drawString(str, currentWidth - 10 - (int) rect.getWidth(), currentHeight - 2);
 
 		graphics.setFont(FEED_FONT);
-		graphics.setClip(3, 3, width - 6, currentHeight - 6);
+		graphics.setClip(3, 3, currentWidth - 6, currentHeight - 6);
 
 		int fontLineHeight = graphics.getFontMetrics().getHeight();
 		int y = currentHeight - PADDING;
@@ -133,26 +136,34 @@ public class Console implements CommandExecuter {
 		String currentCommandStr = ">" + currentCommand.toString();
 		String stringBeforeCursor = currentCommandStr.substring(0, cursorPosition + 1);
 		graphics.drawString(currentCommandStr, PADDING, y);
-		graphics.drawString("_", PADDING + fm.stringWidth(stringBeforeCursor), y);
+		graphics.drawString("_", PADDING + fontMetrics.stringWidth(stringBeforeCursor), y);
 
 		y -= fontLineHeight;
 		int remainingVisibleLines = (currentHeight - (2 * PADDING)) / fontLineHeight;
-		int i = 0;
+		List<String> lines = new ArrayList<>();
+		targetWidth = CONSOLE_MIN_WIDTH - 2 * PADDING;
+
 		MSG_CYCLE:
 		for (Message msg : messages) {
 			try (Scanner scanner = new Scanner(msg.toString())) {
 				while (scanner.hasNextLine()) {
-					String line = scanner.nextLine();
-					graphics.setColor(new Color(255, 255, 255, msg.getFadeAlpha()));
-					graphics.drawString(line, PADDING, y);
-					y -= fontLineHeight;
-					if (--remainingVisibleLines == 0) {
-						break MSG_CYCLE;
-					}
+					lines.add(scanner.nextLine());
 				}
 			}
+			for (int i = lines.size() - 1; i >= 0; i--) {
+				graphics.setColor(new Color(255, 255, 255, msg.getFadeAlpha()));
+				String line = lines.get(i);
+				graphics.drawString(line, PADDING, y);
+				targetWidth = Math.max(targetWidth, fontMetrics.stringWidth(line));
+				y -= fontLineHeight;
+				if (--remainingVisibleLines == 0) {
+					break MSG_CYCLE;
+				}
+			}
+			lines.clear();
 		}
 		graphics.setClip(null);
+		targetWidth += 2 * PADDING;
 	}
 
 	public void update() {
@@ -197,7 +208,7 @@ public class Console implements CommandExecuter {
 	}
 
 	private boolean isIncidentalWithConsole(int x, int y) {
-		return visible && x <= CONSOLE_WIDTH && y <= currentHeight;
+		return visible && x <= CONSOLE_MIN_WIDTH && y <= currentHeight;
 	}
 
 	private static final Pattern PAT_CLEAR = Pattern.compile("^\\s*clear\\s*\\z", Pattern.CASE_INSENSITIVE);

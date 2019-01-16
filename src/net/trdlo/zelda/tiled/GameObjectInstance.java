@@ -3,44 +3,46 @@ package net.trdlo.zelda.tiled;
 import java.awt.Graphics2D;
 import java.util.Comparator;
 
-
 public abstract class GameObjectInstance {
 
-	protected float posX, posY;
+	public final GameObject gameObject;
+	protected float x, y;
 
-	public GameObjectInstance(float posX, float posY) {
-		this.posX = posX;
-		this.posY = posY;
+	public GameObjectInstance(GameObject gameObject, float x, float y) {
+		this.gameObject = gameObject;
+		this.x = x;
+		this.y = y;
 	}
 
 	public void update() {
 
 	}
 
-	public float getPosX() {
-		return posX;
+	public float getX() {
+		return x;
 	}
 
-	public float getPosY() {
-		return posY;
+	public float getY() {
+		return y;
 	}
 
-	public float getMoveX() {
+	public float getDX() {
 		return 0;
 	}
 
-	public float getMoveY() {
+	public float getDY() {
 		return 0;
 	}
 
 	public abstract void render(Graphics2D graphics, float x, float y, float renderFraction);
 
-	public abstract int getZIndex();
+	public int getZIndex() {
+		return gameObject.defaultZIndex;
+	}
 
-	public static Comparator<GameObjectInstance> zIndexComparator = new Comparator<GameObjectInstance>() {
-		@Override
-		public int compare(GameObjectInstance go1, GameObjectInstance go2) {
-			return go1.getZIndex() - go2.getZIndex();
-		}
-	};
+	public static Comparator<GameObjectInstance> zIndexComparator = (GameObjectInstance go1, GameObjectInstance go2) -> go1.getZIndex() - go2.getZIndex();
+
+	public abstract void stateFromString(String args);
+
+	public abstract String stateToString();
 }

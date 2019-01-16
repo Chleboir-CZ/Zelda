@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
-
 public class Tree extends GameObject {
 
 	BufferedImage img;
@@ -20,4 +19,8 @@ public class Tree extends GameObject {
 		return new TreeInstance(this, x, y);
 	}
 
+	@Override
+	public GameObjectInstance getInstanceWithDefaults(float x, float y) {
+		return new TreeInstance(this, x, y);
+	}
 }

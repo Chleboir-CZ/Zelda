@@ -12,7 +12,7 @@ public class Bird extends SimplyAnimatedObject {
 	public final int FRAME_COUNT = 2;
 
 	public Bird(World world) throws IOException {
-		super('^', 1.0f, Z_BIRDSPACE);
+		super('^', "Bird", 1.0f, Z_BIRDSPACE);
 		this.world = world;
 
 		BufferedImage[] img = new BufferedImage[2];
@@ -24,7 +24,15 @@ public class Bird extends SimplyAnimatedObject {
 
 	@Override
 	public GameObjectInstance getInstance(float x, float y, String args) {
-		return new BirdInstance(this, x, y, world);
+		BirdInstance birdInstance = new BirdInstance(this, x, y, world);
+		birdInstance.stateFromString(args);
+		return birdInstance;
 	}
 
+	@Override
+	public GameObjectInstance getInstanceWithDefaults(float x, float y) {
+		BirdInstance birdInstance = new BirdInstance(this, x, y, world);
+		birdInstance.randomSpeedBird();
+		return birdInstance;
+	}
 }

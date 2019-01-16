@@ -10,15 +10,8 @@ public abstract class SimplyAnimatedObject extends GameObject {
 
 	protected BufferedImage[] images;
 
-	/**
-	 *
-	 * @param identifier
-	 * @param size
-	 * @param zIndex
-	 */
-	public SimplyAnimatedObject(char identifier, float size, int zIndex) {
+	public SimplyAnimatedObject(char identifier, String identifier2, float size, int zIndex) {
 		super(identifier, size, zIndex);
-//		this.images = images;
 	}
 
 	public void setImages(BufferedImage[] images) {

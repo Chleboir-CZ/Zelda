@@ -114,6 +114,8 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 		if (!bufferStrategy.contentsLost()) {
 			bufferStrategy.show();
 		}
+		
+		g.dispose();
 
 		setRenderLength(getTime() - renderStart);
 	}
@@ -270,13 +272,7 @@ public final class ZeldaFrame extends JFrame implements WindowListener, InputLis
 			bufferStrategy = getBufferStrategy();
 
 			while (!terminate) {
-				long updatesPending = (getTime() / UPDATE_PERIOD) - updateFrame + 1;
-
-				if (updatesPending < 1) {
-					updatesPending = 1; //one update minimum!
-				} else if (updatesPending > MAX_FRAME_DROPS) {
-					updatesPending = MAX_FRAME_DROPS;
-				}
+				long updatesPending = Math.max(1, Math.min((getTime() / UPDATE_PERIOD) - updateFrame + 1, MAX_FRAME_DROPS));
 
 				//System.err.print("pending: " + updatesPending + ",\t");
 				while (updatesPending-- > 0) {

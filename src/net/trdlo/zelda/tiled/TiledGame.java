@@ -11,6 +11,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.trdlo.zelda.Console;
 import net.trdlo.zelda.ZeldaFrame;
 import net.trdlo.zelda.GameInterface;
@@ -39,21 +42,21 @@ public class TiledGame implements GameInterface, InputListener {
 
 		World w = new World();
 		if (mapFile != null) {
-			w.loadFromFile(mapFile);
+			w.loadMapFromFile(mapFile);
 		}
-		
+
 		setWorld(w);
 	}
-	
+
 	public void setWorld(World world) {
 		this.world = world;
-		viewX = world.mapWidth / 2.0f;
-		viewY = world.mapHeight / 2.0f;
+		viewX = world.width / 2.0f;
+		viewY = world.height / 2.0f;
 	}
 
 	@Override
-	public void setZeldaFrame(ZeldaFrame frame) {
-		this.zFrame = frame;
+	public void setZeldaFrame(ZeldaFrame zFrame) {
+		this.zFrame = zFrame;
 		menu.setZeldaFrame(zFrame);
 	}
 
@@ -63,13 +66,13 @@ public class TiledGame implements GameInterface, InputListener {
 
 		limitViewPosition(bounds);
 
-		float rWidth2 = Math.min(world.mapWidth, bounds.width / (float) World.GRID_SIZE) / 2.0f;
-		float rHeight2 = Math.min(world.mapHeight, bounds.height / (float) World.GRID_SIZE) / 2.0f;
+		float rWidth2 = Math.min(world.width, bounds.width / (float) World.GRID_SIZE) / 2.0f;
+		float rHeight2 = Math.min(world.height, bounds.height / (float) World.GRID_SIZE) / 2.0f;
 
 		int xOffset = (int) Math.floor((bounds.width / 2.0f) - (viewX * World.GRID_SIZE));
 		int yOffset = (int) Math.floor((bounds.height / 2.0f) - (viewY * World.GRID_SIZE));
 
-		graphics.setClip(xOffset, yOffset, world.mapWidth * World.GRID_SIZE, world.mapHeight * World.GRID_SIZE);
+		graphics.setClip(xOffset, yOffset, world.width * World.GRID_SIZE, world.height * World.GRID_SIZE);
 
 		for (int y = (int) (viewY - rHeight2); y < (int) Math.ceil(viewY + rHeight2); y++) {
 			for (int x = (int) (viewX - rWidth2); x < (int) Math.ceil(viewX + rWidth2); x++) {
@@ -102,8 +105,8 @@ public class TiledGame implements GameInterface, InputListener {
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
 		for (GameObjectInstance goi : world.objectInstances) {
-			float pixelX = xOffset + (goi.getPosX() + goi.getMoveX() * renderFraction) * World.GRID_SIZE;
-			float pixelY = yOffset + (goi.getPosY() + goi.getMoveY() * renderFraction) * World.GRID_SIZE;
+			float pixelX = xOffset + (goi.getX() + goi.getDX() * renderFraction) * World.GRID_SIZE;
+			float pixelY = yOffset + (goi.getY() + goi.getDY() * renderFraction) * World.GRID_SIZE;
 			goi.render(graphics, pixelX, pixelY, renderFraction);
 		}
 
@@ -120,15 +123,15 @@ public class TiledGame implements GameInterface, InputListener {
 	}
 
 	public void limitViewPosition(Rectangle bounds) {
-		float centerX = world.mapWidth / 2.0f;
-		float centerY = world.mapHeight / 2.0f;
+		float centerX = world.width / 2.0f;
+		float centerY = world.height / 2.0f;
 		float bWidth = bounds.width / (float) World.GRID_SIZE;
 		float bHeight = bounds.height / (float) World.GRID_SIZE;
 
 		float minX = Math.min(centerX, bWidth / 2.0f);
-		float maxX = Math.max(centerX, world.mapWidth - bWidth / 2.0f);
+		float maxX = Math.max(centerX, world.width - bWidth / 2.0f);
 		float minY = Math.min(centerY, bHeight / 2.0f);
-		float maxY = Math.max(centerY, world.mapHeight - bHeight / 2.0f);
+		float maxY = Math.max(centerY, world.height - bHeight / 2.0f);
 
 		float old = viewX;
 		viewX = Math.min(Math.max(viewX + dx, minX), maxX);
@@ -198,12 +201,12 @@ public class TiledGame implements GameInterface, InputListener {
 		int selY = (int) Math.round(selYf);
 		if (me.getButton() == MouseEvent.BUTTON1) {
 			if (!(world.getTileInstance(selX, selY) instanceof RoadInstance)) {
-				world.setTile(selX, selY, new RoadInstance(world.roadTile));
+				world.setTileInstanceUpdateNeighbours(selX, selY, new RoadInstance(world.roadTile));
 			}
 		}
 		if (me.getButton() == MouseEvent.BUTTON3) {
 			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
-				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
+				world.setTileInstanceUpdateNeighbours(selX, selY, new WaterInstance(world.waterTile, selX, selY));
 			}
 		}
 		if (me.getButton() == MouseEvent.BUTTON2) {
@@ -253,14 +256,18 @@ public class TiledGame implements GameInterface, InputListener {
 
 		int selX = (int) Math.round(getWorldX(me.getX(), me.getY()));
 		int selY = (int) Math.round(getWorldY(me.getX(), me.getY()));
+		if (selX < 0 || selY < 0 || selX >= world.width || selY >= world.height) {
+			return;
+		}
+		
 		if ((me.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) == InputEvent.BUTTON1_DOWN_MASK) {
 			if (!(world.getTileInstance(selX, selY) instanceof RoadInstance)) {
-				world.setTile(selX, selY, new RoadInstance(world.roadTile));
+				world.setTileInstanceUpdateNeighbours(selX, selY, new RoadInstance(world.roadTile));
 			}
 		}
 		if ((me.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) == InputEvent.BUTTON3_DOWN_MASK) {
 			if (!(world.getTileInstance(selX, selY) instanceof WaterInstance)) {
-				world.setTile(selX, selY, new WaterInstance(world.waterTile, selX, selY));
+				world.setTileInstanceUpdateNeighbours(selX, selY, new WaterInstance(world.waterTile, selX, selY));
 			}
 		}
 	}
@@ -274,9 +281,12 @@ public class TiledGame implements GameInterface, InputListener {
 		if (menu.keyTyped(ke)) {
 			return;
 		}
-		
-		if (ke.getKeyChar() == 't') {
-			Console.getInstance().echo(5000, world.toString());
+
+		if (ke.getKeyChar() == 'm') {
+			Console.getInstance().echo(5000, world.mapToString());
+		}
+		if (ke.getKeyChar() == 's') {
+			Console.getInstance().echo(5000, world.stateToString());
 		}
 	}
 
@@ -324,14 +334,41 @@ public class TiledGame implements GameInterface, InputListener {
 	public void mouseWheelMoved(MouseWheelEvent mwe) {
 	}
 
+	private static final Pattern PAT_SAVE_AS = Pattern.compile("^\\s*save(?:\\s+(.+?))?\\s*\\z", Pattern.CASE_INSENSITIVE);
+
 	@Override
 	public boolean executeCommand(String command, Console console) {
-		return menu.executeCommand(command, console);
+		if (menu.executeCommand(command, console)) {
+			return true;
+		}
+
+		Matcher m;
+		if ((m = PAT_SAVE_AS.matcher(command)).matches()) {
+			String fileName = m.group(1);
+			File file = world.getCurrentFile();
+			if (fileName != null) {
+				file = new File(fileName);
+			}
+			try {
+				world.saveMapToFile(file);
+			} catch (IOException ex) {
+				Console.getInstance().echo("Could not save file " + file.getAbsolutePath() + ": " + ex.toString());
+			}
+		} else {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
 	public void listCommands(String command, Console console) {
 		menu.listCommands(command, console);
+		if (command.isEmpty()) {
+			console.echo("== game commands ==");
+			console.echo("save");
+		} else if (PAT_SAVE_AS.matcher(command).matches()) {
+			console.echo("save saves the world to it's file, if a filename is given it acts as \"save as\"");
+		}
 	}
 
 	@Override

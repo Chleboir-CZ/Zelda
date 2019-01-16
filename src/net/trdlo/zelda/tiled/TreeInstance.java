@@ -3,25 +3,28 @@ package net.trdlo.zelda.tiled;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
-
 public class TreeInstance extends GameObjectInstance {
 
-	private final Tree gameObject;
+	private final Tree tree;
 
-	public TreeInstance(Tree gameObject, float posX, float posY) {
-		super(posX, posY);
-		this.gameObject = gameObject;
+	public TreeInstance(Tree tree, float posX, float posY) {
+		super(tree, posX, posY);
+		this.tree = tree;
 	}
 
 	@Override
 	public void render(Graphics2D graphics, float x, float y, float renderFraction) {
 		AffineTransform t = new AffineTransform();
 		t.translate(x, y);
-		graphics.drawImage(gameObject.img, t, null);
+		graphics.drawImage(tree.img, t, null);
 	}
 
 	@Override
-	public int getZIndex() {
-		return gameObject.zIndex;
+	public void stateFromString(String args) {
+	}
+
+	@Override
+	public String stateToString() {
+		return "";
 	}
 }
